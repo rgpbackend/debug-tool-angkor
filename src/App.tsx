@@ -613,7 +613,10 @@ export default function App() {
         "history detail",
       );
       client.sendFrame(historyDetailFrame(gameRoute.trim(), roundId, spinId));
-      pushLog("out", `history detail cmd=1503 roundId=${roundId} spinId=${spinId}`);
+      pushLog(
+        "out",
+        `history detail cmd=1503 roundId=${roundId} spinId=${spinId}`,
+      );
       const payload = await payloadPromise;
       pushLog("in", "history detail cmd=1503 response");
       return payload as unknown as HistoryDetailPayload;
@@ -689,277 +692,276 @@ export default function App() {
           onFetchDetail={fetchHistoryDetail}
         />
       ) : (
-      <div className="main-grid two-pane">
-        <section className="panel action-pane">
-          <h2>Actions</h2>
+        <div className="main-grid two-pane">
+          <section className="panel action-pane">
+            <h2>Actions</h2>
 
-          <div className="action-group">
-            <h3>Connection</h3>
-            <div className="field-grid">
-              <label>
-                WS URL
-                <input
-                  value={wsUrl}
-                  onChange={(e) => setWsUrl(e.target.value)}
-                  placeholder="wss://…/websocket"
-                  autoComplete="off"
+            <div className="action-group">
+              <h3>Connection</h3>
+              <div className="field-grid">
+                <label>
+                  WS URL
+                  <input
+                    value={wsUrl}
+                    onChange={(e) => setWsUrl(e.target.value)}
+                    placeholder="wss://…/websocket"
+                    autoComplete="off"
+                    disabled={busyConnect || phase === "spinning"}
+                  />
+                </label>
+                <label>
+                  Agent ID
+                  <input
+                    value={agentId}
+                    onChange={(e) => setAgentId(e.target.value)}
+                    disabled={busyConnect || phase === "spinning"}
+                  />
+                </label>
+                <label className="span-2">
+                  Access token
+                  <input
+                    value={accessToken}
+                    onChange={(e) => setAccessToken(e.target.value)}
+                    type="text"
+                    autoComplete="off"
+                    disabled={busyConnect || phase === "spinning"}
+                  />
+                </label>
+                <label className="span-2">
+                  Game route
+                  <input
+                    value={gameRoute}
+                    onChange={(e) => setGameRoute(e.target.value)}
+                    disabled={busyConnect || phase === "spinning"}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => void connectAndJoin()}
                   disabled={busyConnect || phase === "spinning"}
-                />
-              </label>
-              <label>
-                Agent ID
-                <input
-                  value={agentId}
-                  onChange={(e) => setAgentId(e.target.value)}
-                  disabled={busyConnect || phase === "spinning"}
-                />
-              </label>
-              <label className="span-2">
-                Access token
-                <input
-                  value={accessToken}
-                  onChange={(e) => setAccessToken(e.target.value)}
-                  type="password"
-                  autoComplete="off"
-                  disabled={busyConnect || phase === "spinning"}
-                />
-              </label>
-              <label className="span-2">
-                Game route
-                <input
-                  value={gameRoute}
-                  onChange={(e) => setGameRoute(e.target.value)}
-                  disabled={busyConnect || phase === "spinning"}
-                />
-              </label>
+                >
+                  {busyConnect ? "Connecting…" : "Connect + join"}
+                </button>
+                <button
+                  type="button"
+                  onClick={disconnect}
+                  disabled={phase === "disconnected"}
+                >
+                  Disconnect
+                </button>
+              </div>
             </div>
-            <div className="row">
-              <button
-                type="button"
-                className="primary"
-                onClick={() => void connectAndJoin()}
-                disabled={busyConnect || phase === "spinning"}
-              >
-                {busyConnect ? "Connecting…" : "Connect + join"}
-              </button>
-            </div>
-          </div>
 
-          <div className="action-group">
-            <h3>Spin</h3>
-            <div className="field-grid">
-              <label>
-                Bet
-                <input
-                  value={bet}
-                  onChange={(e) => setBet(e.target.value)}
-                  disabled={phase === "spinning"}
-                />
-              </label>
+            <div className="action-group">
+              <h3>Spin</h3>
+              <div className="field-grid">
+                <label>
+                  Bet
+                  <input
+                    value={bet}
+                    onChange={(e) => setBet(e.target.value)}
+                    disabled={phase === "spinning"}
+                  />
+                </label>
+              </div>
+              <div className="row">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => void spin()}
+                  disabled={!canSpin}
+                >
+                  Spin
+                </button>
+              </div>
             </div>
-            <div className="row">
-              <button
-                type="button"
-                className="primary"
-                onClick={() => void spin()}
-                disabled={!canSpin}
-              >
-                Spin
-              </button>
-            </div>
-          </div>
 
-          <div className="action-group">
-            <h3>Cheat</h3>
-            <p className="cheat-hint muted">
-              Shape <code>[3,4,4,4,3]</code> — one symbol per cell (
-              {CHEAT_SYMBOL_OPTIONS.join(", ")}).
-            </p>
-            <CheatReelGridEditor
-              cheatGrid={cheatGrid}
-              canCheat={canCheat}
-              onCellChange={updateCheatCell}
-            />
-            <div className="row">
-              <button
-                type="button"
-                className="primary"
-                onClick={sendCheat}
-                disabled={!canCheat}
-              >
-                Set cheat (2001)
-              </button>
-              <button
-                type="button"
-                className="primary"
-                onClick={sendForceJackpot}
-                disabled={!canCheat}
-              >
-                Force jackpot next spin (2002)
-              </button>
+            <div className="action-group">
+              <h3>Cheat</h3>
+              <p className="cheat-hint muted">
+                Shape <code>[3,4,4,4,3]</code> — one symbol per cell (
+                {CHEAT_SYMBOL_OPTIONS.join(", ")}).
+              </p>
+              <CheatReelGridEditor
+                cheatGrid={cheatGrid}
+                canCheat={canCheat}
+                onCellChange={updateCheatCell}
+              />
+              <div className="row">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={sendCheat}
+                  disabled={!canCheat}
+                >
+                  Set cheat (2001)
+                </button>
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={sendForceJackpot}
+                  disabled={!canCheat}
+                >
+                  Force jackpot next spin (2002)
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="action-group">
-            <h3>Session</h3>
-            <p className="phase">
-              Phase: <strong>{phase}</strong>
-            </p>
-            {cheatStatus ? <p className="phase">{cheatStatus}</p> : null}
-            <div className="row">
-              <button
-                type="button"
-                onClick={disconnect}
-                disabled={phase === "disconnected"}
-              >
-                Disconnect
-              </button>
+            <div className="action-group">
+              <h3>Session</h3>
+              <p className="phase">
+                Phase: <strong>{phase}</strong>
+              </p>
+              {cheatStatus ? <p className="phase">{cheatStatus}</p> : null}
+
+              {error ? <p className="error">{error}</p> : null}
             </div>
-            {error ? <p className="error">{error}</p> : null}
-          </div>
-        </section>
+          </section>
 
-        <section className="panel output-pane">
-          <h2>Output</h2>
-          <div className="output-sections">
-            <section className="output-section">
-              <h3>Result</h3>
-              {lastSpin ? (
-                <>
-                  {jackpotInfo?.triggered ? (
-                    <div className="jackpot-banner">
-                      <strong>Jackpot</strong>{" "}
-                      <span className="jackpot-tier">
-                        {jackpotInfo.tier ?? "—"}
-                      </span>
-                      <span className="jackpot-win">
-                        +{jackpotInfo.jackpotWin.toFixed(2)}
-                      </span>
-                      <span className="muted jackpot-cells">
-                        ({jackpotInfo.goldenWildPositions.length} GW cells)
-                      </span>
-                    </div>
-                  ) : null}
-                  {retriggerInfo?.triggered ? (
-                    <div className="jackpot-banner">
-                      <strong>Retrigger</strong>{" "}
-                      <span className="jackpot-win">
-                        +{retriggerInfo.addedFreeSpins} free spins
-                      </span>
-                      <span className="muted jackpot-cells">
-                        ({retriggerInfo.scatterCount} scatters,{" "}
-                        {retriggerInfo.scatterPositions.length} positions)
-                      </span>
-                    </div>
-                  ) : null}
-                  <div className="winway-toolbar row">
-                    <label className="winway-select-label">
-                      Highlight win way
-                      <select
-                        value={String(safeHighlightIndex)}
-                        onChange={(e) =>
-                          setHighlightWinWayIndex(Number(e.target.value))
-                        }
-                        disabled={phase === "spinning"}
-                      >
-                        {winWays.map((way, idx) => (
-                          <option
-                            key={`winway-opt-${way.symbol}-${idx}`}
-                            value={String(idx)}
-                          >
-                            #{idx + 1} {way.symbol} ×{way.matchCount} ways=
-                            {way.ways} payout=
-                            {way.payout}
-                          </option>
-                        ))}
-                        <option value="all">All</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div className="reels-wrap">
-                    <div className="reels" aria-label="Spin result reels">
-                      {lastSpin.spin.reels.map((column, ci) => (
-                        <div
-                          key={`spin-reel-r${ci + 1}-cells-${column.length}`}
-                          className="reel-col"
+          <section className="panel output-pane">
+            <h2>Output</h2>
+            <div className="output-sections">
+              <section className="output-section">
+                <h3>Result</h3>
+                {lastSpin ? (
+                  <>
+                    {jackpotInfo?.triggered ? (
+                      <div className="jackpot-banner">
+                        <strong>Jackpot</strong>{" "}
+                        <span className="jackpot-tier">
+                          {jackpotInfo.tier ?? "—"}
+                        </span>
+                        <span className="jackpot-win">
+                          +{jackpotInfo.jackpotWin.toFixed(2)}
+                        </span>
+                        <span className="muted jackpot-cells">
+                          ({jackpotInfo.goldenWildPositions.length} GW cells)
+                        </span>
+                      </div>
+                    ) : null}
+                    {retriggerInfo?.triggered ? (
+                      <div className="jackpot-banner">
+                        <strong>Retrigger</strong>{" "}
+                        <span className="jackpot-win">
+                          +{retriggerInfo.addedFreeSpins} free spins
+                        </span>
+                        <span className="muted jackpot-cells">
+                          ({retriggerInfo.scatterCount} scatters,{" "}
+                          {retriggerInfo.scatterPositions.length} positions)
+                        </span>
+                      </div>
+                    ) : null}
+                    <div className="winway-toolbar row">
+                      <label className="winway-select-label">
+                        Highlight win way
+                        <select
+                          value={String(safeHighlightIndex)}
+                          onChange={(e) =>
+                            setHighlightWinWayIndex(Number(e.target.value))
+                          }
+                          disabled={phase === "spinning"}
                         >
-                          {column.map((sym, ri) => {
-                            const k = winWayHighlightKey(ci, ri);
-                            const winHit = winWayHighlightKeys.has(k);
-                            const gwHit = goldenWildHighlightKeys.has(k);
-                            return (
-                              <div
-                                key={`spin-reel-r${ci + 1}-slot-${ri + 1}`}
-                                className={`cell sym-${sym}${winHit ? " cell-winway" : ""}${
-                                  gwHit ? " cell-golden-wild" : ""
-                                }`}
-                              >
-                                {sym}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
+                          {winWays.map((way, idx) => (
+                            <option
+                              key={`winway-opt-${way.symbol}-${idx}`}
+                              value={String(idx)}
+                            >
+                              #{idx + 1} {way.symbol} ×{way.matchCount} ways=
+                              {way.ways} payout=
+                              {way.payout}
+                            </option>
+                          ))}
+                          <option value="all">All</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div className="reels-wrap">
+                      <div className="reels" aria-label="Spin result reels">
+                        {lastSpin.spin.reels.map((column, ci) => (
+                          <div
+                            key={`spin-reel-r${ci + 1}-cells-${column.length}`}
+                            className="reel-col"
+                          >
+                            {column.map((sym, ri) => {
+                              const k = winWayHighlightKey(ci, ri);
+                              const winHit = winWayHighlightKeys.has(k);
+                              const gwHit = goldenWildHighlightKeys.has(k);
+                              return (
+                                <div
+                                  key={`spin-reel-r${ci + 1}-slot-${ri + 1}`}
+                                  className={`cell sym-${sym}${winHit ? " cell-winway" : ""}${
+                                    gwHit ? " cell-golden-wild" : ""
+                                  }`}
+                                >
+                                  {sym}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted">No spin yet.</p>
+                )}
+              </section>
+
+              <section className="output-section">
+                <h3>State</h3>
+                {lastSpin ? (
+                  <div className="snapshot">
+                    <div>
+                      <h3>Round</h3>
+                      <pre>{JSON.stringify(lastSpin.round, null, 2)}</pre>
+                    </div>
+                    <div>
+                      <h3>State</h3>
+                      <pre>{JSON.stringify(lastSpin.state, null, 2)}</pre>
+                    </div>
+                    <div>
+                      <h3>Spin</h3>
+                      <pre>
+                        {JSON.stringify(
+                          {
+                            spinId: lastSpin.spin.spinId,
+                            spinType: lastSpin.spin.spinType,
+                            win: lastSpin.spin.win,
+                            triggers: lastSpin.spin.triggers,
+                            winWays: lastSpin.spin.winWays ?? [],
+                            guardianWild: lastSpin.spin.guardianWild ?? null,
+                            retrigger: readSpinRetrigger(lastSpin.spin),
+                            jackpot: readSpinJackpot(lastSpin.spin),
+                          },
+                          null,
+                          2,
+                        )}
+                      </pre>
                     </div>
                   </div>
-                </>
-              ) : (
-                <p className="muted">No spin yet.</p>
-              )}
-            </section>
+                ) : (
+                  <p className="muted">No spin yet.</p>
+                )}
+              </section>
 
-            <section className="output-section">
-              <h3>State</h3>
-              {lastSpin ? (
-                <div className="snapshot">
-                  <div>
-                    <h3>Round</h3>
-                    <pre>{JSON.stringify(lastSpin.round, null, 2)}</pre>
-                  </div>
-                  <div>
-                    <h3>State</h3>
-                    <pre>{JSON.stringify(lastSpin.state, null, 2)}</pre>
-                  </div>
-                  <div>
-                    <h3>Spin</h3>
-                    <pre>
-                      {JSON.stringify(
-                        {
-                          spinId: lastSpin.spin.spinId,
-                          spinType: lastSpin.spin.spinType,
-                          win: lastSpin.spin.win,
-                          triggers: lastSpin.spin.triggers,
-                          winWays: lastSpin.spin.winWays ?? [],
-                          guardianWild: lastSpin.spin.guardianWild ?? null,
-                          retrigger: readSpinRetrigger(lastSpin.spin),
-                          jackpot: readSpinJackpot(lastSpin.spin),
-                        },
-                        null,
-                        2,
-                      )}
-                    </pre>
-                  </div>
-                </div>
-              ) : (
-                <p className="muted">No spin yet.</p>
-              )}
-            </section>
-
-            <section className="output-section">
-              <h3>Logs</h3>
-              {log.length > 0 ? (
-                <ul className="log">
-                  {log.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted">No logs yet.</p>
-              )}
-            </section>
-          </div>
-        </section>
-      </div>
+              <section className="output-section">
+                <h3>Logs</h3>
+                {log.length > 0 ? (
+                  <ul className="log">
+                    {log.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="muted">No logs yet.</p>
+                )}
+              </section>
+            </div>
+          </section>
+        </div>
       )}
     </div>
   );
