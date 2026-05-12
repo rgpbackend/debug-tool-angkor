@@ -1,16 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { readEnvDefaults } from "./config";
-import { BrowserWsClient, isSpinResponsePayload } from "./ws/browser-ws-client";
+import {
+  BrowserWsClient,
+  isHistoryDetailPayload,
+  isHistoryListPayload,
+  isSpinResponsePayload,
+} from "./ws/browser-ws-client";
 import {
   cheatFrame,
   connectFrame,
   forceJackpotNextSpinFrame,
   heartbeatFrame,
+  historyDetailFrame,
+  historyListFrame,
   joinFrame,
   spinFrame,
 } from "./ws/frames";
-import type { SpinResponsePayload, WinWay } from "./ws/protocol";
+import type {
+  HistoryDetailPayload,
+  HistoryListPayload,
+  SpinResponsePayload,
+  WinWay,
+} from "./ws/protocol";
 import type { GamePhase } from "./ws/game-phase";
+import HistoryView from "./components/HistoryView";
 import "./App.css";
 
 const LOG_CAP = 100;
@@ -307,6 +320,7 @@ export default function App() {
   const clientRef = useRef<BrowserWsClient | null>(null);
   const heartbeatTimerRef = useRef<number | null>(null);
 
+  const [activeTab, setActiveTab] = useState<"game" | "history">("game");
   const [phase, setPhase] = useState<GamePhase>("disconnected");
   /** True after connect+join succeeded; used for UI (avoid reading refs during render). */
   const [sessionReady, setSessionReady] = useState(false);
@@ -368,6 +382,7 @@ export default function App() {
     setCheatStatus(null);
     setCheatGrid(emptyCheatGrid());
     setHighlightWinWayIndex(0);
+    setActiveTab("game");
     setPhase("disconnected");
   }, [stopHeartbeat]);
 
@@ -568,6 +583,44 @@ export default function App() {
     }
   }, [gameRoute, phase, pushLog, sessionReady]);
 
+  const fetchHistoryList = useCallback(
+    async (page: number): Promise<HistoryListPayload> => {
+      const client = clientRef.current;
+      if (!client?.isConnected()) {
+        throw new Error("Not connected");
+      }
+      const payloadPromise = client.waitForPayload(
+        isHistoryListPayload,
+        "history list",
+      );
+      client.sendFrame(historyListFrame(gameRoute.trim(), page, 20));
+      pushLog("out", `history list cmd=1502 page=${page}`);
+      const payload = await payloadPromise;
+      pushLog("in", "history list cmd=1502 response");
+      return payload as unknown as HistoryListPayload;
+    },
+    [gameRoute, pushLog],
+  );
+
+  const fetchHistoryDetail = useCallback(
+    async (roundId: string, spinId: string): Promise<HistoryDetailPayload> => {
+      const client = clientRef.current;
+      if (!client?.isConnected()) {
+        throw new Error("Not connected");
+      }
+      const payloadPromise = client.waitForPayload(
+        isHistoryDetailPayload,
+        "history detail",
+      );
+      client.sendFrame(historyDetailFrame(gameRoute.trim(), roundId, spinId));
+      pushLog("out", `history detail cmd=1503 roundId=${roundId} spinId=${spinId}`);
+      const payload = await payloadPromise;
+      pushLog("in", "history detail cmd=1503 response");
+      return payload as unknown as HistoryDetailPayload;
+    },
+    [gameRoute, pushLog],
+  );
+
   const updateCheatCell = useCallback(
     (reelIndex: number, rowIndex: number, colLen: number, value: string) => {
       setCheatGrid((prev) =>
@@ -612,6 +665,30 @@ export default function App() {
         <p className="game-sub">WebSocket test client</p>
       </header>
 
+      <div className="tab-bar">
+        <button
+          type="button"
+          className={`tab${activeTab === "game" ? " tab-active" : ""}`}
+          onClick={() => setActiveTab("game")}
+        >
+          Game
+        </button>
+        <button
+          type="button"
+          className={`tab${activeTab === "history" ? " tab-active" : ""}`}
+          onClick={() => setActiveTab("history")}
+        >
+          History
+        </button>
+      </div>
+
+      {activeTab === "history" ? (
+        <HistoryView
+          canQuery={sessionReady && phase !== "spinning"}
+          onFetchList={fetchHistoryList}
+          onFetchDetail={fetchHistoryDetail}
+        />
+      ) : (
       <div className="main-grid two-pane">
         <section className="panel action-pane">
           <h2>Actions</h2>
@@ -883,6 +960,7 @@ export default function App() {
           </div>
         </section>
       </div>
+      )}
     </div>
   );
 }

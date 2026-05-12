@@ -390,3 +390,229 @@ button.primary {
 .cheat-cell-input:disabled {
   opacity: 0.55;
 }
+
+/* ====================================================================
+   Tab bar
+   ==================================================================== */
+
+.tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 1.1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.tab {
+  padding: 0.4rem 1rem;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  position: relative;
+  bottom: -1px;
+}
+
+.tab:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--bg) 85%, var(--code-bg));
+  color: var(--text-h);
+}
+
+.tab.tab-active {
+  background: color-mix(in srgb, var(--bg) 92%, var(--code-bg));
+  border-color: var(--border);
+  border-bottom-color: color-mix(in srgb, var(--bg) 92%, var(--code-bg));
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+/* ====================================================================
+   History panel
+   ==================================================================== */
+
+.hist-panel {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  flex: 1;
+}
+
+.hist-header {
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+/* --- Spin type badges --- */
+
+.hist-type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text-h);
+}
+
+.hist-type-FREE_SPIN {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+}
+
+.hist-type-RESPIN {
+  border-color: color-mix(in srgb, gold 40%, var(--border));
+  background: color-mix(in srgb, gold 10%, var(--bg));
+}
+
+/* --- Profit colouring --- */
+
+.hist-profit-pos {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.hist-profit-neg {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hist-profit-pos {
+    color: #4ade80;
+  }
+
+  .hist-profit-neg {
+    color: #fca5a5;
+  }
+}
+
+/* --- List toolbar / pagination --- */
+
+.hist-list-toolbar {
+  margin-bottom: 0.65rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.hist-count {
+  font-size: 0.82rem;
+}
+
+.hist-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hist-page-info {
+  font-size: 0.82rem;
+  color: var(--text);
+  min-width: 4rem;
+  text-align: center;
+}
+
+/* --- Table --- */
+
+.hist-table-wrap {
+  overflow-x: auto;
+}
+
+.hist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+
+.hist-table th {
+  text-align: left;
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hist-table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.hist-table tbody tr:hover {
+  background: color-mix(in srgb, var(--code-bg) 55%, transparent);
+}
+
+.hist-row-selected {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg)) !important;
+}
+
+.hist-ts {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.hist-detail-btn {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+/* --- Detail panel --- */
+
+.hist-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hist-detail-header {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0;
+}
+
+.hist-detail-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.hist-detail-meta {
+  font-size: 0.83rem;
+}
+
+.hist-meta-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+}
+
+.hist-meta-label {
+  min-width: 4rem;
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.hist-meta-row code {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+/* Mini symbol cell inside tables */
+
+.hist-sym-mini {
+  width: 1.7rem;
+  height: 1.7rem;
+  min-width: 1.7rem;
+  min-height: 1.7rem;
+  font-size: 0.72rem;
+}
+

@@ -79,3 +79,60 @@ export interface WinWay {
   payout: number;
   positions: number[][];
 }
+
+// --- History (cmd 1502 / 1503) ---
+
+export interface HistoryItem {
+  roundId: string;
+  spinId: string;
+  transactionId: string;
+  spinType: "BASE" | "FREE_SPIN" | "RESPIN";
+  stepIndex: number;
+  /** Parent round display time (finishedAt / updatedAt). Not exact spin instant. */
+  timestampMillis: number;
+  /** Only BASE step carries round stake; FREE_SPIN / RESPIN use 0. */
+  bet: number;
+  win: number;
+  profit: number;
+}
+
+export interface HistoryListPayload {
+  cmd: string | number;
+  items: HistoryItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface HistoryWinWay {
+  wayIndex: number;
+  symbol: string;
+  matchCount: number;
+  ways: number;
+  payout: number;
+  /** Reel-major: positions[i] = winning row indices on reel i. */
+  positions: number[][];
+}
+
+export interface HistoryDetailPayload {
+  cmd: string | number;
+  roundId: string;
+  transactionId: string;
+  /** Parent round display time — same semantics as HistoryItem.timestampMillis. */
+  finishedAtMillis: number;
+  spinId: string;
+  /** 0-based index of this spin within its parent round. */
+  stepIndex: number;
+  /** 1-based step display number. */
+  round: number;
+  spinType: "BASE" | "FREE_SPIN" | "RESPIN";
+  /** Human label: "Normal spin" | "Free spin" | "Respin" */
+  title: string;
+  /** Only BASE step carries round stake; FREE_SPIN / RESPIN use 0. */
+  bet: number;
+  win: number;
+  profit: number;
+  /** Column-major grid, same layout as live spin reels. */
+  reels: string[][];
+  winWays: HistoryWinWay[];
+}

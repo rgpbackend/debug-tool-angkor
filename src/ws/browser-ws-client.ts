@@ -156,6 +156,28 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+/** Matches cmd 1502 history-list response. */
+export function isHistoryListPayload(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    hasCmd(payload, "1502") &&
+    Array.isArray(payload.items) &&
+    typeof payload.totalCount === "number"
+  );
+}
+
+/** Matches cmd 1503 history-detail response. */
+export function isHistoryDetailPayload(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    hasCmd(payload, "1503") &&
+    typeof payload.spinId === "string" &&
+    Array.isArray(payload.reels)
+  );
+}
+
 async function tryParseFrame(raw: string | Blob): Promise<WsFrame | null> {
   try {
     const text = typeof raw === "string" ? raw : await raw.text();
