@@ -72,6 +72,19 @@ export interface SpinResponsePayload {
   };
 }
 
+// --- Join response (cmd 1005) ---
+
+/** activeRound uses the same { round, spin, state } shape as SpinResponsePayload. */
+export type ActiveRound = SpinResponsePayload;
+
+export interface JoinResponsePayload {
+  cmd: string | number;
+  c: number;
+  symbols: string[];
+  paylines?: unknown;
+  activeRound: ActiveRound | null;
+}
+
 export interface WinWay {
   symbol: string;
   matchCount: number;

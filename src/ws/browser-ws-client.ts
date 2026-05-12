@@ -1,4 +1,9 @@
-import { getFramePayload, hasCmd, type WsFrame, type WsOutboundFrame } from "./protocol";
+import {
+  getFramePayload,
+  hasCmd,
+  type WsFrame,
+  type WsOutboundFrame,
+} from "./protocol";
 
 export interface BrowserWsClientOptions {
   timeoutMs: number;
@@ -154,6 +159,17 @@ export function isSpinResponsePayload(
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+/** Matches cmd 1005 join/subscribe response. */
+export function isJoinResponsePayload(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    hasCmd(payload, "1005") &&
+    typeof payload.c === "number" &&
+    Array.isArray(payload.symbols)
+  );
 }
 
 /** Matches cmd 1502 history-list response. */

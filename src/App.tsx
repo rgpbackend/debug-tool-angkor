@@ -4,6 +4,7 @@ import {
   BrowserWsClient,
   isHistoryDetailPayload,
   isHistoryListPayload,
+  isJoinResponsePayload,
   isSpinResponsePayload,
 } from "./ws/browser-ws-client";
 import {
@@ -17,8 +18,10 @@ import {
   spinFrame,
 } from "./ws/frames";
 import type {
+  ActiveRound,
   HistoryDetailPayload,
   HistoryListPayload,
+  JoinResponsePayload,
   SpinResponsePayload,
   WinWay,
 } from "./ws/protocol";
@@ -30,8 +33,6 @@ const LOG_CAP = 100;
 const HEARTBEAT_INTERVAL_MS = 30_000;
 /** Delay after auth connect frame, before join (cmd 1005). */
 const POST_AUTH_BEFORE_JOIN_MS = 1000;
-/** Short settle after join before treating session as ready. */
-const POST_JOIN_SETTLE_MS = 200;
 const EXPECTED_CHEAT_REEL_SIZES = [3, 4, 4, 4, 3] as const;
 const VALID_CHEAT_SYMBOLS = new Set([
   "A",
@@ -337,6 +338,7 @@ export default function App() {
   );
 
   const [lastSpin, setLastSpin] = useState<SpinResponsePayload | null>(null);
+  const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
   const [highlightWinWayIndex, setHighlightWinWayIndex] = useState(0);
   const [cheatStatus, setCheatStatus] = useState<string | null>(null);
   const [cheatArmed, setCheatArmed] = useState(false);
@@ -382,6 +384,7 @@ export default function App() {
     setCheatStatus(null);
     setCheatGrid(emptyCheatGrid());
     setHighlightWinWayIndex(0);
+    setActiveRound(null);
     setActiveTab("game");
     setPhase("disconnected");
   }, [stopHeartbeat]);
@@ -389,6 +392,7 @@ export default function App() {
   const connectAndJoin = useCallback(async () => {
     setError(null);
     setLastSpin(null);
+    setActiveRound(null);
     setHighlightWinWayIndex(0);
     setCheatGrid(emptyCheatGrid());
     setCheatArmed(false);
@@ -434,11 +438,21 @@ export default function App() {
         throw new Error(`Disconnected before join (${detail})`);
       }
 
+      const joinPayloadPromise = client.waitForPayload(
+        isJoinResponsePayload,
+        "join response",
+      );
       const join = joinFrame(gameRoute.trim());
       client.sendFrame(join);
       pushLog("out", `join cmd=1005 route=${gameRoute}`);
 
-      await delay(POST_JOIN_SETTLE_MS);
+      const joinPayload =
+        (await joinPayloadPromise) as unknown as JoinResponsePayload;
+      pushLog(
+        "in",
+        `join cmd=1005 c=${joinPayload.c} activeRound=${joinPayload.activeRound ? joinPayload.activeRound.round.state : "null"}`,
+      );
+
       if (clientRef.current !== client) {
         return;
       }
@@ -449,6 +463,11 @@ export default function App() {
           : "socket not open";
         throw new Error(`Disconnected after connect/join (${detail})`);
       }
+
+      if (joinPayload.activeRound) {
+        setActiveRound(joinPayload.activeRound);
+      }
+
       setSessionReady(true);
       setPhase("joined");
     } catch (e) {
@@ -505,6 +524,7 @@ export default function App() {
       pushLog("in", "spin cmd=1500 payload");
       const spinPayload = payload as unknown as SpinResponsePayload;
       setLastSpin(spinPayload);
+      setActiveRound(null);
       setCheatGrid(cheatGridFromSpinReels(spinPayload.spin.reels));
       if (cheatArmed || forceJackpotArmed) {
         if (cheatArmed && forceJackpotArmed) {
@@ -637,7 +657,10 @@ export default function App() {
   const canCheat = phase === "joined" && sessionReady;
   const busyConnect = phase === "connecting" || phase === "connected";
 
-  const winWays = lastSpin?.spin.winWays ?? [];
+  /** Unified display source: last spin result OR active round from join. */
+  const displaySpin = lastSpin ?? activeRound;
+
+  const winWays = displaySpin?.spin.winWays ?? [];
   const safeHighlightIndex =
     winWays.length === 0
       ? 0
@@ -649,12 +672,12 @@ export default function App() {
   );
 
   const jackpotInfo = useMemo(
-    () => (lastSpin ? readSpinJackpot(lastSpin.spin) : null),
-    [lastSpin],
+    () => (displaySpin ? readSpinJackpot(displaySpin.spin) : null),
+    [displaySpin],
   );
   const retriggerInfo = useMemo(
-    () => (lastSpin ? readSpinRetrigger(lastSpin.spin) : null),
-    [lastSpin],
+    () => (displaySpin ? readSpinRetrigger(displaySpin.spin) : null),
+    [displaySpin],
   );
   const goldenWildHighlightKeys = useMemo(
     () => buildGoldenWildHighlightSet(jackpotInfo?.goldenWildPositions),
@@ -826,7 +849,7 @@ export default function App() {
             <div className="output-sections">
               <section className="output-section">
                 <h3>Result</h3>
-                {lastSpin ? (
+                {displaySpin ? (
                   <>
                     {jackpotInfo?.triggered ? (
                       <div className="jackpot-banner">
@@ -880,7 +903,7 @@ export default function App() {
                     </div>
                     <div className="reels-wrap">
                       <div className="reels" aria-label="Spin result reels">
-                        {lastSpin.spin.reels.map((column, ci) => (
+                        {displaySpin.spin.reels.map((column, ci) => (
                           <div
                             key={`spin-reel-r${ci + 1}-cells-${column.length}`}
                             className="reel-col"
@@ -912,29 +935,29 @@ export default function App() {
 
               <section className="output-section">
                 <h3>State</h3>
-                {lastSpin ? (
+                {displaySpin ? (
                   <div className="snapshot">
                     <div>
                       <h3>Round</h3>
-                      <pre>{JSON.stringify(lastSpin.round, null, 2)}</pre>
+                      <pre>{JSON.stringify(displaySpin.round, null, 2)}</pre>
                     </div>
                     <div>
                       <h3>State</h3>
-                      <pre>{JSON.stringify(lastSpin.state, null, 2)}</pre>
+                      <pre>{JSON.stringify(displaySpin.state, null, 2)}</pre>
                     </div>
                     <div>
                       <h3>Spin</h3>
                       <pre>
                         {JSON.stringify(
                           {
-                            spinId: lastSpin.spin.spinId,
-                            spinType: lastSpin.spin.spinType,
-                            win: lastSpin.spin.win,
-                            triggers: lastSpin.spin.triggers,
-                            winWays: lastSpin.spin.winWays ?? [],
-                            guardianWild: lastSpin.spin.guardianWild ?? null,
-                            retrigger: readSpinRetrigger(lastSpin.spin),
-                            jackpot: readSpinJackpot(lastSpin.spin),
+                            spinId: displaySpin.spin.spinId,
+                            spinType: displaySpin.spin.spinType,
+                            win: displaySpin.spin.win,
+                            triggers: displaySpin.spin.triggers,
+                            winWays: displaySpin.spin.winWays ?? [],
+                            guardianWild: displaySpin.spin.guardianWild ?? null,
+                            retrigger: readSpinRetrigger(displaySpin.spin),
+                            jackpot: readSpinJackpot(displaySpin.spin),
                           },
                           null,
                           2,
