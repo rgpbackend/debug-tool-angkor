@@ -74,8 +74,11 @@ export interface SpinResponsePayload {
 
 // --- Join response (cmd 1005) ---
 
-/** lastRound uses the same { round, spin, state } shape as SpinResponsePayload. */
-export type LastRound = SpinResponsePayload;
+/** lastRound uses the same { round, spin, state } shape as SpinResponsePayload,
+ *  but `spin` can be absent when the round has no spins yet. */
+export type LastRound = Omit<SpinResponsePayload, 'spin'> & {
+  spin?: SpinResponsePayload['spin'] | null;
+};
 
 export interface JoinResponsePayload {
   cmd: string | number;

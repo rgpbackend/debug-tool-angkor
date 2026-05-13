@@ -660,7 +660,7 @@ export default function App() {
   /** Unified display source: last spin result OR active round from join. */
   const displaySpin = lastSpin ?? lastRound;
 
-  const winWays = displaySpin?.spin.winWays ?? [];
+  const winWays = displaySpin?.spin?.winWays ?? [];
   const safeHighlightIndex =
     winWays.length === 0
       ? 0
@@ -672,11 +672,11 @@ export default function App() {
   );
 
   const jackpotInfo = useMemo(
-    () => (displaySpin ? readSpinJackpot(displaySpin.spin) : null),
+    () => (displaySpin?.spin ? readSpinJackpot(displaySpin.spin) : null),
     [displaySpin],
   );
   const retriggerInfo = useMemo(
-    () => (displaySpin ? readSpinRetrigger(displaySpin.spin) : null),
+    () => (displaySpin?.spin ? readSpinRetrigger(displaySpin.spin) : null),
     [displaySpin],
   );
   const goldenWildHighlightKeys = useMemo(
@@ -903,28 +903,32 @@ export default function App() {
                     </div>
                     <div className="reels-wrap">
                       <div className="reels" aria-label="Spin result reels">
-                        {displaySpin.spin.reels.map((column, ci) => (
-                          <div
-                            key={`spin-reel-r${ci + 1}-cells-${column.length}`}
-                            className="reel-col"
-                          >
-                            {column.map((sym, ri) => {
-                              const k = winWayHighlightKey(ci, ri);
-                              const winHit = winWayHighlightKeys.has(k);
-                              const gwHit = goldenWildHighlightKeys.has(k);
-                              return (
-                                <div
-                                  key={`spin-reel-r${ci + 1}-slot-${ri + 1}`}
-                                  className={`cell sym-${sym}${winHit ? " cell-winway" : ""}${
-                                    gwHit ? " cell-golden-wild" : ""
-                                  }`}
-                                >
-                                  {sym}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
+                        {displaySpin.spin ? (
+                          displaySpin.spin.reels.map((column, ci) => (
+                            <div
+                              key={`spin-reel-r${ci + 1}-cells-${column.length}`}
+                              className="reel-col"
+                            >
+                              {column.map((sym, ri) => {
+                                const k = winWayHighlightKey(ci, ri);
+                                const winHit = winWayHighlightKeys.has(k);
+                                const gwHit = goldenWildHighlightKeys.has(k);
+                                return (
+                                  <div
+                                    key={`spin-reel-r${ci + 1}-slot-${ri + 1}`}
+                                    className={`cell sym-${sym}${winHit ? " cell-winway" : ""}${
+                                      gwHit ? " cell-golden-wild" : ""
+                                    }`}
+                                  >
+                                    {sym}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="muted">No spin data in this round.</p>
+                        )}
                       </div>
                     </div>
                   </>
@@ -948,20 +952,23 @@ export default function App() {
                     <div>
                       <h3>Spin</h3>
                       <pre>
-                        {JSON.stringify(
-                          {
-                            spinId: displaySpin.spin.spinId,
-                            spinType: displaySpin.spin.spinType,
-                            win: displaySpin.spin.win,
-                            triggers: displaySpin.spin.triggers,
-                            winWays: displaySpin.spin.winWays ?? [],
-                            guardianWild: displaySpin.spin.guardianWild ?? null,
-                            retrigger: readSpinRetrigger(displaySpin.spin),
-                            jackpot: readSpinJackpot(displaySpin.spin),
-                          },
-                          null,
-                          2,
-                        )}
+                        {displaySpin.spin
+                          ? JSON.stringify(
+                              {
+                                spinId: displaySpin.spin.spinId,
+                                spinType: displaySpin.spin.spinType,
+                                win: displaySpin.spin.win,
+                                triggers: displaySpin.spin.triggers,
+                                winWays: displaySpin.spin.winWays ?? [],
+                                guardianWild:
+                                  displaySpin.spin.guardianWild ?? null,
+                                retrigger: readSpinRetrigger(displaySpin.spin),
+                                jackpot: readSpinJackpot(displaySpin.spin),
+                              },
+                              null,
+                              2,
+                            )
+                          : "null"}
                       </pre>
                     </div>
                   </div>
