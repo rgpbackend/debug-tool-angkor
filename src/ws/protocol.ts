@@ -74,15 +74,15 @@ export interface SpinResponsePayload {
 
 // --- Join response (cmd 1005) ---
 
-/** activeRound uses the same { round, spin, state } shape as SpinResponsePayload. */
-export type ActiveRound = SpinResponsePayload;
+/** lastRound uses the same { round, spin, state } shape as SpinResponsePayload. */
+export type LastRound = SpinResponsePayload;
 
 export interface JoinResponsePayload {
   cmd: string | number;
   c: number;
   symbols: string[];
   paylines?: unknown;
-  activeRound: ActiveRound | null;
+  lastRound: LastRound | null;
 }
 
 export interface WinWay {

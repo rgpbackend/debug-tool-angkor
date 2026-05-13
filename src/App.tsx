@@ -18,7 +18,7 @@ import {
   spinFrame,
 } from "./ws/frames";
 import type {
-  ActiveRound,
+  LastRound,
   HistoryDetailPayload,
   HistoryListPayload,
   JoinResponsePayload,
@@ -338,7 +338,7 @@ export default function App() {
   );
 
   const [lastSpin, setLastSpin] = useState<SpinResponsePayload | null>(null);
-  const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
+  const [lastRound, setLastRound] = useState<LastRound | null>(null);
   const [highlightWinWayIndex, setHighlightWinWayIndex] = useState(0);
   const [cheatStatus, setCheatStatus] = useState<string | null>(null);
   const [cheatArmed, setCheatArmed] = useState(false);
@@ -384,7 +384,7 @@ export default function App() {
     setCheatStatus(null);
     setCheatGrid(emptyCheatGrid());
     setHighlightWinWayIndex(0);
-    setActiveRound(null);
+    setLastRound(null);
     setActiveTab("game");
     setPhase("disconnected");
   }, [stopHeartbeat]);
@@ -392,7 +392,7 @@ export default function App() {
   const connectAndJoin = useCallback(async () => {
     setError(null);
     setLastSpin(null);
-    setActiveRound(null);
+    setLastRound(null);
     setHighlightWinWayIndex(0);
     setCheatGrid(emptyCheatGrid());
     setCheatArmed(false);
@@ -450,7 +450,7 @@ export default function App() {
         (await joinPayloadPromise) as unknown as JoinResponsePayload;
       pushLog(
         "in",
-        `join cmd=1005 c=${joinPayload.c} activeRound=${joinPayload.activeRound ? joinPayload.activeRound.round.state : "null"}`,
+        `join cmd=1005 c=${joinPayload.c} lastRound=${joinPayload.lastRound ? joinPayload.lastRound.round.state : "null"}`,
       );
 
       if (clientRef.current !== client) {
@@ -464,8 +464,8 @@ export default function App() {
         throw new Error(`Disconnected after connect/join (${detail})`);
       }
 
-      if (joinPayload.activeRound) {
-        setActiveRound(joinPayload.activeRound);
+      if (joinPayload.lastRound) {
+        setLastRound(joinPayload.lastRound);
       }
 
       setSessionReady(true);
@@ -524,7 +524,7 @@ export default function App() {
       pushLog("in", "spin cmd=1500 payload");
       const spinPayload = payload as unknown as SpinResponsePayload;
       setLastSpin(spinPayload);
-      setActiveRound(null);
+      setLastRound(null);
       setCheatGrid(cheatGridFromSpinReels(spinPayload.spin.reels));
       if (cheatArmed || forceJackpotArmed) {
         if (cheatArmed && forceJackpotArmed) {
@@ -658,7 +658,7 @@ export default function App() {
   const busyConnect = phase === "connecting" || phase === "connected";
 
   /** Unified display source: last spin result OR active round from join. */
-  const displaySpin = lastSpin ?? activeRound;
+  const displaySpin = lastSpin ?? lastRound;
 
   const winWays = displaySpin?.spin.winWays ?? [];
   const safeHighlightIndex =
