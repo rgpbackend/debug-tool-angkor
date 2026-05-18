@@ -240,6 +240,48 @@
   justify-content: flex-end;
 }
 
+.bet-picker-modal {
+  width: min(100%, 22rem);
+  max-height: min(90vh, 420px);
+}
+
+.bet-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  max-height: min(50vh, 280px);
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.bet-picker-option {
+  margin: 0;
+  padding: 0.55rem 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  border: 2px solid color-mix(in srgb, var(--slot-gold-dim) 55%, var(--border));
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.bet-picker-option:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+
+.bet-picker-option--selected {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  color: var(--text-h);
+}
+
 .token-ban-modal-lead {
   margin: 0 0 0.65rem;
   font-size: 0.9rem;

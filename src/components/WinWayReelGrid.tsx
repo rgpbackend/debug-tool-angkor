@@ -67,6 +67,9 @@ export interface WinWayReelGridProps {
   /** Remaining free spins; badge top-right when visible. */
   freeSpinRemaining?: number | null;
   freeSpinVisible?: boolean;
+  /** Free-spin scatter collection meter (0–target). */
+  freeSpinScatterCollected?: number;
+  freeSpinScatterTarget?: number;
   /** Cabinet: cells become inputs bound to editGrid. */
   editable?: boolean;
   editGrid?: string[][];
@@ -89,6 +92,8 @@ export default function WinWayReelGrid({
   respinVisible = false,
   freeSpinRemaining = null,
   freeSpinVisible = false,
+  freeSpinScatterCollected = 0,
+  freeSpinScatterTarget = 5,
   editable = false,
   editGrid,
   editDisabled = false,
@@ -198,14 +203,40 @@ export default function WinWayReelGrid({
               </div>
             ) : null}
             {freeSpinVisible ? (
-              <div
-                className="slot-reels-badge slot-reels-badge--freespin"
-                title="Free spins remaining"
-              >
-                <span className="slot-reels-badge-label">Free spin</span>
-                <span className="slot-reels-badge-count">
-                  {freeSpinRemaining ?? 0}
-                </span>
+              <div className="slot-reels-hud-freespin-cluster">
+                <div
+                  className="slot-scatter-tracker"
+                  title="Collect scatters during free spins"
+                  role="img"
+                  aria-label={`${freeSpinScatterCollected} of ${freeSpinScatterTarget} scatters collected`}
+                >
+                  <div className="slot-scatter-tracker-slots">
+                    {Array.from(
+                      { length: freeSpinScatterTarget },
+                      (_, index) => {
+                        const filled = index < freeSpinScatterCollected;
+                        return (
+                          <span
+                            key={`scatter-slot-${index}`}
+                            className={`slot-scatter-tracker-slot${filled ? " slot-scatter-tracker-slot--filled" : ""}`}
+                            aria-hidden
+                          >
+                            S
+                          </span>
+                        );
+                      },
+                    )}
+                  </div>
+                </div>
+                <div
+                  className="slot-reels-badge slot-reels-badge--freespin"
+                  title="Free spins remaining"
+                >
+                  <span className="slot-reels-badge-label">Free spin</span>
+                  <span className="slot-reels-badge-count">
+                    {freeSpinRemaining ?? 0}
+                  </span>
+                </div>
               </div>
             ) : null}
           </div>

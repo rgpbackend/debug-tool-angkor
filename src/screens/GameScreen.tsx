@@ -151,6 +151,12 @@ export default function GameScreen(session: Readonly<GameSession>) {
                       respinRemaining={featureBadges.respin.remaining}
                       freeSpinVisible={featureBadges.freeSpin.visible}
                       freeSpinRemaining={featureBadges.freeSpin.remaining}
+                      freeSpinScatterCollected={
+                        featureBadges.freeSpin.scatterCollected
+                      }
+                      freeSpinScatterTarget={
+                        featureBadges.freeSpin.scatterTarget
+                      }
                     />
                   ) : null
                 }

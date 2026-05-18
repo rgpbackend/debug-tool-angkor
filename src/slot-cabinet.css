@@ -379,8 +379,20 @@
   color: color-mix(in srgb, gold 85%, #fff);
 }
 
-.slot-reels-badge--freespin {
+.slot-reels-hud-freespin-cluster {
+  position: absolute;
+  top: clamp(0.35rem, 1.2cqh, 0.65rem);
   right: clamp(0.35rem, 1.2cqw, 0.75rem);
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(0.3rem, 0.9cqw, 0.45rem);
+}
+
+.slot-reels-hud-freespin-cluster .slot-reels-badge--freespin {
+  position: static;
+}
+
+.slot-reels-badge--freespin {
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
   background: linear-gradient(
     180deg,
@@ -388,6 +400,68 @@
     color-mix(in srgb, var(--accent) 12%, var(--slot-screen-bg)) 100%
   );
   color: color-mix(in srgb, var(--accent) 90%, #fff);
+}
+
+.slot-scatter-tracker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  padding: 0.28rem 0.35rem 0.32rem;
+  border-radius: clamp(6px, 0.8cqw, 10px);
+  border: 1px solid color-mix(in srgb, #22d3ee 50%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #22d3ee 22%, #0c4a6e) 0%,
+    color-mix(in srgb, #22d3ee 8%, var(--slot-screen-bg)) 100%
+  );
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 35%),
+    inset 0 1px 0 rgb(255 255 255 / 12%);
+}
+
+.slot-scatter-tracker-slots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: clamp(0.12rem, 0.45cqw, 0.2rem);
+}
+
+.slot-scatter-tracker-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(1.05rem, 2.8cqw, 1.35rem);
+  height: clamp(1.05rem, 2.8cqw, 1.35rem);
+  border-radius: clamp(4px, 0.55cqw, 6px);
+  border: 1px dashed color-mix(in srgb, #22d3ee 35%, var(--border));
+  background: color-mix(in srgb, var(--slot-screen-bg) 88%, #0f172a);
+  font-family: var(--mono);
+  font-size: clamp(0.58rem, 1.6cqw, 0.72rem);
+  font-weight: 800;
+  line-height: 1;
+  color: color-mix(in srgb, #22d3ee 35%, var(--muted));
+  opacity: 0.55;
+  text-shadow: none;
+}
+
+.slot-scatter-tracker-slot--filled {
+  border-style: solid;
+  border-color: color-mix(in srgb, #67e8f9 80%, var(--slot-gold-dim));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, #22d3ee 52%, #0e7490) 0%,
+    color-mix(in srgb, #0891b2 42%, #16141f) 100%
+  );
+  color: #ecfeff;
+  opacity: 1;
+  text-shadow:
+    0 0 8px rgb(34 211 238 / 75%),
+    0 1px 2px rgb(0 0 0 / 55%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 18%),
+    0 0 0 1px color-mix(in srgb, #22d3ee 50%, transparent),
+    0 0 10px color-mix(in srgb, #22d3ee 32%, transparent);
 }
 
 .slot-reels-badge-label {
@@ -652,23 +726,48 @@
   white-space: nowrap;
 }
 
-.slot-controls--console .slot-bet-stepper {
-  border-radius: clamp(6px, 0.8cqw, 10px);
-  border-color: color-mix(in srgb, var(--slot-gold-dim) 70%, var(--border));
-}
-
-.slot-controls--console .slot-bet-step {
-  width: clamp(2rem, 5cqw, 2.5rem);
-  padding: clamp(0.4rem, 1.2cqh, 0.55rem) 0;
-  font-size: clamp(0.95rem, 2.5cqw, 1.15rem);
-}
-
-.slot-controls--console .slot-bet-select {
+.slot-controls--console .slot-bet-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
   min-width: clamp(5.5rem, 14cqw, 7.5rem);
-  padding: clamp(0.4rem, 1.2cqh, 0.55rem) clamp(0.5rem, 1.5cqw, 0.75rem);
-  font-size: clamp(0.88rem, 2.4cqw, 1.05rem);
-  border-color: color-mix(in srgb, var(--slot-gold-dim) 50%, var(--border));
+  padding: clamp(0.35rem, 1cqh, 0.5rem) clamp(0.65rem, 1.8cqw, 1rem);
+  border-radius: clamp(6px, 0.8cqw, 10px);
+  border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 70%, var(--border));
   background: var(--bg);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.slot-controls--console .slot-bet-trigger:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.slot-controls--console .slot-bet-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.slot-controls--console .slot-bet-trigger-label {
+  font-size: clamp(0.58rem, 1.4cqw, 0.65rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.1;
+}
+
+.slot-controls--console .slot-bet-trigger-value {
+  font-family: var(--mono);
+  font-size: clamp(0.88rem, 2.4cqw, 1.05rem);
+  font-weight: 700;
+  color: var(--text-h);
+  line-height: 1.2;
 }
 
 .slot-controls--console .slot-spin-btn {

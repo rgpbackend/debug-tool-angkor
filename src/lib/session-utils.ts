@@ -147,9 +147,17 @@ export function readSpinJackpot(spin: SpinResponsePayload["spin"]): {
   };
 }
 
+/** Scatters to collect during free-spin mode (retrigger meter). */
+export const FREE_SPIN_SCATTER_TARGET = 5;
+
 export type RoundFeatureBadges = {
   respin: { visible: boolean; remaining: number };
-  freeSpin: { visible: boolean; remaining: number };
+  freeSpin: {
+    visible: boolean;
+    remaining: number;
+    scatterCollected: number;
+    scatterTarget: number;
+  };
 };
 
 /** Free-spin / respin counts from spin or join `state` (§1500). */
@@ -158,7 +166,12 @@ export function readRoundFeatureBadges(
 ): RoundFeatureBadges {
   const none: RoundFeatureBadges = {
     respin: { visible: false, remaining: 0 },
-    freeSpin: { visible: false, remaining: 0 },
+    freeSpin: {
+      visible: false,
+      remaining: 0,
+      scatterCollected: 0,
+      scatterTarget: FREE_SPIN_SCATTER_TARGET,
+    },
   };
   if (!payload?.state || typeof payload.state !== "object") {
     return none;
@@ -169,6 +182,10 @@ export function readRoundFeatureBadges(
   const freeRemaining =
     typeof freeSpin?.spinsLeft === "number" ? freeSpin.spinsLeft : 0;
   const freeVisible = Boolean(freeSpin?.active) || freeRemaining > 0;
+  const scatterCollected =
+    typeof freeSpin?.scatterCollected === "number"
+      ? Math.max(0, freeSpin.scatterCollected)
+      : 0;
 
   const respinCurrent =
     typeof respin?.currentStep === "number" ? respin.currentStep : 0;
@@ -179,7 +196,12 @@ export function readRoundFeatureBadges(
 
   return {
     respin: { visible: respinVisible, remaining: respinRemaining },
-    freeSpin: { visible: freeVisible, remaining: freeRemaining },
+    freeSpin: {
+      visible: freeVisible,
+      remaining: freeRemaining,
+      scatterCollected: Math.min(scatterCollected, FREE_SPIN_SCATTER_TARGET),
+      scatterTarget: FREE_SPIN_SCATTER_TARGET,
+    },
   };
 }
 
