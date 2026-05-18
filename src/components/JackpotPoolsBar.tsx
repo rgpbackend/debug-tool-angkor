@@ -81,7 +81,10 @@ export default function JackpotPoolsBar({
   );
 
   return (
-    <div className="jackpot-pools" aria-label="The Guardian's Eye jackpots">
+    <div
+      className="jackpot-pools slot-stage-surface"
+      aria-label="The Guardian's Eye jackpots"
+    >
       <div className="jackpot-pools-header">
         <h3 className="jackpot-pools-title">The Guardian&apos;s Eye</h3>
         {loading && <span className="muted jackpot-pools-status">Updating…</span>}

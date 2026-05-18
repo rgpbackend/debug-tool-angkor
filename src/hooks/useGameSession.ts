@@ -16,8 +16,10 @@ import {
   readSpinRetrigger,
   resolveBetFromLevels,
 } from "../lib/session-utils";
+import { resetAccessToken } from "../api/resetToken";
 import {
   BrowserWsClient,
+  StompTokenBannedError,
   isHistoryDetailPayload,
   isHistoryListPayload,
   isJackpotPoolsPayload,
@@ -54,6 +56,7 @@ import {
   type SpinResponsePayload,
 } from "../ws/protocol";
 import type { GamePhase } from "../ws/game-phase";
+import { isTokenBannedStompError } from "../ws/stomp-errors";
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const POST_AUTH_BEFORE_JOIN_MS = 1000;
@@ -70,6 +73,7 @@ export function useGameSession() {
   const heartbeatTimerRef = useRef<number | null>(null);
   /** True while awaiting spin response — blocks jackpot loading UI churn. */
   const spinBusyRef = useRef(false);
+  const stompListenerCleanupRef = useRef<(() => void) | null>(null);
 
   const [activeTab, setActiveTab] = useState<"game" | "history" | "jackpots">(
     "game",
@@ -83,6 +87,8 @@ export function useGameSession() {
   /** True after connect+join succeeded; used for UI (avoid reading refs during render). */
   const [sessionReady, setSessionReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tokenBanPromptOpen, setTokenBanPromptOpen] = useState(false);
+  const [tokenResetBusy, setTokenResetBusy] = useState(false);
 
   const [wsUrl, setWsUrl] = useState(defaults.wsUrl);
   const [agentId, setAgentId] = useState(defaults.agentId);
@@ -130,7 +136,46 @@ export function useGameSession() {
     [stopHeartbeat],
   );
 
+  const detachStompListener = useCallback(() => {
+    stompListenerCleanupRef.current?.();
+    stompListenerCleanupRef.current = null;
+  }, []);
+
+  const handleTokenBan = useCallback(() => {
+    setTokenBanPromptOpen(true);
+    setError("Access token has been banned.");
+    stopHeartbeat();
+    detachStompListener();
+    clientRef.current?.close();
+    clientRef.current = null;
+    setSessionReady(false);
+    setPhase("disconnected");
+  }, [detachStompListener, stopHeartbeat]);
+
+  const dismissTokenBanPrompt = useCallback(() => {
+    setTokenBanPromptOpen(false);
+  }, []);
+
+  const confirmTokenReset = useCallback(async () => {
+    const token = accessToken.trim();
+    if (!token) {
+      setError("Access token is required to reset");
+      return;
+    }
+    setTokenResetBusy(true);
+    try {
+      await resetAccessToken(defaults.tokenResetBaseUrl, token);
+      setTokenBanPromptOpen(false);
+      setError("Token reset succeeded. Connect again with the same token.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTokenResetBusy(false);
+    }
+  }, [accessToken, defaults.tokenResetBaseUrl]);
+
   const disconnect = useCallback(() => {
+    detachStompListener();
     stopHeartbeat();
     clientRef.current?.close();
     clientRef.current = null;
@@ -149,8 +194,10 @@ export function useGameSession() {
     setActiveTab("game");
     spinBusyRef.current = false;
     setSpinFreeze(null);
+    setTokenBanPromptOpen(false);
+    setTokenResetBusy(false);
     setPhase("disconnected");
-  }, [stopHeartbeat]);
+  }, [detachStompListener, stopHeartbeat]);
 
   const applyJackpotPools = useCallback((pools: JackpotPool[]) => {
     if (pools.length === 0) {
@@ -221,6 +268,14 @@ export function useGameSession() {
       if (clientRef.current !== client) {
         return;
       }
+
+      detachStompListener();
+      stompListenerCleanupRef.current = client.addStompErrorListener((code) => {
+        if (isTokenBannedStompError(code)) {
+          handleTokenBan();
+        }
+      });
+
       const connect = connectFrame(agentId.trim(), accessToken.trim(), false);
       client.sendFrame(connect);
       setPhase("connected");
@@ -283,8 +338,13 @@ export function useGameSession() {
       if (clientRef.current !== client) {
         return;
       }
+      if (e instanceof StompTokenBannedError) {
+        handleTokenBan();
+        return;
+      }
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
+      detachStompListener();
       stopHeartbeat();
       client.close();
       clientRef.current = null;
@@ -295,8 +355,10 @@ export function useGameSession() {
     accessToken,
     agentId,
     defaults.timeoutMs,
+    detachStompListener,
     disconnect,
     gameRoute,
+    handleTokenBan,
     startHeartbeat,
     stopHeartbeat,
     wsUrl,
@@ -611,6 +673,10 @@ export function useGameSession() {
     goldenWildHighlightKeys,
     featureBadges,
     cheatSymbolOptions: CHEAT_SYMBOL_OPTIONS,
+    tokenBanPromptOpen,
+    tokenResetBusy,
+    confirmTokenReset,
+    dismissTokenBanPrompt,
   };
 }
 

@@ -4,6 +4,7 @@ import HistoryView from "../components/HistoryView";
 import JackpotPoolsBar from "../components/JackpotPoolsBar";
 import JackpotWinnersView from "../components/JackpotWinnersView";
 import SlotCabinet from "../components/SlotCabinet";
+import SlotStageBlock from "../components/SlotStageBlock";
 import WinWayReelGrid from "../components/WinWayReelGrid";
 import type { GameSession } from "../hooks/useGameSession";
 
@@ -96,8 +97,9 @@ export default function GameScreen(session: Readonly<GameSession>) {
         />
       ) : (
         <section className="panel slot-stage">
-          <div className="slot-stage-top">
-            <JackpotPoolsBar
+          <div className="slot-stage-stack">
+            <SlotStageBlock className="slot-stage-top">
+              <JackpotPoolsBar
               poolsByTier={jackpotPoolsByTier}
               connected={sessionReady}
               loading={jackpotPoolsLoading && !isSpinning}
@@ -107,10 +109,10 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 <span className="error slot-error">{error}</span>
               </div>
             ) : null}
-          </div>
+            </SlotStageBlock>
 
-          <div className="slot-playfield">
-            <SlotCabinet
+            <SlotStageBlock className="slot-playfield">
+              <SlotCabinet
               banners={
                 jackpotInfo?.triggered || retriggerInfo?.triggered ? (
                 <>
@@ -172,7 +174,8 @@ export default function GameScreen(session: Readonly<GameSession>) {
               spinning={isSpinning}
               onSpin={() => void spin()}
               onOpenCheat={() => setCheatOpen(true)}
-            />
+              />
+            </SlotStageBlock>
           </div>
 
           <CheatModal

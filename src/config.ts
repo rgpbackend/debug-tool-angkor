@@ -4,6 +4,7 @@ export interface GameGuiEnvDefaults {
   accessToken: string;
   gameRoute: string;
   timeoutMs: number;
+  tokenResetBaseUrl: string;
 }
 
 export function readEnvDefaults(): GameGuiEnvDefaults {
@@ -15,5 +16,8 @@ export function readEnvDefaults(): GameGuiEnvDefaults {
     accessToken: import.meta.env.VITE_ACCESS_TOKEN ?? "",
     gameRoute: import.meta.env.VITE_GAME_ROUTE ?? "game-the-last-guardian-of-angkor",
     timeoutMs: Number.isFinite(timeoutParsed) && timeoutParsed > 0 ? timeoutParsed : 10_000,
+    tokenResetBaseUrl:
+      import.meta.env.VITE_TOKEN_RESET_BASE_URL ??
+      "https://stag.osyamazakiglobel.club",
   };
 }

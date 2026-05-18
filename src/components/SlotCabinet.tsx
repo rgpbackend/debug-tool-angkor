@@ -32,7 +32,10 @@ export default function SlotCabinet({
 
   return (
     <div className="slot-cabinet">
-      <div className="slot-cabinet-frame" aria-label="Slot machine">
+      <div
+        className="slot-cabinet-frame slot-stage-surface"
+        aria-label="Slot machine"
+      >
         {banners ? (
           <div className="slot-cabinet-alerts">{banners}</div>
         ) : null}

@@ -4,6 +4,11 @@ import {
   type WsFrame,
   type WsOutboundFrame,
 } from "./protocol";
+import {
+  isTokenBannedStompError,
+  parseStompErrorCode,
+  StompTokenBannedError,
+} from "./stomp-errors";
 
 export interface BrowserWsClientOptions {
   timeoutMs: number;
@@ -11,16 +16,22 @@ export interface BrowserWsClientOptions {
 
 type PayloadMatcher = (payload: Record<string, unknown>) => boolean;
 type PayloadHandler = (payload: Record<string, unknown>) => void;
+type StompErrorHandler = (code: number) => void;
 
 interface PayloadListenerRegistration {
   matcher: PayloadMatcher;
   handler: PayloadHandler;
 }
 
+type WsInboundMessage =
+  | { type: "payload"; payload: Record<string, unknown> }
+  | { type: "stomp-error"; code: number };
+
 export class BrowserWsClient {
   private socket: WebSocket | null = null;
   private lastClose: { code: number; reason: string } | null = null;
   private readonly payloadListeners = new Set<PayloadListenerRegistration>();
+  private readonly stompErrorListeners = new Set<StompErrorHandler>();
   private persistentMessageHandler: ((ev: MessageEvent<string | Blob>) => void) | null =
     null;
 
@@ -91,6 +102,14 @@ export class BrowserWsClient {
     };
   }
 
+  addStompErrorListener(handler: StompErrorHandler): () => void {
+    this.stompErrorListeners.add(handler);
+    this.attachPersistentMessageHandler();
+    return () => {
+      this.stompErrorListeners.delete(handler);
+    };
+  }
+
   waitForPayload(
     matcher: PayloadMatcher,
     label = "response",
@@ -110,13 +129,21 @@ export class BrowserWsClient {
       const onMessage = (ev: MessageEvent<string | Blob>) => {
         void (async () => {
           try {
-            const payload = await parseMessagePayload(ev.data);
-            if (!payload) {
+            const message = await parseInboundMessage(ev.data);
+            if (!message) {
               return;
             }
-            if (matcher(payload)) {
+            if (message.type === "stomp-error") {
+              this.dispatchStompError(message.code);
+              if (isTokenBannedStompError(message.code)) {
+                cleanup();
+                reject(new StompTokenBannedError());
+              }
+              return;
+            }
+            if (matcher(message.payload)) {
               cleanup();
-              resolve(payload);
+              resolve(message.payload);
             }
           } catch (err) {
             cleanup();
@@ -155,6 +182,7 @@ export class BrowserWsClient {
   close(): void {
     this.detachPersistentMessageHandler();
     this.payloadListeners.clear();
+    this.stompErrorListeners.clear();
     this.socket?.close();
     this.socket = null;
   }
@@ -166,13 +194,17 @@ export class BrowserWsClient {
     this.persistentMessageHandler = (ev) => {
       void (async () => {
         try {
-          const payload = await parseMessagePayload(ev.data);
-          if (!payload) {
+          const message = await parseInboundMessage(ev.data);
+          if (!message) {
+            return;
+          }
+          if (message.type === "stomp-error") {
+            this.dispatchStompError(message.code);
             return;
           }
           for (const { matcher, handler } of this.payloadListeners) {
-            if (matcher(payload)) {
-              handler(payload);
+            if (matcher(message.payload)) {
+              handler(message.payload);
             }
           }
         } catch {
@@ -189,7 +221,15 @@ export class BrowserWsClient {
     }
     this.persistentMessageHandler = null;
   }
+
+  private dispatchStompError(code: number): void {
+    for (const handler of this.stompErrorListeners) {
+      handler(code);
+    }
+  }
 }
+
+export { StompTokenBannedError } from "./stomp-errors";
 
 export function isSpinResponsePayload(
   payload: Record<string, unknown>,
@@ -278,50 +318,54 @@ export function isJackpotWinnerPush(
   );
 }
 
-async function parseMessagePayload(
+async function parseInboundMessage(
   raw: string | Blob,
-): Promise<Record<string, unknown> | null> {
-  const frame = await tryParseFrame(raw);
-  if (!frame) {
-    return null;
-  }
-  const payload = getFramePayload(frame);
-  if (!payload || Array.isArray(payload) || typeof payload !== "object") {
-    return null;
-  }
-  return payload;
-}
-
-async function tryParseFrame(raw: string | Blob): Promise<WsFrame | null> {
+): Promise<WsInboundMessage | null> {
   try {
     const text = typeof raw === "string" ? raw : await raw.text();
     const parsed: unknown = JSON.parse(text);
-    if (!Array.isArray(parsed) || parsed.length < 2) {
+    const stompCode = parseStompErrorCode(parsed);
+    if (stompCode !== null) {
+      return { type: "stomp-error", code: stompCode };
+    }
+    const frame = tryParseFrameFromParsed(parsed);
+    if (!frame) {
       return null;
     }
-    if (typeof parsed[0] !== "number") {
+    const payload = getFramePayload(frame);
+    if (!payload || Array.isArray(payload) || typeof payload !== "object") {
       return null;
     }
-    const payload = parsed.at(-1);
-    if (
-      Array.isArray(payload) ||
-      typeof payload !== "object" ||
-      payload === null
-    ) {
-      return null;
-    }
-    if (parsed.length === 2) {
-      return parsed as WsFrame;
-    }
-    if (
-      typeof parsed[1] === "string" &&
-      typeof parsed[2] === "string" &&
-      (parsed.length === 4 || parsed.length === 5)
-    ) {
-      return parsed as WsFrame;
-    }
-    return null;
+    return { type: "payload", payload };
   } catch {
     return null;
   }
+}
+
+function tryParseFrameFromParsed(parsed: unknown): WsFrame | null {
+  if (!Array.isArray(parsed) || parsed.length < 2) {
+    return null;
+  }
+  if (typeof parsed[0] !== "number") {
+    return null;
+  }
+  const payload = parsed.at(-1);
+  if (
+    Array.isArray(payload) ||
+    typeof payload !== "object" ||
+    payload === null
+  ) {
+    return null;
+  }
+  if (parsed.length === 2) {
+    return parsed as WsFrame;
+  }
+  if (
+    typeof parsed[1] === "string" &&
+    typeof parsed[2] === "string" &&
+    (parsed.length === 4 || parsed.length === 5)
+  ) {
+    return parsed as WsFrame;
+  }
+  return null;
 }
