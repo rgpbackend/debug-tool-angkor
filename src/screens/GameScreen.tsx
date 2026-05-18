@@ -1,5 +1,3 @@
-import { useState } from "react";
-import CheatModal from "../components/CheatModal";
 import HistoryView from "../components/HistoryView";
 import JackpotPoolsBar from "../components/JackpotPoolsBar";
 import JackpotWinnersView from "../components/JackpotWinnersView";
@@ -9,8 +7,6 @@ import WinWayReelGrid from "../components/WinWayReelGrid";
 import type { GameSession } from "../hooks/useGameSession";
 
 export default function GameScreen(session: Readonly<GameSession>) {
-  const [cheatOpen, setCheatOpen] = useState(false);
-
   const {
     activeTab,
     setActiveTab,
@@ -26,8 +22,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
     canSpin,
     canCheat,
     cheatGrid,
-    cheatStatus,
-    cheatSymbolOptions,
+    cheatGridDirty,
     sendCheat,
     sendForceJackpot,
     updateCheatCell,
@@ -51,6 +46,8 @@ export default function GameScreen(session: Readonly<GameSession>) {
     !sessionReady ||
     betLocked ||
     betLevels.length === 0;
+
+  const hasSpinReels = Boolean(viewSpin?.spin?.reels);
 
   return (
     <>
@@ -100,95 +97,90 @@ export default function GameScreen(session: Readonly<GameSession>) {
           <div className="slot-stage-stack">
             <SlotStageBlock className="slot-stage-top">
               <JackpotPoolsBar
-              poolsByTier={jackpotPoolsByTier}
-              connected={sessionReady}
-              loading={jackpotPoolsLoading && !isSpinning}
-            />
-            {error ? (
-              <div className="slot-status-bar">
-                <span className="error slot-error">{error}</span>
-              </div>
-            ) : null}
+                poolsByTier={jackpotPoolsByTier}
+                connected={sessionReady}
+                loading={jackpotPoolsLoading && !isSpinning}
+              />
+              {error ? (
+                <div className="slot-status-bar">
+                  <span className="error slot-error">{error}</span>
+                </div>
+              ) : null}
             </SlotStageBlock>
 
             <SlotStageBlock className="slot-playfield">
               <SlotCabinet
-              banners={
-                jackpotInfo?.triggered || retriggerInfo?.triggered ? (
-                <>
-                  {jackpotInfo?.triggered ? (
-                    <div className="jackpot-banner slot-banner">
-                      <strong>Jackpot</strong>{" "}
-                      <span className="jackpot-tier">
-                        {jackpotInfo.tier ?? "—"}
-                      </span>
-                      <span className="jackpot-win">
-                        +{jackpotInfo.jackpotWin.toFixed(2)}
-                      </span>
-                      <span className="muted jackpot-cells">
-                        ({jackpotInfo.goldenWildPositions.length} GW cells)
-                      </span>
-                    </div>
-                  ) : null}
-                  {retriggerInfo?.triggered ? (
-                    <div className="jackpot-banner slot-banner">
-                      <strong>Retrigger</strong>{" "}
-                      <span className="jackpot-win">
-                        +{retriggerInfo.addedFreeSpins} free spins
-                      </span>
-                      <span className="muted jackpot-cells">
-                        ({retriggerInfo.scatterCount} scatters,{" "}
-                        {retriggerInfo.scatterPositions.length} positions)
-                      </span>
-                    </div>
-                  ) : null}
-                </>
-                ) : undefined
-              }
-              reels={
-                viewSpin?.spin ? (
-                  <WinWayReelGrid
-                    cabinet
-                    reels={viewSpin.spin.reels}
-                    winWays={winWays}
-                    goldenWildHighlightKeys={goldenWildHighlightKeys}
-                    respinVisible={featureBadges.respin.visible}
-                    respinRemaining={featureBadges.respin.remaining}
-                    freeSpinVisible={featureBadges.freeSpin.visible}
-                    freeSpinRemaining={featureBadges.freeSpin.remaining}
-                  />
-                ) : null
-              }
-              emptyMessage={
-                !viewSpin
-                  ? "Press Spin to play"
-                  : !viewSpin.spin
-                    ? "No spin data in this round"
-                    : null
-              }
-              betValue={selectBetValue}
-              betLevels={betLevels}
-              onBetChange={setBet}
-              betDisabled={betDisabled}
-              canSpin={canSpin}
-              spinning={isSpinning}
-              onSpin={() => void spin()}
-              onOpenCheat={() => setCheatOpen(true)}
+                banners={
+                  jackpotInfo?.triggered || retriggerInfo?.triggered ? (
+                    <>
+                      {jackpotInfo?.triggered ? (
+                        <div className="jackpot-banner slot-banner">
+                          <strong>Jackpot</strong>{" "}
+                          <span className="jackpot-tier">
+                            {jackpotInfo.tier ?? "—"}
+                          </span>
+                          <span className="jackpot-win">
+                            +{jackpotInfo.jackpotWin.toFixed(2)}
+                          </span>
+                          <span className="muted jackpot-cells">
+                            ({jackpotInfo.goldenWildPositions.length} GW cells)
+                          </span>
+                        </div>
+                      ) : null}
+                      {retriggerInfo?.triggered ? (
+                        <div className="jackpot-banner slot-banner">
+                          <strong>Retrigger</strong>{" "}
+                          <span className="jackpot-win">
+                            +{retriggerInfo.addedFreeSpins} free spins
+                          </span>
+                          <span className="muted jackpot-cells">
+                            ({retriggerInfo.scatterCount} scatters,{" "}
+                            {retriggerInfo.scatterPositions.length} positions)
+                          </span>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : undefined
+                }
+                reels={
+                  hasSpinReels && viewSpin?.spin ? (
+                    <WinWayReelGrid
+                      cabinet
+                      editable
+                      editGrid={cheatGrid}
+                      editDisabled={!canCheat || isSpinning}
+                      onEditCellChange={updateCheatCell}
+                      reels={viewSpin.spin.reels}
+                      winWays={winWays}
+                      goldenWildHighlightKeys={goldenWildHighlightKeys}
+                      respinVisible={featureBadges.respin.visible}
+                      respinRemaining={featureBadges.respin.remaining}
+                      freeSpinVisible={featureBadges.freeSpin.visible}
+                      freeSpinRemaining={featureBadges.freeSpin.remaining}
+                    />
+                  ) : null
+                }
+                emptyMessage={
+                  !viewSpin
+                    ? "Press Spin to play"
+                    : !viewSpin.spin
+                      ? "No spin data in this round"
+                      : null
+                }
+                betValue={selectBetValue}
+                betLevels={betLevels}
+                onBetChange={setBet}
+                betDisabled={betDisabled}
+                canSpin={canSpin}
+                spinning={isSpinning}
+                onSpin={() => void spin()}
+                canCheat={canCheat}
+                cheatGridDirty={cheatGridDirty}
+                onSetCheat={sendCheat}
+                onForceJackpot={sendForceJackpot}
               />
             </SlotStageBlock>
           </div>
-
-          <CheatModal
-            open={cheatOpen}
-            onClose={() => setCheatOpen(false)}
-            cheatGrid={cheatGrid}
-            canCheat={canCheat}
-            cheatStatus={cheatStatus}
-            cheatSymbolOptions={cheatSymbolOptions}
-            onCellChange={updateCheatCell}
-            onSetCheat={sendCheat}
-            onForceJackpot={sendForceJackpot}
-          />
         </section>
       )}
     </>

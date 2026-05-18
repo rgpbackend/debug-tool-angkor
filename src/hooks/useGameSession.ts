@@ -3,6 +3,8 @@ import { readEnvDefaults } from "../config";
 import {
   CHEAT_SYMBOL_OPTIONS,
   cheatGridFromSpinReels,
+  cheatGridsEqual,
+  cloneCheatGrid,
   emptyCheatGrid,
   setCheatCellValue,
   validateCheatReels,
@@ -74,6 +76,7 @@ export function useGameSession() {
   /** True while awaiting spin response — blocks jackpot loading UI churn. */
   const spinBusyRef = useRef(false);
   const stompListenerCleanupRef = useRef<(() => void) | null>(null);
+  const cheatBaselineRef = useRef<string[][]>(emptyCheatGrid());
 
   const [activeTab, setActiveTab] = useState<"game" | "history" | "jackpots">(
     "game",
@@ -106,9 +109,9 @@ export function useGameSession() {
   const [spinFreeze, setSpinFreeze] = useState<
     SpinResponsePayload | LastRound | null
   >(null);
-  const [cheatStatus, setCheatStatus] = useState<string | null>(null);
   const [cheatArmed, setCheatArmed] = useState(false);
   const [forceJackpotArmed, setForceJackpotArmed] = useState(false);
+  const [cheatGridDirty, setCheatGridDirty] = useState(false);
 
 
   const stopHeartbeat = useCallback(() => {
@@ -116,6 +119,13 @@ export function useGameSession() {
       window.clearInterval(heartbeatTimerRef.current);
       heartbeatTimerRef.current = null;
     }
+  }, []);
+
+  const applyCheatGridFromReels = useCallback((reels: string[][]) => {
+    const grid = cheatGridFromSpinReels(reels);
+    setCheatGrid(grid);
+    cheatBaselineRef.current = cloneCheatGrid(grid);
+    setCheatGridDirty(false);
   }, []);
 
   const startHeartbeat = useCallback(
@@ -184,8 +194,9 @@ export function useGameSession() {
     setSessionReady(false);
     setCheatArmed(false);
     setForceJackpotArmed(false);
-    setCheatStatus(null);
     setCheatGrid(emptyCheatGrid());
+    cheatBaselineRef.current = emptyCheatGrid();
+    setCheatGridDirty(false);
     setLastRound(null);
     setJackpotPoolsByTier(emptyJackpotPoolsByTier());
     setJackpotPoolsLoading(false);
@@ -245,7 +256,6 @@ export function useGameSession() {
     setCheatGrid(emptyCheatGrid());
     setCheatArmed(false);
     setForceJackpotArmed(false);
-    setCheatStatus(null);
     if (!wsUrl.trim()) {
       setError("WebSocket URL is required");
       return;
@@ -316,6 +326,9 @@ export function useGameSession() {
 
       if (joinPayload.lastRound) {
         setLastRound(joinPayload.lastRound);
+        if (joinPayload.lastRound.spin?.reels) {
+          applyCheatGridFromReels(joinPayload.lastRound.spin.reels);
+        }
       }
 
       const levels = parseBetLevelsFromJoin(joinPayload);
@@ -364,6 +377,7 @@ export function useGameSession() {
     wsUrl,
     fetchJackpotPools,
     applyJackpotPoolsFromPayload,
+    applyCheatGridFromReels,
   ]);
 
   useEffect(() => {
@@ -419,7 +433,7 @@ export function useGameSession() {
       const spinPayload = payload as unknown as SpinResponsePayload;
       setLastSpin(spinPayload);
       setLastRound(null);
-      setCheatGrid(cheatGridFromSpinReels(spinPayload.spin.reels));
+      applyCheatGridFromReels(spinPayload.spin.reels);
 
       const poolsFromSpin = parseJackpotPoolsFromPayload(payload);
       if (poolsFromSpin) {
@@ -428,13 +442,6 @@ export function useGameSession() {
         void fetchJackpotPools();
       }
       if (cheatArmed || forceJackpotArmed) {
-        if (cheatArmed && forceJackpotArmed) {
-          setCheatStatus("Cheat and force jackpot consumed on latest spin.");
-        } else if (cheatArmed) {
-          setCheatStatus("Cheat consumed on latest spin.");
-        } else {
-          setCheatStatus("Force jackpot consumed on latest spin.");
-        }
         setCheatArmed(false);
         setForceJackpotArmed(false);
       }
@@ -485,7 +492,8 @@ export function useGameSession() {
       const frame = cheatFrame(gameRoute.trim(), parsed.reels);
       client.sendFrame(frame);
       setCheatArmed(true);
-      setCheatStatus("Cheat set for next spin.");
+      cheatBaselineRef.current = cloneCheatGrid(cheatGrid);
+      setCheatGridDirty(false);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
@@ -503,7 +511,6 @@ export function useGameSession() {
       const frame = forceJackpotNextSpinFrame(gameRoute.trim());
       client.sendFrame(frame);
       setForceJackpotArmed(true);
-      setCheatStatus("Force jackpot set for next spin.");
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
@@ -561,9 +568,11 @@ export function useGameSession() {
 
   const updateCheatCell = useCallback(
     (reelIndex: number, rowIndex: number, colLen: number, value: string) => {
-      setCheatGrid((prev) =>
-        setCheatCellValue(prev, reelIndex, rowIndex, colLen, value),
-      );
+      setCheatGrid((prev) => {
+        const next = setCheatCellValue(prev, reelIndex, rowIndex, colLen, value);
+        setCheatGridDirty(!cheatGridsEqual(next, cheatBaselineRef.current));
+        return next;
+      });
     },
     [],
   );
@@ -649,7 +658,6 @@ export function useGameSession() {
     setBet,
     betLevels,
     cheatGrid,
-    cheatStatus,
     connectAndJoin,
     disconnect,
     spin,
@@ -673,6 +681,7 @@ export function useGameSession() {
     goldenWildHighlightKeys,
     featureBadges,
     cheatSymbolOptions: CHEAT_SYMBOL_OPTIONS,
+    cheatGridDirty,
     tokenBanPromptOpen,
     tokenResetBusy,
     confirmTokenReset,

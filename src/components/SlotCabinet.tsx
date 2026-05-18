@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import SlotConsoleCheat from "./SlotConsoleCheat";
 import SlotControls from "./SlotControls";
 
 type SlotCabinetProps = {
@@ -12,7 +13,10 @@ type SlotCabinetProps = {
   canSpin: boolean;
   spinning: boolean;
   onSpin: () => void;
-  onOpenCheat?: () => void;
+  canCheat?: boolean;
+  cheatGridDirty?: boolean;
+  onSetCheat?: () => void;
+  onForceJackpot?: () => void;
 };
 
 export default function SlotCabinet({
@@ -26,7 +30,10 @@ export default function SlotCabinet({
   canSpin,
   spinning,
   onSpin,
-  onOpenCheat,
+  canCheat = false,
+  cheatGridDirty = false,
+  onSetCheat,
+  onForceJackpot,
 }: Readonly<SlotCabinetProps>) {
   const hasReels = reels != null && emptyMessage == null;
 
@@ -52,18 +59,13 @@ export default function SlotCabinet({
 
         <footer className="slot-cabinet-console">
           <div className="slot-console-bar">
-            {onOpenCheat ? (
-              <button
-                type="button"
-                className="cheat-fab cheat-fab--console"
-                onClick={onOpenCheat}
-                aria-label="Open cheat tools"
-                title="Cheat tools (dev)"
-              >
-                <span className="cheat-fab-icon" aria-hidden>
-                  ⚙
-                </span>
-              </button>
+            {onSetCheat && onForceJackpot ? (
+              <SlotConsoleCheat
+                canCheat={canCheat}
+                cheatGridDirty={cheatGridDirty}
+                onSetCheat={onSetCheat}
+                onForceJackpot={onForceJackpot}
+              />
             ) : null}
             <SlotControls
               betValue={betValue}

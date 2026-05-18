@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { EXPECTED_CHEAT_REEL_SIZES } from "../lib/cheat";
 import type { WinWay } from "../ws/protocol";
 
 const WINWAY_COLORS = [
@@ -66,6 +67,16 @@ export interface WinWayReelGridProps {
   /** Remaining free spins; badge top-right when visible. */
   freeSpinRemaining?: number | null;
   freeSpinVisible?: boolean;
+  /** Cabinet: cells become inputs bound to editGrid. */
+  editable?: boolean;
+  editGrid?: string[][];
+  editDisabled?: boolean;
+  onEditCellChange?: (
+    reelIndex: number,
+    rowIndex: number,
+    colLen: number,
+    value: string,
+  ) => void;
 }
 
 export default function WinWayReelGrid({
@@ -78,6 +89,10 @@ export default function WinWayReelGrid({
   respinVisible = false,
   freeSpinRemaining = null,
   freeSpinVisible = false,
+  editable = false,
+  editGrid,
+  editDisabled = false,
+  onEditCellChange,
 }: Readonly<WinWayReelGridProps>) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -195,38 +210,81 @@ export default function WinWayReelGrid({
             ) : null}
           </div>
         ) : null}
-        <div className="reels" aria-label={ariaLabel}>
-          {reels.map((column, ci) => (
-            <div
-              key={`reel-r${ci + 1}-cells-${column.length}`}
-              className="reel-col"
-            >
-              {column.map((sym, ri) => {
-                const key = cellKey(ci, ri);
-                const wayIndices = cellWinWays.get(key) ?? [];
-                const winHit = wayIndices.length > 0;
-                const gwHit = goldenWildHighlightKeys?.has(key) ?? false;
+        <div
+          className={`reels${editable ? " reels--editable" : ""}`}
+          aria-label={ariaLabel}
+        >
+          {EXPECTED_CHEAT_REEL_SIZES.map((colLen, ci) => {
+            const column = reels[ci] ?? [];
+            return (
+              <div
+                key={`reel-r${ci + 1}-cells-${colLen}`}
+                className="reel-col"
+              >
+                {Array.from({ length: colLen }, (_, ri) => {
+                  const sym =
+                    editable && editGrid
+                      ? (editGrid[ci]?.[ri] ?? "")
+                      : (column[ri] ?? "");
+                  const key = cellKey(ci, ri);
+                  const wayIndices = cellWinWays.get(key) ?? [];
+                  const winHit = wayIndices.length > 0;
+                  const gwHit = goldenWildHighlightKeys?.has(key) ?? false;
+                  const isScatter = sym === "S";
+                  const cellClass = `cell sym-${sym}${isScatter ? " cell-scatter" : ""}${
+                    winHit ? " cell-winway" : ""
+                  }${gwHit ? " cell-golden-wild" : ""}${
+                    editable ? " cell-editable" : ""
+                  }`;
+                  const cellStyle = winHit
+                    ? ({
+                        "--winway-color": selectedColor,
+                      } as CSSProperties)
+                    : undefined;
 
-                return (
-                  <div
-                    key={`reel-r${ci + 1}-slot-${ri + 1}`}
-                    className={`cell sym-${sym}${winHit ? " cell-winway" : ""}${
-                      gwHit ? " cell-golden-wild" : ""
-                    }`}
-                    style={
-                      winHit
-                        ? ({
-                            "--winway-color": selectedColor,
-                          } as CSSProperties)
-                        : undefined
-                    }
-                  >
-                    <span className="cell-symbol">{sym}</span>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                  if (editable && onEditCellChange) {
+                    return (
+                      <div
+                        key={`reel-r${ci + 1}-slot-${ri + 1}`}
+                        className={cellClass}
+                        style={cellStyle}
+                        title={isScatter ? "Scatter" : undefined}
+                      >
+                        <input
+                          className="slot-cell-input"
+                          value={editGrid?.[ci]?.[ri] ?? ""}
+                          onChange={(e) =>
+                            onEditCellChange(ci, ri, colLen, e.target.value)
+                          }
+                          maxLength={2}
+                          inputMode="text"
+                          autoComplete="off"
+                          spellCheck={false}
+                          aria-label={
+                            isScatter
+                              ? `Reel ${ci + 1} row ${ri + 1}, scatter`
+                              : `Reel ${ci + 1} row ${ri + 1}`
+                          }
+                          disabled={editDisabled}
+                        />
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={`reel-r${ci + 1}-slot-${ri + 1}`}
+                      className={cellClass}
+                      style={cellStyle}
+                      title={isScatter ? "Scatter" : undefined}
+                    >
+                      <span className="cell-symbol">{sym}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

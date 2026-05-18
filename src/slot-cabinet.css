@@ -347,6 +347,25 @@
   }
 }
 
+.winway-reels-layout--cabinet .cell.cell-scatter {
+  border-color: color-mix(in srgb, #67e8f9 80%, var(--slot-gold-dim));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, #22d3ee 52%, #0e7490) 0%,
+    color-mix(in srgb, #0891b2 42%, #16141f) 100%
+  );
+  color: #ecfeff;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 18%),
+    0 0 0 1px color-mix(in srgb, #22d3ee 50%, transparent),
+    0 0 16px color-mix(in srgb, #22d3ee 38%, transparent),
+    0 2px 8px rgb(0 0 0 / 35%);
+}
+
+.winway-reels-layout--cabinet .cell.cell-scatter .scatter-badge {
+  font-size: clamp(0.38rem, 1.4cqw, 0.5rem);
+}
+
 /* Console footer */
 .slot-cabinet-console {
   flex-shrink: 0;
@@ -367,6 +386,65 @@
   gap: clamp(0.65rem, 1.8cqw, 1rem);
   width: 100%;
   min-width: 0;
+}
+
+.slot-console-cheat {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: min(100%, 22rem);
+}
+
+.slot-console-cheat-buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.slot-cheat-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.45rem 0.65rem;
+  font-size: clamp(0.72rem, 1.8cqw, 0.82rem);
+  white-space: nowrap;
+}
+
+.winway-reels-layout--cabinet .cell-editable {
+  padding: 0;
+  overflow: hidden;
+}
+
+.winway-reels-layout--cabinet .slot-cell-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font: inherit;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: inherit;
+  text-align: center;
+  color: inherit;
+  cursor: text;
+}
+
+.winway-reels-layout--cabinet .slot-cell-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.winway-reels-layout--cabinet .cell-editable:focus-within {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 1px;
+  z-index: 1;
 }
 
 .cheat-fab--console {
@@ -508,6 +586,20 @@
 
 /* Console stacks on very narrow */
 @container slot-cabinet (max-width: 520px) {
+  .slot-console-cheat {
+    max-width: none;
+    flex: 1 1 100%;
+  }
+
+  .slot-console-cheat-buttons {
+    flex-wrap: wrap;
+  }
+
+  .slot-cheat-btn {
+    flex: 1 1 calc(50% - 0.2rem);
+    min-width: min(100%, 9rem);
+  }
+
   .slot-console-bar {
     flex-wrap: wrap;
     justify-content: space-between;

@@ -24,6 +24,21 @@ export function emptyCheatGrid(): string[][] {
   );
 }
 
+export function cheatGridsEqual(a: string[][], b: string[][]): boolean {
+  return EXPECTED_CHEAT_REEL_SIZES.every((expectedLen, ci) => {
+    for (let ri = 0; ri < expectedLen; ri += 1) {
+      if ((a[ci]?.[ri] ?? "") !== (b[ci]?.[ri] ?? "")) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
+export function cloneCheatGrid(grid: string[][]): string[][] {
+  return grid.map((col) => [...col]);
+}
+
 export function cheatGridFromSpinReels(reels: string[][]): string[][] {
   return EXPECTED_CHEAT_REEL_SIZES.map((expectedLen, ci) => {
     const col = reels[ci] ?? [];
