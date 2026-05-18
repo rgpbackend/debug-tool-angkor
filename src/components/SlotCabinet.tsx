@@ -20,6 +20,8 @@ type SlotCabinetProps = {
   balanceConnected?: boolean;
   onSetCheat?: () => void;
   onForceJackpot?: () => void;
+  jackpotPools?: ReactNode;
+  statusError?: string | null;
 };
 
 export default function SlotCabinet({
@@ -39,6 +41,8 @@ export default function SlotCabinet({
   balanceConnected = false,
   onSetCheat,
   onForceJackpot,
+  jackpotPools,
+  statusError,
 }: Readonly<SlotCabinetProps>) {
   const hasReels = reels != null && emptyMessage == null;
 
@@ -48,17 +52,29 @@ export default function SlotCabinet({
         className="slot-cabinet-frame slot-stage-surface"
         aria-label="Slot machine"
       >
-        {banners ? (
-          <div className="slot-cabinet-alerts">{banners}</div>
+        {banners || statusError ? (
+          <div className="slot-cabinet-alerts">
+            {banners}
+            {statusError ? (
+              <div className="slot-status-bar">
+                <span className="error slot-error">{statusError}</span>
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         <div className="slot-cabinet-body">
-          <div className="slot-reel-window">
-            {hasReels ? (
-              reels
-            ) : (
-              <p className="slot-empty">{emptyMessage ?? "Spin to play"}</p>
-            )}
+          <div className="slot-reel-window slot-reel-window--stacked">
+            <div className="slot-reel-window-main">
+              {hasReels ? (
+                reels
+              ) : (
+                <p className="slot-empty">{emptyMessage ?? "Spin to play"}</p>
+              )}
+            </div>
+            {jackpotPools ? (
+              <div className="slot-reel-pools">{jackpotPools}</div>
+            ) : null}
           </div>
         </div>
 

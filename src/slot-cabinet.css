@@ -145,6 +145,76 @@
     inset 0 0 0 1px rgb(255 255 255 / 06%);
 }
 
+.slot-reel-window--stacked {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.slot-reel-window-main {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.slot-reel-window-main .winway-reels-layout--cabinet {
+  height: 100%;
+  max-height: 100%;
+}
+
+.slot-reel-pools {
+  flex-shrink: 0;
+  width: 100%;
+  padding-top: clamp(0.35rem, 1cqw, 0.55rem);
+  border-top: 1px solid color-mix(in srgb, var(--slot-gold-dim) 40%, transparent);
+}
+
+.jackpot-pools--embedded {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.jackpot-pools--embedded .jackpot-pools-status {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.25rem;
+  font-size: clamp(0.58rem, 1.4cqw, 0.68rem);
+  text-align: center;
+}
+
+.jackpot-pools-embedded-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.3rem, 0.8cqw, 0.45rem);
+}
+
+.jackpot-pools--embedded .jackpot-pool-card {
+  padding: clamp(0.35rem, 1cqw, 0.45rem) clamp(0.4rem, 1.2cqw, 0.55rem);
+  border-color: color-mix(in srgb, var(--slot-gold-dim) 45%, var(--border));
+  background: color-mix(in srgb, #fff 6%, var(--bg));
+}
+
+.jackpot-pools--embedded .jackpot-pool-tier {
+  font-size: clamp(0.58rem, 1.5cqw, 0.68rem);
+}
+
+.jackpot-pools--embedded .jackpot-pool-amount {
+  font-size: clamp(0.72rem, 2cqw, 0.88rem);
+}
+
+@container slot-cabinet (max-width: 640px) {
+  .jackpot-pools-embedded-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .slot-empty {
   margin: 0;
   text-align: center;

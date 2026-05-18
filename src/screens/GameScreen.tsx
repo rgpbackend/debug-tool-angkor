@@ -97,21 +97,17 @@ export default function GameScreen(session: Readonly<GameSession>) {
       ) : (
         <section className="panel slot-stage">
           <div className="slot-stage-stack">
-            <SlotStageBlock className="slot-stage-top">
-              <JackpotPoolsBar
-                poolsByTier={jackpotPoolsByTier}
-                connected={sessionReady}
-                loading={jackpotPoolsLoading && !isSpinning}
-              />
-              {error ? (
-                <div className="slot-status-bar">
-                  <span className="error slot-error">{error}</span>
-                </div>
-              ) : null}
-            </SlotStageBlock>
-
             <SlotStageBlock className="slot-playfield">
               <SlotCabinet
+                statusError={error}
+                jackpotPools={
+                  <JackpotPoolsBar
+                    embedded
+                    poolsByTier={jackpotPoolsByTier}
+                    connected={sessionReady}
+                    loading={jackpotPoolsLoading && !isSpinning}
+                  />
+                }
                 banners={
                   jackpotInfo?.triggered || retriggerInfo?.triggered ? (
                     <>
