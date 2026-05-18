@@ -21,6 +21,181 @@
   font-size: 0.95rem;
 }
 
+.login-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0 2rem;
+}
+
+.login-card {
+  width: min(100%, 28rem);
+  margin-top: 0;
+}
+
+.login-card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.login-lead {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.login-fields {
+  margin-bottom: 0.75rem;
+}
+
+.login-actions {
+  margin-top: 0.25rem;
+}
+
+.login-phase {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+}
+
+.game-screen-toolbar {
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.game-tab-bar {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.logout-btn {
+  flex-shrink: 0;
+}
+
+.slot-stage {
+  position: relative;
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      color-mix(in srgb, var(--accent) 8%, transparent),
+      transparent 55%
+    ),
+    color-mix(in srgb, var(--bg) 90%, var(--code-bg));
+}
+
+.slot-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 0.82rem;
+}
+
+.slot-status-bar .slot-error {
+  margin: 0;
+}
+
+/* Cheat FAB + modal (base); slot-stage overrides in slot-cabinet.css */
+.cheat-fab {
+  position: absolute;
+  z-index: 20;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.72;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.cheat-fab:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  border-color: var(--accent-border);
+}
+
+.cheat-fab-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.cheat-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.cheat-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgb(8 6 13 / 45%);
+  cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cheat-modal-backdrop {
+    background: rgb(0 0 0 / 62%);
+  }
+}
+
+.cheat-modal {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 32rem);
+  max-height: min(90vh, 520px);
+  overflow: auto;
+  margin-top: 0;
+  box-shadow: var(--shadow);
+}
+
+.cheat-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.cheat-modal-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.cheat-modal-close {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 1.35rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cheat-modal-actions {
+  margin-top: 0.85rem;
+}
+
+.cheat-modal-status {
+  margin-top: 0.65rem;
+  margin-bottom: 0;
+}
+
 .panel {
   margin-top: 1.5rem;
   padding: 1rem 1.1rem;

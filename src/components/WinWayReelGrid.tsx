@@ -58,6 +58,14 @@ export interface WinWayReelGridProps {
   winWays: WinWay[];
   goldenWildHighlightKeys?: Set<string>;
   ariaLabel?: string;
+  /** When true, uses slot-cabinet layout and responsive scaling. */
+  cabinet?: boolean;
+  /** Remaining respins; badge top-left when visible. */
+  respinRemaining?: number | null;
+  respinVisible?: boolean;
+  /** Remaining free spins; badge top-right when visible. */
+  freeSpinRemaining?: number | null;
+  freeSpinVisible?: boolean;
 }
 
 export default function WinWayReelGrid({
@@ -65,6 +73,11 @@ export default function WinWayReelGrid({
   winWays,
   goldenWildHighlightKeys,
   ariaLabel = "Spin result reels",
+  cabinet = false,
+  respinRemaining = null,
+  respinVisible = false,
+  freeSpinRemaining = null,
+  freeSpinVisible = false,
 }: Readonly<WinWayReelGridProps>) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -85,12 +98,29 @@ export default function WinWayReelGrid({
 
   const selectedColor = winWayColor(safeSelectedIndex);
 
+  const layoutClass = cabinet
+    ? "winway-reels-layout winway-reels-layout--cabinet"
+    : "winway-reels-layout";
+
+  const showLegendSlot = cabinet || winWays.length > 0;
+
   return (
-    <div className="winway-reels-layout">
-      {winWays.length > 0 ? (
-        <aside className="winway-legend-panel" aria-label="Win ways legend">
-          <ul className="winway-legend" role="listbox" aria-label="Select win way">
-            {winWays.map((way, idx) => {
+    <div className={layoutClass}>
+      {showLegendSlot ? (
+        <aside
+          className={`winway-legend-panel${cabinet && winWays.length === 0 ? " winway-legend-panel--empty" : ""}`}
+          aria-label="Win ways legend"
+        >
+          {cabinet ? (
+            <p className="winway-legend-heading">Win ways</p>
+          ) : null}
+          {winWays.length > 0 ? (
+            <ul
+              className="winway-legend"
+              role="listbox"
+              aria-label="Select win way"
+            >
+              {winWays.map((way, idx) => {
               const color = winWayColor(idx);
               const isActive = idx === safeSelectedIndex;
               return (
@@ -129,11 +159,42 @@ export default function WinWayReelGrid({
                 </li>
               );
             })}
-          </ul>
+            </ul>
+          ) : (
+            <p className="winway-legend-empty muted" aria-live="polite">
+              No win ways this spin
+            </p>
+          )}
         </aside>
       ) : null}
 
-      <div className="reels-wrap winway-reels-main">
+      <div className="reels-wrap winway-reels-main slot-reels-stage">
+        {cabinet && (respinVisible || freeSpinVisible) ? (
+          <div className="slot-reels-hud" aria-live="polite">
+            {respinVisible ? (
+              <div
+                className="slot-reels-badge slot-reels-badge--respin"
+                title="Respin remaining"
+              >
+                <span className="slot-reels-badge-label">Respin</span>
+                <span className="slot-reels-badge-count">
+                  {respinRemaining ?? 0}
+                </span>
+              </div>
+            ) : null}
+            {freeSpinVisible ? (
+              <div
+                className="slot-reels-badge slot-reels-badge--freespin"
+                title="Free spins remaining"
+              >
+                <span className="slot-reels-badge-label">Free spin</span>
+                <span className="slot-reels-badge-count">
+                  {freeSpinRemaining ?? 0}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <div className="reels" aria-label={ariaLabel}>
           {reels.map((column, ci) => (
             <div

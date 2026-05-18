@@ -1,0 +1,474 @@
+/* Slot cabinet — responsive playfield (container queries on .slot-playfield) */
+
+.game-app:has(.slot-stage) {
+  height: 100svh;
+  overflow: hidden;
+}
+
+.slot-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.65rem, 1.5vw, 1rem);
+}
+
+.slot-stage-top {
+  flex-shrink: 0;
+}
+
+.slot-playfield {
+  --slot-gold: #c9a227;
+  --slot-gold-dim: color-mix(in srgb, var(--slot-gold) 55%, var(--border));
+  --slot-frame-deep: #1a1228;
+  --slot-frame-mid: #2d2244;
+  --slot-screen-bg: #0a0810;
+  --slot-screen-edge: color-mix(in srgb, var(--slot-gold) 28%, #3d2e5c);
+  --slot-cell: clamp(1.55rem, min(5.5cqw, 7.5cqh), 3.35rem);
+  --slot-cell-gap: clamp(0.2rem, 0.65cqw, 0.45rem);
+  --slot-console-h: clamp(4.25rem, 11cqh, 5.5rem);
+  --slot-pad: clamp(0.5rem, 1.8cqw, 1.1rem);
+  --slot-radius: clamp(10px, 1.2cqw, 16px);
+  --slot-legend-width: clamp(9.5rem, 22cqw, 14rem);
+  --slot-legend-row-h: clamp(6.5rem, 22cqh, 9.5rem);
+
+  flex: 1;
+  min-height: 0;
+  margin-top: clamp(0.5rem, 1.2vh, 0.85rem);
+  padding-top: clamp(0.5rem, 1.2vh, 0.85rem);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  container-type: size;
+  container-name: slot-playfield;
+}
+
+.slot-cabinet {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: min(100%, 80rem);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  container-name: slot-cabinet;
+}
+
+.slot-cabinet-frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: calc(var(--slot-radius) + 4px);
+  padding: 3px;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--slot-gold) 75%, #fff) 0%,
+    var(--slot-frame-mid) 35%,
+    var(--slot-frame-deep) 100%
+  );
+  box-shadow:
+    0 12px 40px rgb(0 0 0 / 22%),
+    inset 0 1px 0 rgb(255 255 255 / 18%);
+}
+
+.slot-cabinet-alerts {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: var(--slot-pad) var(--slot-pad) 0;
+}
+
+.slot-cabinet-alerts .slot-banner {
+  margin: 0;
+}
+
+.slot-cabinet-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--slot-pad);
+  display: flex;
+}
+
+.slot-reel-window {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.5rem, 1.5cqw, 1rem);
+  border-radius: var(--slot-radius);
+  border: 2px solid var(--slot-screen-edge);
+  background:
+    radial-gradient(
+      ellipse 90% 70% at 50% 20%,
+      color-mix(in srgb, var(--accent) 14%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(180deg, #12101a 0%, var(--slot-screen-bg) 45%, #06050a 100%);
+  box-shadow:
+    inset 0 4px 24px rgb(0 0 0 / 55%),
+    inset 0 0 0 1px rgb(255 255 255 / 06%);
+}
+
+.slot-empty {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(0.85rem, 2.5cqw, 1rem);
+  color: color-mix(in srgb, var(--slot-gold) 45%, var(--text));
+  letter-spacing: 0.04em;
+}
+
+/* Cabinet win-way layout — fixed grid slots (legend | reels) */
+.winway-reels-layout--cabinet {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  gap: clamp(0.45rem, 1.2cqw, 0.85rem);
+  grid-template-columns: var(--slot-legend-width) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "legend reels";
+  align-items: stretch;
+}
+
+.winway-reels-layout--cabinet .winway-legend-heading {
+  margin: 0 0 0.4rem;
+  padding: 0 0.15rem;
+  font-size: clamp(0.62rem, 1.8cqw, 0.72rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: color-mix(in srgb, var(--slot-gold) 70%, var(--text));
+}
+
+.winway-reels-layout--cabinet .winway-legend-panel {
+  grid-area: legend;
+  width: var(--slot-legend-width);
+  min-width: var(--slot-legend-width);
+  max-width: var(--slot-legend-width);
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem;
+  border-color: color-mix(in srgb, var(--slot-gold-dim) 80%, var(--border));
+  background: color-mix(in srgb, var(--slot-screen-bg) 55%, var(--bg));
+}
+
+.winway-reels-layout--cabinet .winway-legend-panel .winway-legend {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.winway-reels-layout--cabinet .winway-legend-panel--empty {
+  justify-content: flex-start;
+}
+
+.winway-reels-layout--cabinet .winway-legend-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: clamp(0.72rem, 2cqw, 0.82rem);
+  line-height: 1.35;
+}
+
+.winway-reels-layout--cabinet .winway-legend-item {
+  border-color: color-mix(in srgb, var(--slot-gold-dim) 50%, var(--border));
+  background: color-mix(in srgb, var(--slot-screen-bg) 40%, var(--bg));
+}
+
+.winway-reels-layout--cabinet .winway-legend-item-active {
+  border-color: color-mix(in srgb, var(--slot-gold) 55%, var(--accent-border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--slot-screen-bg));
+}
+
+.winway-reels-layout--cabinet .winway-legend-num,
+.winway-reels-layout--cabinet .winway-legend-text {
+  font-size: clamp(0.72rem, 2cqw, 0.82rem);
+}
+
+.winway-reels-layout--cabinet .winway-legend-meta {
+  font-size: clamp(0.62rem, 1.6cqw, 0.7rem);
+}
+
+.winway-reels-layout--cabinet .slot-reels-stage {
+  grid-area: reels;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: clamp(2.25rem, 6cqh, 2.75rem) 0.15rem 0.15rem;
+}
+
+.slot-reels-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.slot-reels-badge {
+  position: absolute;
+  top: clamp(0.35rem, 1.2cqh, 0.65rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: clamp(3.25rem, 9cqw, 4.5rem);
+  padding: 0.3rem 0.55rem 0.35rem;
+  border-radius: clamp(6px, 0.8cqw, 10px);
+  border: 1px solid;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 35%),
+    inset 0 1px 0 rgb(255 255 255 / 15%);
+}
+
+.slot-reels-badge--respin {
+  left: clamp(0.35rem, 1.2cqw, 0.75rem);
+  border-color: color-mix(in srgb, gold 55%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, gold 35%, #3d3010) 0%,
+    color-mix(in srgb, gold 12%, var(--slot-screen-bg)) 100%
+  );
+  color: color-mix(in srgb, gold 85%, #fff);
+}
+
+.slot-reels-badge--freespin {
+  right: clamp(0.35rem, 1.2cqw, 0.75rem);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 45%, #2e1064) 0%,
+    color-mix(in srgb, var(--accent) 12%, var(--slot-screen-bg)) 100%
+  );
+  color: color-mix(in srgb, var(--accent) 90%, #fff);
+}
+
+.slot-reels-badge-label {
+  font-size: clamp(0.52rem, 1.4cqw, 0.62rem);
+  line-height: 1.1;
+  opacity: 0.92;
+}
+
+.slot-reels-badge-count {
+  font-family: var(--mono);
+  font-size: clamp(1.1rem, 3.2cqw, 1.45rem);
+  line-height: 1;
+  font-weight: 800;
+}
+
+.winway-reels-layout--cabinet .reels {
+  gap: var(--slot-cell-gap);
+}
+
+.winway-reels-layout--cabinet .reel-col {
+  gap: var(--slot-cell-gap);
+}
+
+.winway-reels-layout--cabinet .cell {
+  width: var(--slot-cell);
+  height: var(--slot-cell);
+  min-width: var(--slot-cell);
+  min-height: var(--slot-cell);
+  font-size: clamp(0.72rem, 2.8cqw, 1.05rem);
+  border-radius: clamp(6px, 0.8cqw, 10px);
+  border-color: color-mix(in srgb, var(--slot-gold-dim) 40%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff 8%, var(--bg)) 0%,
+    var(--bg) 100%
+  );
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 10%),
+    0 2px 6px rgb(0 0 0 / 25%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .winway-reels-layout--cabinet .cell {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, #fff 6%, #252030) 0%,
+      #16141f 100%
+    );
+  }
+}
+
+/* Console footer */
+.slot-cabinet-console {
+  flex-shrink: 0;
+  min-height: var(--slot-console-h);
+  padding: clamp(0.45rem, 1.2cqw, 0.75rem) var(--slot-pad)
+    clamp(0.55rem, 1.4cqw, 0.85rem);
+  border-top: 1px solid color-mix(in srgb, var(--slot-gold) 25%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--slot-frame-mid) 40%, var(--bg)) 0%,
+    color-mix(in srgb, var(--slot-frame-deep) 30%, var(--code-bg)) 100%
+  );
+}
+
+.slot-controls--console {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: clamp(0.65rem, 2cqw, 1.25rem);
+}
+
+.slot-controls--console .slot-bet-cluster {
+  flex-direction: row;
+  align-items: center;
+  gap: clamp(0.5rem, 1.5cqw, 0.85rem);
+  justify-self: start;
+}
+
+.slot-controls--console .slot-bet-label {
+  font-size: clamp(0.62rem, 1.6cqw, 0.68rem);
+  white-space: nowrap;
+}
+
+.slot-controls--console .slot-bet-stepper {
+  border-radius: clamp(6px, 0.8cqw, 10px);
+  border-color: color-mix(in srgb, var(--slot-gold-dim) 70%, var(--border));
+}
+
+.slot-controls--console .slot-bet-step {
+  width: clamp(2rem, 5cqw, 2.5rem);
+  padding: clamp(0.4rem, 1.2cqh, 0.55rem) 0;
+  font-size: clamp(0.95rem, 2.5cqw, 1.15rem);
+}
+
+.slot-controls--console .slot-bet-select {
+  min-width: clamp(5.5rem, 14cqw, 7.5rem);
+  padding: clamp(0.4rem, 1.2cqh, 0.55rem) clamp(0.5rem, 1.5cqw, 0.75rem);
+  font-size: clamp(0.88rem, 2.4cqw, 1.05rem);
+  border-color: color-mix(in srgb, var(--slot-gold-dim) 50%, var(--border));
+  background: var(--bg);
+}
+
+.slot-controls--console .slot-spin-btn {
+  justify-self: end;
+  min-width: clamp(6.5rem, 18cqw, 9rem);
+  padding: clamp(0.55rem, 1.5cqh, 0.75rem) clamp(1.25rem, 4cqw, 2.25rem);
+  font-size: clamp(0.88rem, 2.5cqw, 1.08rem);
+  border-radius: clamp(8px, 1.2cqw, 999px);
+  border-color: color-mix(in srgb, var(--slot-gold) 55%, var(--accent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--slot-gold) 35%, var(--accent)) 0%,
+    color-mix(in srgb, var(--accent) 70%, #4c1d95) 100%
+  );
+  box-shadow:
+    0 4px 16px color-mix(in srgb, var(--accent) 40%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 28%);
+}
+
+.slot-stage .cheat-fab {
+  right: clamp(0.5rem, 2cqw, 1.25rem);
+  bottom: calc(var(--slot-console-h) + clamp(0.65rem, 2cqh, 1.1rem));
+  width: clamp(2.35rem, 6cqw, 2.75rem);
+  height: clamp(2.35rem, 6cqw, 2.75rem);
+  z-index: 25;
+  border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 60%, var(--border));
+  background: color-mix(in srgb, var(--slot-frame-mid) 50%, var(--bg));
+  color: var(--text-h);
+  box-shadow: var(--shadow);
+}
+
+/* Narrow cabinet: legend strip on top (same grid areas, stacked) */
+@container slot-cabinet (max-width: 720px) {
+  .winway-reels-layout--cabinet {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--slot-legend-row-h) minmax(0, 1fr);
+    grid-template-areas:
+      "legend"
+      "reels";
+  }
+
+  .winway-reels-layout--cabinet .winway-legend-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    max-height: var(--slot-legend-row-h);
+  }
+
+  .winway-reels-layout--cabinet .winway-legend {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0.35rem;
+    padding-bottom: 0.2rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .winway-reels-layout--cabinet .winway-legend-item {
+    flex: 0 0 min(11rem, 78vw);
+    scroll-snap-align: start;
+  }
+
+  .winway-reels-layout--cabinet .slot-reels-stage {
+    min-height: clamp(8rem, 38cqh, 14rem);
+  }
+}
+
+/* Short viewport: tighten vertical space */
+@container slot-playfield (max-height: 520px) {
+  .slot-playfield {
+    --slot-cell: clamp(1.35rem, min(4.5cqw, 6cqh), 2.35rem);
+    --slot-console-h: clamp(3.75rem, 14cqh, 4.5rem);
+  }
+
+  .slot-cabinet-alerts {
+    display: none;
+  }
+}
+
+/* Console stacks on very narrow */
+@container slot-cabinet (max-width: 420px) {
+  .slot-controls--console {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .slot-controls--console .slot-bet-cluster {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .slot-controls--console .slot-spin-btn {
+    justify-self: stretch;
+    width: 100%;
+  }
+}
