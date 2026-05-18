@@ -269,6 +269,25 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  gap: 0.2rem;
+}
+
+.winway-reels-layout--cabinet .winway-legend-btn {
+  padding: 0.18rem 0.3rem;
+  gap: 0.28rem;
+  align-items: center;
+}
+
+.winway-reels-layout--cabinet .winway-legend-swatch {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.winway-reels-layout--cabinet .winway-legend-body {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.05rem 0.3rem;
 }
 
 .winway-reels-layout--cabinet .winway-legend-panel--empty {
@@ -299,11 +318,13 @@
 
 .winway-reels-layout--cabinet .winway-legend-num,
 .winway-reels-layout--cabinet .winway-legend-text {
-  font-size: clamp(0.72rem, 2cqw, 0.82rem);
+  font-size: clamp(0.66rem, 1.7cqw, 0.74rem);
+  line-height: 1.15;
 }
 
 .winway-reels-layout--cabinet .winway-legend-meta {
-  font-size: clamp(0.62rem, 1.6cqw, 0.7rem);
+  font-size: clamp(0.58rem, 1.4cqw, 0.66rem);
+  line-height: 1.2;
 }
 
 .winway-reels-layout--cabinet .slot-reels-stage {

@@ -491,11 +491,11 @@ button.primary {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.2rem;
 }
 
 .winway-legend-item {
-  border-radius: 6px;
+  border-radius: 5px;
   border: 1px solid var(--border);
   background: var(--bg);
 }
@@ -507,11 +507,11 @@ button.primary {
 
 .winway-legend-btn {
   display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.3rem;
   width: 100%;
   margin: 0;
-  padding: 0.35rem 0.4rem;
+  padding: 0.2rem 0.35rem;
   border: 0;
   border-radius: inherit;
   background: transparent;
@@ -519,6 +519,7 @@ button.primary {
   font: inherit;
   text-align: left;
   cursor: pointer;
+  line-height: 1.15;
 }
 
 .winway-legend-btn:hover {
@@ -530,34 +531,39 @@ button.primary {
 }
 
 .winway-legend-swatch {
-  width: 0.65rem;
-  height: 0.65rem;
-  margin-top: 0.2rem;
-  border-radius: 3px;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
 .winway-legend-body {
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.05rem 0.35rem;
   min-width: 0;
+  flex: 1;
 }
 
 .winway-legend-num {
   font-weight: 800;
   font-family: var(--mono);
-  line-height: 1.2;
+  font-size: 0.75rem;
+  line-height: 1.15;
 }
 
 .winway-legend-text {
   color: var(--text-h);
   font-weight: 600;
+  font-size: 0.78rem;
+  line-height: 1.15;
 }
 
 .winway-legend-meta {
-  font-size: 0.7rem;
-  line-height: 1.25;
+  font-size: 0.66rem;
+  line-height: 1.2;
   word-break: break-word;
 }
 
