@@ -36,15 +36,14 @@ import {
   type JackpotWinHistoryPayload,
   type LastRound,
   type SpinResponsePayload,
-  type WinWay,
 } from "./ws/protocol";
 import type { GamePhase } from "./ws/game-phase";
 import HistoryView from "./components/HistoryView";
 import JackpotPoolsBar from "./components/JackpotPoolsBar";
 import JackpotWinnersView from "./components/JackpotWinnersView";
+import WinWayReelGrid from "./components/WinWayReelGrid";
 import "./App.css";
 
-const LOG_CAP = 100;
 const HEARTBEAT_INTERVAL_MS = 30_000;
 /** Delay after auth connect frame, before join (cmd 1005). */
 const POST_AUTH_BEFORE_JOIN_MS = 1000;
@@ -144,16 +143,6 @@ function parseBetLevelsFromJoin(
   );
 }
 
-function appendLogLine(
-  prev: string[],
-  direction: "in" | "out",
-  summary: string,
-): string[] {
-  const ts = new Date().toISOString();
-  const line = `${ts} ${direction === "out" ? "→" : "←"} ${summary}`;
-  return [line, ...prev].slice(0, LOG_CAP);
-}
-
 /** Cheat cells are mostly one letter; `GW` is two letters (Golden Wild). */
 function normalizeCheatSymbolInput(raw: string): string {
   const u = raw.trim().toUpperCase();
@@ -219,22 +208,6 @@ function validateCheatReels(reels: string[][]): {
 
 function winWayHighlightKey(reelIndex: number, rowIndex: number): string {
   return `${reelIndex}:${rowIndex}`;
-}
-
-function buildWinWayHighlightSet(way: WinWay | undefined): Set<string> {
-  const keys = new Set<string>();
-  if (!way?.positions) {
-    return keys;
-  }
-  way.positions.forEach((rows, reelIndex) => {
-    if (!rows) {
-      return;
-    }
-    rows.forEach((rowIndex) => {
-      keys.add(winWayHighlightKey(reelIndex, rowIndex));
-    });
-  });
-  return keys;
 }
 
 function buildGoldenWildHighlightSet(
@@ -398,7 +371,6 @@ export default function App() {
   /** True after connect+join succeeded; used for UI (avoid reading refs during render). */
   const [sessionReady, setSessionReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [log, setLog] = useState<string[]>([]);
 
   const [wsUrl, setWsUrl] = useState(defaults.wsUrl);
   const [agentId, setAgentId] = useState(defaults.agentId);
@@ -412,14 +384,10 @@ export default function App() {
 
   const [lastSpin, setLastSpin] = useState<SpinResponsePayload | null>(null);
   const [lastRound, setLastRound] = useState<LastRound | null>(null);
-  const [highlightWinWayIndex, setHighlightWinWayIndex] = useState(0);
   const [cheatStatus, setCheatStatus] = useState<string | null>(null);
   const [cheatArmed, setCheatArmed] = useState(false);
   const [forceJackpotArmed, setForceJackpotArmed] = useState(false);
 
-  const pushLog = useCallback((direction: "in" | "out", summary: string) => {
-    setLog((prev) => appendLogLine(prev, direction, summary));
-  }, []);
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatTimerRef.current !== null) {
@@ -438,13 +406,12 @@ export default function App() {
         }
         try {
           client.sendFrame(heartbeatFrame());
-          pushLog("out", 'heartbeat ["7","MiniGame","1",2]');
         } catch {
           stopHeartbeat();
         }
       }, HEARTBEAT_INTERVAL_MS);
     },
-    [pushLog, stopHeartbeat],
+    [stopHeartbeat],
   );
 
   const disconnect = useCallback(() => {
@@ -456,7 +423,6 @@ export default function App() {
     setForceJackpotArmed(false);
     setCheatStatus(null);
     setCheatGrid(emptyCheatGrid());
-    setHighlightWinWayIndex(0);
     setLastRound(null);
     setJackpotPoolsByTier(emptyJackpotPoolsByTier());
     setJackpotPoolsLoading(false);
@@ -495,24 +461,20 @@ export default function App() {
         "jackpot pools",
       );
       client.sendFrame(jackpotPoolsFrame(gameRoute.trim()));
-      pushLog("out", "jackpot pools cmd=1510");
       const payload = await payloadPromise;
-      pushLog("in", "jackpot pools cmd=1510 response");
       const poolsPayload = payload as unknown as JackpotPoolsPayload;
       applyJackpotPools(poolsPayload.pools);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      pushLog("in", `jackpot pools error: ${message}`);
+    } catch {
+      // Pool fetch is best-effort; UI still works via push 1520.
     } finally {
       setJackpotPoolsLoading(false);
     }
-  }, [applyJackpotPools, gameRoute, pushLog]);
+  }, [applyJackpotPools, gameRoute]);
 
   const connectAndJoin = useCallback(async () => {
     setError(null);
     setLastSpin(null);
     setLastRound(null);
-    setHighlightWinWayIndex(0);
     setCheatGrid(emptyCheatGrid());
     setCheatArmed(false);
     setForceJackpotArmed(false);
@@ -541,7 +503,6 @@ export default function App() {
       }
       const connect = connectFrame(agentId.trim(), accessToken.trim(), false);
       client.sendFrame(connect);
-      pushLog("out", `connect MiniGame agentId=${agentId}`);
       setPhase("connected");
       startHeartbeat(client);
 
@@ -563,14 +524,9 @@ export default function App() {
       );
       const join = joinFrame(gameRoute.trim());
       client.sendFrame(join);
-      pushLog("out", `join cmd=1005 route=${gameRoute}`);
 
       const joinPayload =
         (await joinPayloadPromise) as unknown as JoinResponsePayload;
-      pushLog(
-        "in",
-        `join cmd=1005 c=${joinPayload.c} lastRound=${joinPayload.lastRound ? joinPayload.lastRound.round.state : "null"}`,
-      );
 
       if (clientRef.current !== client) {
         return;
@@ -621,7 +577,6 @@ export default function App() {
     defaults.timeoutMs,
     disconnect,
     gameRoute,
-    pushLog,
     startHeartbeat,
     stopHeartbeat,
     wsUrl,
@@ -639,17 +594,12 @@ export default function App() {
       isJackpotPoolsPushPayload,
       (payload) => {
         applyJackpotPoolsFromPayload(payload);
-        pushLog("in", "jackpot pools push cmd=1520");
       },
     );
 
     const removeWinnerPush = client.addPayloadListener(
       isJackpotWinnerPush,
-      (payload) => {
-        pushLog(
-          "in",
-          `jackpot winner push cmd=1521 tier=${String(payload.tier)}`,
-        );
+      () => {
         setJackpotWinnersRefreshToken((t) => t + 1);
       },
     );
@@ -658,7 +608,7 @@ export default function App() {
       removePoolsPush();
       removeWinnerPush();
     };
-  }, [applyJackpotPoolsFromPayload, pushLog, sessionReady]);
+  }, [applyJackpotPoolsFromPayload, sessionReady]);
 
   useEffect(
     () => () => {
@@ -666,10 +616,6 @@ export default function App() {
     },
     [stopHeartbeat],
   );
-
-  useEffect(() => {
-    setHighlightWinWayIndex(0);
-  }, [lastSpin?.spin.spinId]);
 
   const spin = useCallback(async () => {
     const client = clientRef.current;
@@ -685,9 +631,7 @@ export default function App() {
       );
       const frame = spinFrame(gameRoute.trim(), String(bet));
       client.sendFrame(frame);
-      pushLog("out", `spin cmd=1500 bet=${bet}`);
       const payload = await payloadPromise;
-      pushLog("in", "spin cmd=1500 payload");
       const spinPayload = payload as unknown as SpinResponsePayload;
       setLastSpin(spinPayload);
       setLastRound(null);
@@ -696,7 +640,6 @@ export default function App() {
       const poolsFromSpin = parseJackpotPoolsFromPayload(payload);
       if (poolsFromSpin) {
         applyJackpotPools(poolsFromSpin);
-        pushLog("in", "jackpot pools from spin cmd=1500");
       } else {
         void fetchJackpotPools();
       }
@@ -731,7 +674,6 @@ export default function App() {
     phase,
     applyJackpotPools,
     fetchJackpotPools,
-    pushLog,
     sessionReady,
   ]);
 
@@ -751,14 +693,13 @@ export default function App() {
     try {
       const frame = cheatFrame(gameRoute.trim(), parsed.reels);
       client.sendFrame(frame);
-      pushLog("out", "cheat cmd=2001 reels=[3,4,4,4,3]");
       setCheatArmed(true);
       setCheatStatus("Cheat set for next spin.");
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
     }
-  }, [cheatGrid, gameRoute, phase, pushLog, sessionReady]);
+  }, [cheatGrid, gameRoute, phase, sessionReady]);
 
   const sendForceJackpot = useCallback(() => {
     const client = clientRef.current;
@@ -770,14 +711,13 @@ export default function App() {
     try {
       const frame = forceJackpotNextSpinFrame(gameRoute.trim());
       client.sendFrame(frame);
-      pushLog("out", "cheat cmd=2002 force-jackpot-next-spin");
       setForceJackpotArmed(true);
       setCheatStatus("Force jackpot set for next spin.");
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
     }
-  }, [gameRoute, phase, pushLog, sessionReady]);
+  }, [gameRoute, phase, sessionReady]);
 
   const fetchHistoryList = useCallback(
     async (page: number): Promise<HistoryListPayload> => {
@@ -790,12 +730,10 @@ export default function App() {
         "history list",
       );
       client.sendFrame(historyListFrame(gameRoute.trim(), page, 20));
-      pushLog("out", `history list cmd=1502 page=${page}`);
       const payload = await payloadPromise;
-      pushLog("in", "history list cmd=1502 response");
       return payload as unknown as HistoryListPayload;
     },
-    [gameRoute, pushLog],
+    [gameRoute],
   );
 
   const fetchJackpotWinHistory =
@@ -809,11 +747,9 @@ export default function App() {
         "jackpot win history",
       );
       client.sendFrame(jackpotWinHistoryFrame(gameRoute.trim(), 10));
-      pushLog("out", "jackpot win history cmd=1511 limit=10");
       const payload = await payloadPromise;
-      pushLog("in", "jackpot win history cmd=1511 response");
       return payload as unknown as JackpotWinHistoryPayload;
-    }, [gameRoute, pushLog]);
+    }, [gameRoute]);
 
   const fetchHistoryDetail = useCallback(
     async (roundId: string, spinId: string): Promise<HistoryDetailPayload> => {
@@ -826,15 +762,10 @@ export default function App() {
         "history detail",
       );
       client.sendFrame(historyDetailFrame(gameRoute.trim(), roundId, spinId));
-      pushLog(
-        "out",
-        `history detail cmd=1503 roundId=${roundId} spinId=${spinId}`,
-      );
       const payload = await payloadPromise;
-      pushLog("in", "history detail cmd=1503 response");
       return payload as unknown as HistoryDetailPayload;
     },
-    [gameRoute, pushLog],
+    [gameRoute],
   );
 
   const updateCheatCell = useCallback(
@@ -877,15 +808,6 @@ export default function App() {
     betLevels.length > 0 && betLevels.includes(bet) ? bet : (betLevels[0] ?? "");
 
   const winWays = displaySpin?.spin?.winWays ?? [];
-  const safeHighlightIndex =
-    winWays.length === 0
-      ? 0
-      : Math.min(Math.max(highlightWinWayIndex, 0), winWays.length - 1);
-  const highlightedWinWay = winWays[safeHighlightIndex];
-  const winWayHighlightKeys = useMemo(
-    () => buildWinWayHighlightSet(highlightedWinWay),
-    [highlightedWinWay],
-  );
 
   const jackpotInfo = useMemo(
     () => (displaySpin?.spin ? readSpinJackpot(displaySpin.spin) : null),
@@ -1128,118 +1050,21 @@ export default function App() {
                         </span>
                       </div>
                     ) : null}
-                    <div className="winway-toolbar row">
-                      <label className="winway-select-label">
-                        Highlight win way
-                        <select
-                          value={String(safeHighlightIndex)}
-                          onChange={(e) =>
-                            setHighlightWinWayIndex(Number(e.target.value))
-                          }
-                          disabled={phase === "spinning"}
-                        >
-                          {winWays.map((way, idx) => (
-                            <option
-                              key={`winway-opt-${way.symbol}-${idx}`}
-                              value={String(idx)}
-                            >
-                              #{idx + 1} {way.symbol} ×{way.matchCount} ways=
-                              {way.ways} payout=
-                              {way.payout}
-                            </option>
-                          ))}
-                          <option value="all">All</option>
-                        </select>
-                      </label>
-                    </div>
-                    <div className="reels-wrap">
-                      <div className="reels" aria-label="Spin result reels">
-                        {displaySpin.spin ? (
-                          displaySpin.spin.reels.map((column, ci) => (
-                            <div
-                              key={`spin-reel-r${ci + 1}-cells-${column.length}`}
-                              className="reel-col"
-                            >
-                              {column.map((sym, ri) => {
-                                const k = winWayHighlightKey(ci, ri);
-                                const winHit = winWayHighlightKeys.has(k);
-                                const gwHit = goldenWildHighlightKeys.has(k);
-                                return (
-                                  <div
-                                    key={`spin-reel-r${ci + 1}-slot-${ri + 1}`}
-                                    className={`cell sym-${sym}${winHit ? " cell-winway" : ""}${
-                                      gwHit ? " cell-golden-wild" : ""
-                                    }`}
-                                  >
-                                    {sym}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ))
-                        ) : (
-                          <p className="muted">No spin data in this round.</p>
-                        )}
-                      </div>
-                    </div>
+                    {displaySpin.spin ? (
+                      <WinWayReelGrid
+                        reels={displaySpin.spin.reels}
+                        winWays={winWays}
+                        goldenWildHighlightKeys={goldenWildHighlightKeys}
+                      />
+                    ) : (
+                      <p className="muted">No spin data in this round.</p>
+                    )}
                   </>
                 ) : (
                   <p className="muted">No spin yet.</p>
                 )}
               </section>
 
-              <section className="output-section">
-                <h3>State</h3>
-                {displaySpin ? (
-                  <div className="snapshot">
-                    <div>
-                      <h3>Round</h3>
-                      <pre>{JSON.stringify(displaySpin.round, null, 2)}</pre>
-                    </div>
-                    <div>
-                      <h3>State</h3>
-                      <pre>{JSON.stringify(displaySpin.state, null, 2)}</pre>
-                    </div>
-                    <div>
-                      <h3>Spin</h3>
-                      <pre>
-                        {displaySpin.spin
-                          ? JSON.stringify(
-                              {
-                                spinId: displaySpin.spin.spinId,
-                                spinType: displaySpin.spin.spinType,
-                                win: displaySpin.spin.win,
-                                triggers: displaySpin.spin.triggers,
-                                winWays: displaySpin.spin.winWays ?? [],
-                                guardianWild:
-                                  displaySpin.spin.guardianWild ?? null,
-                                retrigger: readSpinRetrigger(displaySpin.spin),
-                                jackpot: readSpinJackpot(displaySpin.spin),
-                              },
-                              null,
-                              2,
-                            )
-                          : "null"}
-                      </pre>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="muted">No spin yet.</p>
-                )}
-              </section>
-
-              <section className="output-section">
-                <h3>Logs</h3>
-                {log.length > 0 ? (
-                  <ul className="log">
-                    {log.map((line) => (
-                      <li key={line}>{line}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="muted">No logs yet.</p>
-                )}
-              </section>
             </div>
           </section>
         </div>

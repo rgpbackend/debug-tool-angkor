@@ -233,6 +233,7 @@ button.primary {
 }
 
 .cell {
+  position: relative;
   box-sizing: border-box;
   width: 2.15rem;
   height: 2.15rem;
@@ -250,32 +251,153 @@ button.primary {
   color: var(--text-h);
 }
 
+.cell-symbol {
+  line-height: 1;
+}
+
 .cell.cell-winway {
-  outline: 2px solid var(--accent-border);
+  outline: 2px solid var(--winway-color, var(--accent-border));
   outline-offset: 0;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--winway-color, var(--accent)) 22%,
+    var(--bg)
+  );
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--winway-color, var(--accent)) 35%, transparent);
 }
 
-.winway-toolbar {
-  margin: 0 0 0.5rem;
+.winway-reels-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
 }
 
-.winway-select-label {
+.winway-legend-panel {
+  flex: 0 0 min(13.5rem, 36%);
+  max-height: min(22rem, 70vh);
+  overflow: auto;
+  padding: 0.35rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 94%, var(--code-bg));
+}
+
+.winway-reels-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.winway-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.82rem;
-  color: var(--text-h);
-  min-width: min(100%, 22rem);
+  gap: 0.35rem;
 }
 
-.winway-select-label select {
-  font: inherit;
-  padding: 0.35rem 0.45rem;
+.winway-legend-item {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg);
+}
+
+.winway-legend-item-active {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+
+.winway-legend-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0.4rem;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.winway-legend-btn:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.winway-legend-item-active .winway-legend-btn:hover {
+  background: transparent;
+}
+
+.winway-legend-swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-top: 0.2rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.winway-legend-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.winway-legend-num {
+  font-weight: 800;
+  font-family: var(--mono);
+  line-height: 1.2;
+}
+
+.winway-legend-text {
   color: var(--text-h);
+  font-weight: 600;
+}
+
+.winway-legend-meta {
+  font-size: 0.7rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .winway-reels-layout {
+    flex-direction: column;
+  }
+
+  .winway-legend-panel {
+    flex: none;
+    width: 100%;
+    max-height: 10rem;
+  }
+}
+
+.winway-cell-badges {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1px;
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.winway-badge {
+  min-width: 0.85rem;
+  padding: 0 2px;
+  border-radius: 3px;
+  font-size: 0.52rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 0 2px rgb(0 0 0 / 55%);
 }
 
 .sym-W {

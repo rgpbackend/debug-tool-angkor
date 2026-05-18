@@ -1,0 +1,173 @@
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import type { WinWay } from "../ws/protocol";
+
+const WINWAY_COLORS = [
+  "#3b82f6",
+  "#22c55e",
+  "#f59e0b",
+  "#a855f7",
+  "#ec4899",
+  "#14b8a6",
+  "#ef4444",
+  "#84cc16",
+] as const;
+
+function cellKey(reelIndex: number, rowIndex: number): string {
+  return `${reelIndex}:${rowIndex}`;
+}
+
+function buildCellWinWayMap(ways: WinWay[]): Map<string, number[]> {
+  const map = new Map<string, number[]>();
+  ways.forEach((way, wayIndex) => {
+    way.positions?.forEach((rows, reelIndex) => {
+      if (!rows) {
+        return;
+      }
+      rows.forEach((rowIndex) => {
+        const key = cellKey(reelIndex, rowIndex);
+        const existing = map.get(key) ?? [];
+        if (!existing.includes(wayIndex)) {
+          existing.push(wayIndex);
+        }
+        map.set(key, existing);
+      });
+    });
+  });
+  return map;
+}
+
+function filterCellWinWayMap(
+  map: Map<string, number[]>,
+  wayIndex: number,
+): Map<string, number[]> {
+  const filtered = new Map<string, number[]>();
+  for (const [key, indices] of map) {
+    if (indices.includes(wayIndex)) {
+      filtered.set(key, [wayIndex]);
+    }
+  }
+  return filtered;
+}
+
+function winWayColor(wayIndex: number): string {
+  return WINWAY_COLORS[wayIndex % WINWAY_COLORS.length];
+}
+
+export interface WinWayReelGridProps {
+  reels: string[][];
+  winWays: WinWay[];
+  goldenWildHighlightKeys?: Set<string>;
+  ariaLabel?: string;
+}
+
+export default function WinWayReelGrid({
+  reels,
+  winWays,
+  goldenWildHighlightKeys,
+  ariaLabel = "Spin result reels",
+}: Readonly<WinWayReelGridProps>) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [winWays]);
+
+  const safeSelectedIndex =
+    winWays.length === 0
+      ? 0
+      : Math.min(Math.max(selectedIndex, 0), winWays.length - 1);
+
+  const fullCellWinWays = useMemo(() => buildCellWinWayMap(winWays), [winWays]);
+  const cellWinWays = useMemo(
+    () => filterCellWinWayMap(fullCellWinWays, safeSelectedIndex),
+    [fullCellWinWays, safeSelectedIndex],
+  );
+
+  const selectedColor = winWayColor(safeSelectedIndex);
+
+  return (
+    <div className="winway-reels-layout">
+      {winWays.length > 0 ? (
+        <aside className="winway-legend-panel" aria-label="Win ways legend">
+          <ul className="winway-legend" role="listbox" aria-label="Select win way">
+            {winWays.map((way, idx) => {
+              const color = winWayColor(idx);
+              const isActive = idx === safeSelectedIndex;
+              return (
+                <li
+                  key={`winway-legend-${way.symbol}-${idx}`}
+                  className={`winway-legend-item${isActive ? " winway-legend-item-active" : ""}`}
+                  role="option"
+                  aria-selected={isActive}
+                >
+                  <button
+                    type="button"
+                    className="winway-legend-btn"
+                    onClick={() => setSelectedIndex(idx)}
+                  >
+                    <span
+                      className="winway-legend-swatch"
+                      style={{ background: color }}
+                      aria-hidden
+                    />
+                    <span className="winway-legend-body">
+                      <span
+                        className="winway-legend-num"
+                        style={{ color: isActive ? color : undefined }}
+                      >
+                        #{idx + 1}
+                      </span>
+                      <span className="winway-legend-text">
+                        {way.symbol} ×{way.matchCount}
+                      </span>
+                      <span className="winway-legend-meta muted">
+                        {way.ways} way{way.ways === 1 ? "" : "s"} ·{" "}
+                        {String(way.payout)}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </aside>
+      ) : null}
+
+      <div className="reels-wrap winway-reels-main">
+        <div className="reels" aria-label={ariaLabel}>
+          {reels.map((column, ci) => (
+            <div
+              key={`reel-r${ci + 1}-cells-${column.length}`}
+              className="reel-col"
+            >
+              {column.map((sym, ri) => {
+                const key = cellKey(ci, ri);
+                const wayIndices = cellWinWays.get(key) ?? [];
+                const winHit = wayIndices.length > 0;
+                const gwHit = goldenWildHighlightKeys?.has(key) ?? false;
+
+                return (
+                  <div
+                    key={`reel-r${ci + 1}-slot-${ri + 1}`}
+                    className={`cell sym-${sym}${winHit ? " cell-winway" : ""}${
+                      gwHit ? " cell-golden-wild" : ""
+                    }`}
+                    style={
+                      winHit
+                        ? ({
+                            "--winway-color": selectedColor,
+                          } as CSSProperties)
+                        : undefined
+                    }
+                  >
+                    <span className="cell-symbol">{sym}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
