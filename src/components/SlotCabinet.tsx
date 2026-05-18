@@ -4,7 +4,7 @@ import SlotConsoleCheat from "./SlotConsoleCheat";
 import SlotControls from "./SlotControls";
 
 type SlotCabinetProps = {
-  banners?: ReactNode;
+  celebrations?: ReactNode;
   reels: ReactNode | null;
   emptyMessage?: string | null;
   betValue: string;
@@ -25,7 +25,7 @@ type SlotCabinetProps = {
 };
 
 export default function SlotCabinet({
-  banners,
+  celebrations,
   reels,
   emptyMessage,
   betValue,
@@ -52,14 +52,11 @@ export default function SlotCabinet({
         className="slot-cabinet-frame slot-stage-surface"
         aria-label="Slot machine"
       >
-        {banners || statusError ? (
+        {statusError ? (
           <div className="slot-cabinet-alerts">
-            {banners}
-            {statusError ? (
-              <div className="slot-status-bar">
-                <span className="error slot-error">{statusError}</span>
-              </div>
-            ) : null}
+            <div className="slot-status-bar">
+              <span className="error slot-error">{statusError}</span>
+            </div>
           </div>
         ) : null}
 
@@ -71,6 +68,7 @@ export default function SlotCabinet({
               ) : (
                 <p className="slot-empty">{emptyMessage ?? "Spin to play"}</p>
               )}
+              {celebrations}
             </div>
             {jackpotPools ? (
               <div className="slot-reel-pools">{jackpotPools}</div>

@@ -1,11 +1,14 @@
+import { useMemo } from "react";
 import HistoryView from "../components/HistoryView";
 import JackpotPoolsBar from "../components/JackpotPoolsBar";
 import JackpotWinnersView from "../components/JackpotWinnersView";
 import SlotCabinet from "../components/SlotCabinet";
+import SlotCelebrationOverlay from "../components/SlotCelebrationOverlay";
 import SlotStageBlock from "../components/SlotStageBlock";
 import WinWayReelGrid from "../components/WinWayReelGrid";
-import { formatCreditAmount } from "../lib/session-utils";
+import { buildSpinCelebrations } from "../lib/spin-celebrations";
 import type { GameSession } from "../hooks/useGameSession";
+import type { SpinResponsePayload } from "../ws/protocol";
 
 export default function GameScreen(session: Readonly<GameSession>) {
   const {
@@ -37,8 +40,6 @@ export default function GameScreen(session: Readonly<GameSession>) {
     viewSpin,
     isSpinning,
     winWays,
-    jackpotInfo,
-    retriggerInfo,
     goldenWildHighlightKeys,
     featureBadges,
   } = session;
@@ -50,6 +51,25 @@ export default function GameScreen(session: Readonly<GameSession>) {
     betLevels.length === 0;
 
   const hasSpinReels = Boolean(viewSpin?.spin?.reels);
+
+  const celebrations = useMemo(() => {
+    if (isSpinning || !viewSpin?.spin) {
+      return [];
+    }
+    return buildSpinCelebrations(viewSpin as SpinResponsePayload, winWays);
+  }, [isSpinning, viewSpin, winWays]);
+
+  const celebrationKey = useMemo(() => {
+    if (!viewSpin?.spin?.reels) {
+      return "";
+    }
+    return [
+      viewSpin.round?.roundId ?? "",
+      viewSpin.spin.spinType ?? "",
+      viewSpin.spin.reels.flat().join(","),
+      String(winWays.length),
+    ].join("|");
+  }, [viewSpin, winWays.length]);
 
   return (
     <>
@@ -108,37 +128,12 @@ export default function GameScreen(session: Readonly<GameSession>) {
                     loading={jackpotPoolsLoading && !isSpinning}
                   />
                 }
-                banners={
-                  jackpotInfo?.triggered || retriggerInfo?.triggered ? (
-                    <>
-                      {jackpotInfo?.triggered ? (
-                        <div className="jackpot-banner slot-banner">
-                          <strong>Jackpot</strong>{" "}
-                          <span className="jackpot-tier">
-                            {jackpotInfo.tier ?? "—"}
-                          </span>
-                          <span className="jackpot-win">
-                            +{formatCreditAmount(jackpotInfo.jackpotWin)}
-                          </span>
-                          <span className="muted jackpot-cells">
-                            ({jackpotInfo.goldenWildPositions.length} GW cells)
-                          </span>
-                        </div>
-                      ) : null}
-                      {retriggerInfo?.triggered ? (
-                        <div className="jackpot-banner slot-banner">
-                          <strong>Retrigger</strong>{" "}
-                          <span className="jackpot-win">
-                            +{retriggerInfo.addedFreeSpins} free spins
-                          </span>
-                          <span className="muted jackpot-cells">
-                            ({retriggerInfo.scatterCount} scatters,{" "}
-                            {retriggerInfo.scatterPositions.length} positions)
-                          </span>
-                        </div>
-                      ) : null}
-                    </>
-                  ) : undefined
+                celebrations={
+                  <SlotCelebrationOverlay
+                    items={celebrations}
+                    visible={!isSpinning && celebrations.length > 0}
+                    resetKey={celebrationKey}
+                  />
                 }
                 reels={
                   hasSpinReels && viewSpin?.spin ? (
