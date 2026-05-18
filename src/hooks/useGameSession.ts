@@ -47,6 +47,8 @@ import {
 import {
   emptyJackpotPoolsByTier,
   mergeJackpotPools,
+  parseHistoryDetailPayload,
+  parseHistoryListPayload,
   parseJackpotPoolsFromPayload,
   type HistoryDetailPayload,
   type HistoryListPayload,
@@ -538,7 +540,7 @@ export function useGameSession() {
       );
       client.sendFrame(historyListFrame(gameRoute.trim(), page, 20));
       const payload = await payloadPromise;
-      return payload as unknown as HistoryListPayload;
+      return parseHistoryListPayload(payload);
     },
     [gameRoute],
   );
@@ -559,7 +561,7 @@ export function useGameSession() {
     }, [gameRoute]);
 
   const fetchHistoryDetail = useCallback(
-    async (roundId: string, spinId: string): Promise<HistoryDetailPayload> => {
+    async (roundId: string, spinIndex: number): Promise<HistoryDetailPayload> => {
       const client = clientRef.current;
       if (!client?.isConnected()) {
         throw new Error("Not connected");
@@ -568,9 +570,11 @@ export function useGameSession() {
         isHistoryDetailPayload,
         "history detail",
       );
-      client.sendFrame(historyDetailFrame(gameRoute.trim(), roundId, spinId));
+      client.sendFrame(
+        historyDetailFrame(gameRoute.trim(), roundId, spinIndex),
+      );
       const payload = await payloadPromise;
-      return payload as unknown as HistoryDetailPayload;
+      return parseHistoryDetailPayload(payload);
     },
     [gameRoute],
   );

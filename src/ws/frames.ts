@@ -64,7 +64,7 @@ export function jackpotWinHistoryFrame(
 export function historyDetailFrame(
   gameRoute: string,
   roundId: string,
-  spinId: string,
+  spinIndex: number,
 ): WsFrame {
-  return [6, "MiniGame", gameRoute, { cmd: "1503", roundId, spinId }];
+  return [6, "MiniGame", gameRoute, { cmd: "1503", roundId, spinIndex }];
 }

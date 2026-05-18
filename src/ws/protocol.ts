@@ -105,11 +105,15 @@ export interface WinWay {
 
 // --- History (cmd 1502 / 1503) ---
 
+export type HistorySpinType = "BASE" | "FREE_SPIN" | "RESPIN";
+
 export interface HistoryItem {
   roundId: string;
-  spinId: string;
+  /** 0-based index within the parent round (Level 2 `spinIndex`). */
+  spinIndex: number;
   transactionId: string;
-  spinType: "BASE" | "FREE_SPIN" | "RESPIN";
+  spinType: HistorySpinType;
+  /** Same value as `spinIndex` on the wire. */
   stepIndex: number;
   /** Parent round display time (finishedAt / updatedAt). Not exact spin instant. */
   timestampMillis: number;
@@ -280,18 +284,138 @@ export function parseJackpotPoolsFromPayload(
   return pools.length > 0 ? pools : null;
 }
 
+function readHistorySpinType(value: unknown): HistorySpinType {
+  if (value === "BASE" || value === "FREE_SPIN" || value === "RESPIN") {
+    return value;
+  }
+  return "BASE";
+}
+
+/** Monetary fields on history wire payloads (§1.1 decimal strings). */
+function readHistoryAmount(value: unknown): number {
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value.trim());
+    return Number.isFinite(n) ? n : 0;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  return 0;
+}
+
+function parseHistoryWinWay(
+  entry: unknown,
+  fallbackIndex: number,
+): HistoryWinWay | null {
+  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+    return null;
+  }
+  const row = entry as Record<string, unknown>;
+  const positions = Array.isArray(row.positions)
+    ? (row.positions as unknown[]).map((col) =>
+        Array.isArray(col) ? col.map((r) => Number(r)) : [],
+      )
+    : [];
+  return {
+    wayIndex:
+      typeof row.wayIndex === "number" ? row.wayIndex : fallbackIndex,
+    symbol: String(row.symbol ?? ""),
+    matchCount: Number(row.matchCount ?? 0),
+    ways: Number(row.ways ?? 0),
+    payout: readHistoryAmount(row.payout),
+    positions,
+  };
+}
+
+export function parseHistoryListItem(row: unknown): HistoryItem | null {
+  if (typeof row !== "object" || row === null || Array.isArray(row)) {
+    return null;
+  }
+  const r = row as Record<string, unknown>;
+  if (typeof r.roundId !== "string") {
+    return null;
+  }
+  const spinIndex = Number(r.spinIndex ?? r.stepIndex ?? 0);
+  return {
+    roundId: r.roundId,
+    spinIndex,
+    transactionId:
+      typeof r.transactionId === "string" ? r.transactionId : r.roundId,
+    spinType: readHistorySpinType(r.spinType),
+    stepIndex: Number(r.stepIndex ?? spinIndex),
+    timestampMillis: Number(r.timestampMillis ?? 0),
+    bet: readHistoryAmount(r.bet),
+    win: readHistoryAmount(r.win),
+    profit: readHistoryAmount(r.profit),
+  };
+}
+
+export function parseHistoryListPayload(
+  payload: Record<string, unknown>,
+): HistoryListPayload {
+  const rawItems = Array.isArray(payload.items) ? payload.items : [];
+  const items = rawItems
+    .map((row) => parseHistoryListItem(row))
+    .filter((item): item is HistoryItem => item !== null);
+  return {
+    cmd: payload.cmd as string | number,
+    items,
+    page: Number(payload.page ?? 0),
+    pageSize: Number(payload.pageSize ?? items.length),
+    totalCount: Number(payload.totalCount ?? items.length),
+  };
+}
+
+export function parseHistoryDetailPayload(
+  payload: Record<string, unknown>,
+): HistoryDetailPayload {
+  const spinIndex = Number(payload.spinIndex ?? payload.stepIndex ?? 0);
+  const rawWinWays = Array.isArray(payload.winWays) ? payload.winWays : [];
+  const winWays: HistoryWinWay[] = [];
+  rawWinWays.forEach((entry, idx) => {
+    const way = parseHistoryWinWay(entry, idx);
+    if (way) {
+      winWays.push(way);
+    }
+  });
+  const reels = Array.isArray(payload.reels)
+    ? (payload.reels as unknown[]).map((col) =>
+        Array.isArray(col) ? col.map((sym) => String(sym)) : [],
+      )
+    : [];
+
+  return {
+    cmd: payload.cmd as string | number,
+    roundId: String(payload.roundId ?? ""),
+    transactionId: String(
+      payload.transactionId ?? payload.roundId ?? "",
+    ),
+    finishedAtMillis: Number(payload.finishedAtMillis ?? 0),
+    spinIndex,
+    stepIndex: Number(payload.stepIndex ?? spinIndex),
+    round: Number(payload.round ?? spinIndex + 1),
+    spinType: readHistorySpinType(payload.spinType),
+    title: String(payload.title ?? ""),
+    bet: readHistoryAmount(payload.bet),
+    win: readHistoryAmount(payload.win),
+    profit: readHistoryAmount(payload.profit),
+    reels,
+    winWays,
+  };
+}
+
 export interface HistoryDetailPayload {
   cmd: string | number;
   roundId: string;
   transactionId: string;
   /** Parent round display time — same semantics as HistoryItem.timestampMillis. */
   finishedAtMillis: number;
-  spinId: string;
   /** 0-based index of this spin within its parent round. */
+  spinIndex: number;
   stepIndex: number;
   /** 1-based step display number. */
   round: number;
-  spinType: "BASE" | "FREE_SPIN" | "RESPIN";
+  spinType: HistorySpinType;
   /** Human label: "Normal spin" | "Free spin" | "Respin" */
   title: string;
   /** Only BASE step carries round stake; FREE_SPIN / RESPIN use 0. */

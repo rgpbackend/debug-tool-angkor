@@ -90,8 +90,8 @@ function DetailPanel({ detail, onBack }: Readonly<DetailPanelProps>) {
             <code>{detail.roundId}</code>
           </p>
           <p className="hist-meta-row">
-            <span className="hist-meta-label">Spin</span>
-            <code>{detail.spinId}</code>
+            <span className="hist-meta-label">Spin index</span>
+            <code>{detail.spinIndex}</code>
           </p>
           <p className="hist-meta-row">
             <span className="hist-meta-label">Step</span>
@@ -280,7 +280,7 @@ function ListPanel({
             </thead>
             <tbody>
               {data.items.map((item) => (
-                <tr key={`${item.roundId}-${item.spinId}`}>
+                <tr key={`${item.roundId}-${item.spinIndex}`}>
                   <td className="muted">{item.stepIndex + 1}</td>
                   <td>
                     <span
@@ -328,7 +328,7 @@ export interface HistoryViewProps {
   onFetchList: (page: number) => Promise<HistoryListPayload>;
   onFetchDetail: (
     roundId: string,
-    spinId: string,
+    spinIndex: number,
   ) => Promise<HistoryDetailPayload>;
 }
 
@@ -370,11 +370,11 @@ export default function HistoryView({
   );
 
   const fetchDetail = useCallback(
-    async (roundId: string, spinId: string) => {
+    async (roundId: string, spinIndex: number) => {
       setLoading(true);
       setError(null);
       try {
-        const data = await onFetchDetail(roundId, spinId);
+        const data = await onFetchDetail(roundId, spinIndex);
         setDetailData(data);
         setView("detail");
       } catch (e) {
@@ -399,7 +399,7 @@ export default function HistoryView({
 
   const handleSelectItem = useCallback(
     (item: HistoryItem) => {
-      void fetchDetail(item.roundId, item.spinId);
+      void fetchDetail(item.roundId, item.spinIndex);
     },
     [fetchDetail],
   );

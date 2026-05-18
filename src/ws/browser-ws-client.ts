@@ -272,14 +272,21 @@ export function isHistoryListPayload(
   );
 }
 
-/** Matches cmd 1503 history-detail response. */
+/** Matches cmd 1503 history-detail success (flat spin-step body, no spinId). */
 export function isHistoryDetailPayload(
   payload: Record<string, unknown>,
 ): boolean {
+  if (!hasCmd(payload, "1503")) {
+    return false;
+  }
+  if (payload.c === 1 || payload.errorCode != null) {
+    return false;
+  }
   return (
-    hasCmd(payload, "1503") &&
-    typeof payload.spinId === "string" &&
-    Array.isArray(payload.reels)
+    typeof payload.roundId === "string" &&
+    Array.isArray(payload.reels) &&
+    (typeof payload.spinIndex === "number" ||
+      typeof payload.stepIndex === "number")
   );
 }
 
