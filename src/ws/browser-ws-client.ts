@@ -9,9 +9,20 @@ export interface BrowserWsClientOptions {
   timeoutMs: number;
 }
 
+type PayloadMatcher = (payload: Record<string, unknown>) => boolean;
+type PayloadHandler = (payload: Record<string, unknown>) => void;
+
+interface PayloadListenerRegistration {
+  matcher: PayloadMatcher;
+  handler: PayloadHandler;
+}
+
 export class BrowserWsClient {
   private socket: WebSocket | null = null;
   private lastClose: { code: number; reason: string } | null = null;
+  private readonly payloadListeners = new Set<PayloadListenerRegistration>();
+  private persistentMessageHandler: ((ev: MessageEvent<string | Blob>) => void) | null =
+    null;
 
   private readonly endpoint: string;
   private readonly options: BrowserWsClientOptions;
@@ -35,6 +46,7 @@ export class BrowserWsClient {
       socket.addEventListener("open", () => {
         window.clearTimeout(timer);
         this.socket = socket;
+        this.attachPersistentMessageHandler();
         resolve();
       });
 
@@ -67,8 +79,20 @@ export class BrowserWsClient {
     return this.lastClose;
   }
 
+  addPayloadListener(
+    matcher: PayloadMatcher,
+    handler: PayloadHandler,
+  ): () => void {
+    const registration: PayloadListenerRegistration = { matcher, handler };
+    this.payloadListeners.add(registration);
+    this.attachPersistentMessageHandler();
+    return () => {
+      this.payloadListeners.delete(registration);
+    };
+  }
+
   waitForPayload(
-    matcher: (payload: Record<string, unknown>) => boolean,
+    matcher: PayloadMatcher,
     label = "response",
   ): Promise<Record<string, unknown>> {
     if (!this.socket) {
@@ -86,16 +110,8 @@ export class BrowserWsClient {
       const onMessage = (ev: MessageEvent<string | Blob>) => {
         void (async () => {
           try {
-            const frame = await tryParseFrame(ev.data);
-            if (!frame) {
-              return;
-            }
-            const payload = getFramePayload(frame);
-            if (
-              !payload ||
-              Array.isArray(payload) ||
-              typeof payload !== "object"
-            ) {
+            const payload = await parseMessagePayload(ev.data);
+            if (!payload) {
               return;
             }
             if (matcher(payload)) {
@@ -137,8 +153,41 @@ export class BrowserWsClient {
   }
 
   close(): void {
+    this.detachPersistentMessageHandler();
+    this.payloadListeners.clear();
     this.socket?.close();
     this.socket = null;
+  }
+
+  private attachPersistentMessageHandler(): void {
+    if (!this.socket || this.persistentMessageHandler) {
+      return;
+    }
+    this.persistentMessageHandler = (ev) => {
+      void (async () => {
+        try {
+          const payload = await parseMessagePayload(ev.data);
+          if (!payload) {
+            return;
+          }
+          for (const { matcher, handler } of this.payloadListeners) {
+            if (matcher(payload)) {
+              handler(payload);
+            }
+          }
+        } catch {
+          // Ignore parse errors for push listeners.
+        }
+      })();
+    };
+    this.socket.addEventListener("message", this.persistentMessageHandler);
+  }
+
+  private detachPersistentMessageHandler(): void {
+    if (this.socket && this.persistentMessageHandler) {
+      this.socket.removeEventListener("message", this.persistentMessageHandler);
+    }
+    this.persistentMessageHandler = null;
   }
 }
 
@@ -192,6 +241,55 @@ export function isHistoryDetailPayload(
     typeof payload.spinId === "string" &&
     Array.isArray(payload.reels)
   );
+}
+
+/** Matches cmd 1510 (pull) or 1520 (push) jackpot pools response. */
+export function isJackpotPoolsPayload(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    (hasCmd(payload, "1510") || hasCmd(payload, "1520")) &&
+    Array.isArray(payload.pools)
+  );
+}
+
+/** Matches cmd 1520 server push only. */
+export function isJackpotPoolsPushPayload(
+  payload: Record<string, unknown>,
+): boolean {
+  return hasCmd(payload, "1520") && Array.isArray(payload.pools);
+}
+
+/** Matches cmd 1511 jackpot win history response. */
+export function isJackpotWinHistoryPayload(
+  payload: Record<string, unknown>,
+): boolean {
+  return hasCmd(payload, "1511") && Array.isArray(payload.items);
+}
+
+/** Matches cmd 1521 jackpot winner broadcast. */
+export function isJackpotWinnerPush(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    hasCmd(payload, "1521") &&
+    typeof payload.tier === "string" &&
+    typeof payload.winAmount === "string"
+  );
+}
+
+async function parseMessagePayload(
+  raw: string | Blob,
+): Promise<Record<string, unknown> | null> {
+  const frame = await tryParseFrame(raw);
+  if (!frame) {
+    return null;
+  }
+  const payload = getFramePayload(frame);
+  if (!payload || Array.isArray(payload) || typeof payload !== "object") {
+    return null;
+  }
+  return payload;
 }
 
 async function tryParseFrame(raw: string | Blob): Promise<WsFrame | null> {

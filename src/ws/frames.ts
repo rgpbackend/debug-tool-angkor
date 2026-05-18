@@ -47,6 +47,19 @@ export function historyListFrame(
   return [6, "MiniGame", gameRoute, { cmd: "1502", page, pageSize }];
 }
 
+/** cmd 1510 — active jackpot pool amounts per tier. */
+export function jackpotPoolsFrame(gameRoute: string): WsFrame {
+  return [6, "MiniGame", gameRoute, { cmd: "1510" }];
+}
+
+/** cmd 1511 — recent jackpot wins (limit 1–100). */
+export function jackpotWinHistoryFrame(
+  gameRoute: string,
+  limit: number,
+): WsFrame {
+  return [6, "MiniGame", gameRoute, { cmd: "1511", limit }];
+}
+
 /** cmd 1503 — Level 2: chi tiết 1 spin trong round đã kết thúc. */
 export function historyDetailFrame(
   gameRoute: string,

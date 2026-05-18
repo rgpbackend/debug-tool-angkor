@@ -84,6 +84,9 @@ export interface JoinResponsePayload {
   cmd: string | number;
   c: number;
   symbols: string[];
+  /** Allowed stake amounts as decimal strings (§1.1). */
+  betLevels?: string[];
+  balance?: string;
   paylines?: unknown;
   lastRound: LastRound | null;
 }
@@ -128,6 +131,149 @@ export interface HistoryWinWay {
   payout: number;
   /** Reel-major: positions[i] = winning row indices on reel i. */
   positions: number[][];
+}
+
+// --- Jackpot pools (cmd 1510 / 1520) & win history (1511) ---
+
+export type JackpotTier = "NANO" | "CYBER" | "GUARDIAN" | "ETERNAL";
+
+export const JACKPOT_TIERS: readonly JackpotTier[] = [
+  "NANO",
+  "CYBER",
+  "GUARDIAN",
+  "ETERNAL",
+] as const;
+
+/** Fixed-prize tiers (seed amount is the displayed prize). */
+export const STATIC_JACKPOT_TIERS: readonly JackpotTier[] = [
+  "NANO",
+  "CYBER",
+] as const;
+
+/** Progressive pool tiers (current amount grows until won). */
+export const PROGRESSIVE_JACKPOT_TIERS: readonly JackpotTier[] = [
+  "GUARDIAN",
+  "ETERNAL",
+] as const;
+
+export function isStaticJackpotTier(tier: JackpotTier): boolean {
+  return (STATIC_JACKPOT_TIERS as readonly string[]).includes(tier);
+}
+
+export interface JackpotPool {
+  poolId: string;
+  tier: JackpotTier;
+  status: string;
+  seedAmount: string;
+  currentAmount: string;
+  createdAt: number;
+}
+
+export interface JackpotPoolsPayload {
+  cmd: string | number;
+  pools: JackpotPool[];
+}
+
+export interface JackpotWinnerPush {
+  cmd: string | number;
+  tier: JackpotTier;
+  winAmount: string;
+  userId: string;
+  agencyId: number;
+  roundId: string;
+  poolId: string;
+  occurredAt: number;
+}
+
+export interface JackpotGoldenWildPosition {
+  reelIndex: number;
+  rowIndex: number;
+}
+
+export interface JackpotWinHistoryItem {
+  id: string;
+  poolId: string;
+  tier: JackpotTier;
+  roundId: string;
+  userId: string;
+  agencyId: number;
+  betAmount: string;
+  winAmount: string;
+  poolAmountAtWin: string;
+  goldenWildPositions: JackpotGoldenWildPosition[];
+  createdAt: number;
+}
+
+export interface JackpotWinHistoryPayload {
+  cmd: string | number;
+  items: JackpotWinHistoryItem[];
+  count: number;
+}
+
+export type JackpotPoolsByTier = Record<JackpotTier, JackpotPool | null>;
+
+export function emptyJackpotPoolsByTier(): JackpotPoolsByTier {
+  return {
+    NANO: null,
+    CYBER: null,
+    GUARDIAN: null,
+    ETERNAL: null,
+  };
+}
+
+export function mergeJackpotPools(
+  prev: JackpotPoolsByTier,
+  pools: JackpotPool[],
+): JackpotPoolsByTier {
+  const next = { ...prev };
+  for (const pool of pools) {
+    if (JACKPOT_TIERS.includes(pool.tier)) {
+      next[pool.tier] = pool;
+    }
+  }
+  return next;
+}
+
+function isJackpotTier(value: unknown): value is JackpotTier {
+  return (
+    typeof value === "string" &&
+    (JACKPOT_TIERS as readonly string[]).includes(value)
+  );
+}
+
+/** Parse `pools` array from spin (1500), join, or jackpot cmd payloads. */
+export function parseJackpotPoolsFromPayload(
+  payload: Record<string, unknown>,
+): JackpotPool[] | null {
+  const raw = payload.pools;
+  if (!Array.isArray(raw)) {
+    return null;
+  }
+  const pools: JackpotPool[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      continue;
+    }
+    const p = entry as Record<string, unknown>;
+    if (
+      typeof p.poolId === "string" &&
+      isJackpotTier(p.tier) &&
+      typeof p.status === "string" &&
+      typeof p.seedAmount === "string" &&
+      typeof p.currentAmount === "string" &&
+      typeof p.createdAt === "number"
+    ) {
+      pools.push({
+        poolId: p.poolId,
+        tier: p.tier,
+        status: p.status,
+        seedAmount: p.seedAmount,
+        currentAmount: p.currentAmount,
+        createdAt: p.createdAt,
+      });
+    }
+  }
+  return pools.length > 0 ? pools : null;
 }
 
 export interface HistoryDetailPayload {

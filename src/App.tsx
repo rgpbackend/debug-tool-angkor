@@ -4,6 +4,10 @@ import {
   BrowserWsClient,
   isHistoryDetailPayload,
   isHistoryListPayload,
+  isJackpotPoolsPayload,
+  isJackpotPoolsPushPayload,
+  isJackpotWinHistoryPayload,
+  isJackpotWinnerPush,
   isJoinResponsePayload,
   isSpinResponsePayload,
 } from "./ws/browser-ws-client";
@@ -14,19 +18,30 @@ import {
   heartbeatFrame,
   historyDetailFrame,
   historyListFrame,
+  jackpotPoolsFrame,
+  jackpotWinHistoryFrame,
   joinFrame,
   spinFrame,
 } from "./ws/frames";
-import type {
-  LastRound,
-  HistoryDetailPayload,
-  HistoryListPayload,
-  JoinResponsePayload,
-  SpinResponsePayload,
-  WinWay,
+import {
+  emptyJackpotPoolsByTier,
+  mergeJackpotPools,
+  parseJackpotPoolsFromPayload,
+  type HistoryDetailPayload,
+  type HistoryListPayload,
+  type JoinResponsePayload,
+  type JackpotPool,
+  type JackpotPoolsByTier,
+  type JackpotPoolsPayload,
+  type JackpotWinHistoryPayload,
+  type LastRound,
+  type SpinResponsePayload,
+  type WinWay,
 } from "./ws/protocol";
 import type { GamePhase } from "./ws/game-phase";
 import HistoryView from "./components/HistoryView";
+import JackpotPoolsBar from "./components/JackpotPoolsBar";
+import JackpotWinnersView from "./components/JackpotWinnersView";
 import "./App.css";
 
 const LOG_CAP = 100;
@@ -77,6 +92,56 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
+}
+
+function readRoundBetString(round: { bet: unknown }): string | null {
+  if (typeof round.bet === "string") {
+    return round.bet;
+  }
+  if (typeof round.bet === "number" && Number.isFinite(round.bet)) {
+    return round.bet.toFixed(4);
+  }
+  return null;
+}
+
+/** Pick a betLevels entry; matches exact wire string or numeric value. */
+function resolveBetFromLevels(
+  levels: readonly string[],
+  preferred?: string,
+): string {
+  if (levels.length === 0) {
+    return preferred ?? "1";
+  }
+  if (preferred && levels.includes(preferred)) {
+    return preferred;
+  }
+  if (preferred) {
+    const prefNum = Number(preferred);
+    if (Number.isFinite(prefNum)) {
+      const match = levels.find((level) => Number(level) === prefNum);
+      if (match) {
+        return match;
+      }
+    }
+  }
+  return levels[0];
+}
+
+function parseBetLevelsFromJoin(
+  joinPayload: JoinResponsePayload,
+): string[] {
+  if (Array.isArray(joinPayload.betLevels)) {
+    return joinPayload.betLevels.filter(
+      (level): level is string => typeof level === "string",
+    );
+  }
+  const raw = joinPayload as unknown as Record<string, unknown>;
+  if (!Array.isArray(raw.betLevels)) {
+    return [];
+  }
+  return raw.betLevels.filter(
+    (level): level is string => typeof level === "string",
+  );
 }
 
 function appendLogLine(
@@ -321,7 +386,14 @@ export default function App() {
   const clientRef = useRef<BrowserWsClient | null>(null);
   const heartbeatTimerRef = useRef<number | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"game" | "history">("game");
+  const [activeTab, setActiveTab] = useState<"game" | "history" | "jackpots">(
+    "game",
+  );
+  const [jackpotPoolsByTier, setJackpotPoolsByTier] =
+    useState<JackpotPoolsByTier>(emptyJackpotPoolsByTier);
+  const [jackpotPoolsLoading, setJackpotPoolsLoading] = useState(false);
+  const [jackpotWinnersRefreshToken, setJackpotWinnersRefreshToken] =
+    useState(0);
   const [phase, setPhase] = useState<GamePhase>("disconnected");
   /** True after connect+join succeeded; used for UI (avoid reading refs during render). */
   const [sessionReady, setSessionReady] = useState(false);
@@ -333,6 +405,7 @@ export default function App() {
   const [accessToken, setAccessToken] = useState(defaults.accessToken);
   const [gameRoute, setGameRoute] = useState(defaults.gameRoute);
   const [bet, setBet] = useState("1");
+  const [betLevels, setBetLevels] = useState<string[]>([]);
   const [cheatGrid, setCheatGrid] = useState<string[][]>(() =>
     emptyCheatGrid(),
   );
@@ -385,9 +458,55 @@ export default function App() {
     setCheatGrid(emptyCheatGrid());
     setHighlightWinWayIndex(0);
     setLastRound(null);
+    setJackpotPoolsByTier(emptyJackpotPoolsByTier());
+    setJackpotPoolsLoading(false);
+    setJackpotWinnersRefreshToken(0);
+    setBetLevels([]);
     setActiveTab("game");
     setPhase("disconnected");
   }, [stopHeartbeat]);
+
+  const applyJackpotPools = useCallback((pools: JackpotPool[]) => {
+    if (pools.length === 0) {
+      return;
+    }
+    setJackpotPoolsByTier((prev) => mergeJackpotPools(prev, pools));
+  }, []);
+
+  const applyJackpotPoolsFromPayload = useCallback(
+    (payload: Record<string, unknown>) => {
+      const pools = parseJackpotPoolsFromPayload(payload);
+      if (pools) {
+        applyJackpotPools(pools);
+      }
+    },
+    [applyJackpotPools],
+  );
+
+  const fetchJackpotPools = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client?.isConnected()) {
+      return;
+    }
+    setJackpotPoolsLoading(true);
+    try {
+      const payloadPromise = client.waitForPayload(
+        isJackpotPoolsPayload,
+        "jackpot pools",
+      );
+      client.sendFrame(jackpotPoolsFrame(gameRoute.trim()));
+      pushLog("out", "jackpot pools cmd=1510");
+      const payload = await payloadPromise;
+      pushLog("in", "jackpot pools cmd=1510 response");
+      const poolsPayload = payload as unknown as JackpotPoolsPayload;
+      applyJackpotPools(poolsPayload.pools);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      pushLog("in", `jackpot pools error: ${message}`);
+    } finally {
+      setJackpotPoolsLoading(false);
+    }
+  }, [applyJackpotPools, gameRoute, pushLog]);
 
   const connectAndJoin = useCallback(async () => {
     setError(null);
@@ -468,8 +587,22 @@ export default function App() {
         setLastRound(joinPayload.lastRound);
       }
 
+      const levels = parseBetLevelsFromJoin(joinPayload);
+      setBetLevels(levels);
+      const roundBet = joinPayload.lastRound?.round
+        ? readRoundBetString(
+            joinPayload.lastRound.round as { bet: unknown },
+          )
+        : null;
+      setBet(resolveBetFromLevels(levels, roundBet ?? bet));
+
+      applyJackpotPoolsFromPayload(
+        joinPayload as unknown as Record<string, unknown>,
+      );
+
       setSessionReady(true);
       setPhase("joined");
+      void fetchJackpotPools();
     } catch (e) {
       if (clientRef.current !== client) {
         return;
@@ -492,7 +625,40 @@ export default function App() {
     startHeartbeat,
     stopHeartbeat,
     wsUrl,
+    fetchJackpotPools,
+    applyJackpotPoolsFromPayload,
   ]);
+
+  useEffect(() => {
+    const client = clientRef.current;
+    if (!sessionReady || !client?.isConnected()) {
+      return;
+    }
+
+    const removePoolsPush = client.addPayloadListener(
+      isJackpotPoolsPushPayload,
+      (payload) => {
+        applyJackpotPoolsFromPayload(payload);
+        pushLog("in", "jackpot pools push cmd=1520");
+      },
+    );
+
+    const removeWinnerPush = client.addPayloadListener(
+      isJackpotWinnerPush,
+      (payload) => {
+        pushLog(
+          "in",
+          `jackpot winner push cmd=1521 tier=${String(payload.tier)}`,
+        );
+        setJackpotWinnersRefreshToken((t) => t + 1);
+      },
+    );
+
+    return () => {
+      removePoolsPush();
+      removeWinnerPush();
+    };
+  }, [applyJackpotPoolsFromPayload, pushLog, sessionReady]);
 
   useEffect(
     () => () => {
@@ -526,6 +692,14 @@ export default function App() {
       setLastSpin(spinPayload);
       setLastRound(null);
       setCheatGrid(cheatGridFromSpinReels(spinPayload.spin.reels));
+
+      const poolsFromSpin = parseJackpotPoolsFromPayload(payload);
+      if (poolsFromSpin) {
+        applyJackpotPools(poolsFromSpin);
+        pushLog("in", "jackpot pools from spin cmd=1500");
+      } else {
+        void fetchJackpotPools();
+      }
       if (cheatArmed || forceJackpotArmed) {
         if (cheatArmed && forceJackpotArmed) {
           setCheatStatus("Cheat and force jackpot consumed on latest spin.");
@@ -555,6 +729,8 @@ export default function App() {
     forceJackpotArmed,
     gameRoute,
     phase,
+    applyJackpotPools,
+    fetchJackpotPools,
     pushLog,
     sessionReady,
   ]);
@@ -622,6 +798,23 @@ export default function App() {
     [gameRoute, pushLog],
   );
 
+  const fetchJackpotWinHistory =
+    useCallback(async (): Promise<JackpotWinHistoryPayload> => {
+      const client = clientRef.current;
+      if (!client?.isConnected()) {
+        throw new Error("Not connected");
+      }
+      const payloadPromise = client.waitForPayload(
+        isJackpotWinHistoryPayload,
+        "jackpot win history",
+      );
+      client.sendFrame(jackpotWinHistoryFrame(gameRoute.trim(), 10));
+      pushLog("out", "jackpot win history cmd=1511 limit=10");
+      const payload = await payloadPromise;
+      pushLog("in", "jackpot win history cmd=1511 response");
+      return payload as unknown as JackpotWinHistoryPayload;
+    }, [gameRoute, pushLog]);
+
   const fetchHistoryDetail = useCallback(
     async (roundId: string, spinId: string): Promise<HistoryDetailPayload> => {
       const client = clientRef.current;
@@ -653,12 +846,35 @@ export default function App() {
     [],
   );
 
-  const canSpin = phase === "joined" && sessionReady;
+  const canSpin =
+    phase === "joined" &&
+    sessionReady &&
+    betLevels.length > 0 &&
+    betLevels.includes(bet);
   const canCheat = phase === "joined" && sessionReady;
   const busyConnect = phase === "connecting" || phase === "connected";
 
   /** Unified display source: last spin result OR active round from join. */
   const displaySpin = lastSpin ?? lastRound;
+
+  const betLocked = useMemo(() => {
+    const round = displaySpin?.round;
+    return Boolean(round && round.isFinished === false);
+  }, [displaySpin]);
+
+  useEffect(() => {
+    if (!betLocked || !displaySpin?.round) {
+      return;
+    }
+    const roundBet = readRoundBetString(displaySpin.round as { bet: unknown });
+    if (!roundBet) {
+      return;
+    }
+    setBet(resolveBetFromLevels(betLevels, roundBet));
+  }, [betLocked, betLevels, displaySpin]);
+
+  const selectBetValue =
+    betLevels.length > 0 && betLevels.includes(bet) ? bet : (betLevels[0] ?? "");
 
   const winWays = displaySpin?.spin?.winWays ?? [];
   const safeHighlightIndex =
@@ -706,6 +922,13 @@ export default function App() {
         >
           History
         </button>
+        <button
+          type="button"
+          className={`tab${activeTab === "jackpots" ? " tab-active" : ""}`}
+          onClick={() => setActiveTab("jackpots")}
+        >
+          Jackpot
+        </button>
       </div>
 
       {activeTab === "history" ? (
@@ -713,6 +936,12 @@ export default function App() {
           canQuery={sessionReady && phase !== "spinning"}
           onFetchList={fetchHistoryList}
           onFetchDetail={fetchHistoryDetail}
+        />
+      ) : activeTab === "jackpots" ? (
+        <JackpotWinnersView
+          canQuery={sessionReady && phase !== "spinning"}
+          onFetch={fetchJackpotWinHistory}
+          refreshToken={jackpotWinnersRefreshToken}
         />
       ) : (
         <div className="main-grid two-pane">
@@ -783,11 +1012,26 @@ export default function App() {
               <div className="field-grid">
                 <label>
                   Bet
-                  <input
-                    value={bet}
+                  <select
+                    value={selectBetValue}
                     onChange={(e) => setBet(e.target.value)}
-                    disabled={phase === "spinning"}
-                  />
+                    disabled={
+                      phase === "spinning" ||
+                      !sessionReady ||
+                      betLocked ||
+                      betLevels.length === 0
+                    }
+                  >
+                    {betLevels.length === 0 ? (
+                      <option value="">Connect + join to load bets</option>
+                    ) : (
+                      betLevels.map((level) => (
+                        <option key={level} value={level}>
+                          {level}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </label>
               </div>
               <div className="row">
@@ -847,6 +1091,13 @@ export default function App() {
           <section className="panel output-pane">
             <h2>Output</h2>
             <div className="output-sections">
+              <section className="output-section jackpot-pools-section">
+                <JackpotPoolsBar
+                  poolsByTier={jackpotPoolsByTier}
+                  connected={sessionReady}
+                  loading={jackpotPoolsLoading}
+                />
+              </section>
               <section className="output-section">
                 <h3>Result</h3>
                 {displaySpin ? (
