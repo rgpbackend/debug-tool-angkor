@@ -418,6 +418,37 @@
   min-width: 0;
 }
 
+.slot-console-balance {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  padding: 0.2rem clamp(0.5rem, 2cqw, 1rem);
+  text-align: center;
+}
+
+.slot-console-balance-label {
+  font-size: clamp(0.62rem, 1.5cqw, 0.72rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.slot-console-balance-value {
+  font-family: var(--mono);
+  font-size: clamp(1rem, 3cqw, 1.35rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: color-mix(in srgb, var(--slot-gold) 75%, var(--text-h));
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+}
+
 .slot-console-cheat {
   flex-shrink: 0;
   display: flex;
@@ -633,6 +664,12 @@
   .slot-console-bar {
     flex-wrap: wrap;
     justify-content: space-between;
+  }
+
+  .slot-console-balance {
+    flex: 1 1 100%;
+    order: 0;
+    padding: 0.15rem 0 0.35rem;
   }
 
   .slot-controls--console {

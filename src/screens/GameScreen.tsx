@@ -4,6 +4,7 @@ import JackpotWinnersView from "../components/JackpotWinnersView";
 import SlotCabinet from "../components/SlotCabinet";
 import SlotStageBlock from "../components/SlotStageBlock";
 import WinWayReelGrid from "../components/WinWayReelGrid";
+import { formatCreditAmount } from "../lib/session-utils";
 import type { GameSession } from "../hooks/useGameSession";
 
 export default function GameScreen(session: Readonly<GameSession>) {
@@ -16,6 +17,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
     error,
     setBet,
     betLevels,
+    balance,
     selectBetValue,
     betLocked,
     spin,
@@ -120,7 +122,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
                             {jackpotInfo.tier ?? "—"}
                           </span>
                           <span className="jackpot-win">
-                            +{jackpotInfo.jackpotWin.toFixed(2)}
+                            +{formatCreditAmount(jackpotInfo.jackpotWin)}
                           </span>
                           <span className="muted jackpot-cells">
                             ({jackpotInfo.goldenWildPositions.length} GW cells)
@@ -176,6 +178,8 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 onSpin={() => void spin()}
                 canCheat={canCheat}
                 cheatGridDirty={cheatGridDirty}
+                balance={balance}
+                balanceConnected={sessionReady}
                 onSetCheat={sendCheat}
                 onForceJackpot={sendForceJackpot}
               />

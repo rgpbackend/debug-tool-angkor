@@ -12,6 +12,7 @@ import {
 import {
   buildGoldenWildHighlightSet,
   parseBetLevelsFromJoin,
+  readBalanceString,
   readRoundBetString,
   readRoundFeatureBadges,
   readSpinJackpot,
@@ -99,6 +100,7 @@ export function useGameSession() {
   const [gameRoute, setGameRoute] = useState(defaults.gameRoute);
   const [bet, setBet] = useState("1");
   const [betLevels, setBetLevels] = useState<string[]>([]);
+  const [balance, setBalance] = useState<string | null>(null);
   const [cheatGrid, setCheatGrid] = useState<string[][]>(() =>
     emptyCheatGrid(),
   );
@@ -202,6 +204,7 @@ export function useGameSession() {
     setJackpotPoolsLoading(false);
     setJackpotWinnersRefreshToken(0);
     setBetLevels([]);
+    setBalance(null);
     setActiveTab("game");
     spinBusyRef.current = false;
     setSpinFreeze(null);
@@ -253,6 +256,7 @@ export function useGameSession() {
     setError(null);
     setLastSpin(null);
     setLastRound(null);
+    setBalance(null);
     setCheatGrid(emptyCheatGrid());
     setCheatArmed(false);
     setForceJackpotArmed(false);
@@ -339,6 +343,7 @@ export function useGameSession() {
           )
         : null;
       setBet(resolveBetFromLevels(levels, roundBet ?? bet));
+      setBalance(readBalanceString(joinPayload as unknown as Record<string, unknown>));
 
       applyJackpotPoolsFromPayload(
         joinPayload as unknown as Record<string, unknown>,
@@ -434,6 +439,10 @@ export function useGameSession() {
       setLastSpin(spinPayload);
       setLastRound(null);
       applyCheatGridFromReels(spinPayload.spin.reels);
+      const nextBalance = readBalanceString(payload);
+      if (nextBalance != null) {
+        setBalance(nextBalance);
+      }
 
       const poolsFromSpin = parseJackpotPoolsFromPayload(payload);
       if (poolsFromSpin) {
@@ -657,6 +666,7 @@ export function useGameSession() {
     bet,
     setBet,
     betLevels,
+    balance,
     cheatGrid,
     connectAndJoin,
     disconnect,

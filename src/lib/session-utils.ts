@@ -1,5 +1,40 @@
 import type { JoinResponsePayload, SpinResponsePayload } from "../ws/protocol";
 
+/** Monetary wire value per §1.1 — decimal string (4 dp) or legacy JSON number. */
+export function readDecimalWire(value: unknown, fallback = "0.0000"): string {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toFixed(4);
+  }
+  return fallback;
+}
+
+export function formatCreditAmount(amount: string): string {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) {
+    return amount;
+  }
+  return n.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  });
+}
+
+export function readBalanceString(
+  payload: Record<string, unknown>,
+): string | null {
+  const balance = payload.balance;
+  if (typeof balance === "string" && balance.trim()) {
+    return balance.trim();
+  }
+  if (typeof balance === "number" && Number.isFinite(balance)) {
+    return String(balance);
+  }
+  return null;
+}
+
 export function readRoundBetString(round: { bet: unknown }): string | null {
   if (typeof round.bet === "string") {
     return round.bet;
@@ -77,7 +112,8 @@ export function buildGoldenWildHighlightSet(
 export function readSpinJackpot(spin: SpinResponsePayload["spin"]): {
   triggered: boolean;
   tier: string | null;
-  jackpotWin: number;
+  /** Credited jackpot amount (decimal string from wire). */
+  jackpotWin: string;
   goldenWildPositions: [number, number][];
 } {
   const j = spin.jackpot as Record<string, unknown> | undefined;
@@ -85,7 +121,7 @@ export function readSpinJackpot(spin: SpinResponsePayload["spin"]): {
     return {
       triggered: false,
       tier: null,
-      jackpotWin: 0,
+      jackpotWin: "0.0000",
       goldenWildPositions: [],
     };
   }
@@ -106,7 +142,7 @@ export function readSpinJackpot(spin: SpinResponsePayload["spin"]): {
   return {
     triggered: Boolean(j.triggered),
     tier: typeof j.tier === "string" ? j.tier : null,
-    jackpotWin: typeof j.jackpotWin === "number" ? j.jackpotWin : 0,
+    jackpotWin: readDecimalWire(j.jackpotWin),
     goldenWildPositions,
   };
 }

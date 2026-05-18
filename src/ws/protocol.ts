@@ -24,11 +24,14 @@ export function hasCmd(
 }
 
 export interface SpinResponsePayload {
+  /** Wallet balance after spin when server includes it. */
+  balance?: string;
   spin: {
     spinId: string;
     spinType: string;
     reels: string[][];
-    win: number;
+    /** Credited line/feature win for this spin (decimal string on wire). */
+    win: string | number;
     triggers: string[];
     winWays?: WinWay[];
     guardianWild?: any;
@@ -41,7 +44,8 @@ export interface SpinResponsePayload {
     jackpot: {
       triggered: boolean;
       tier: string | null;
-      jackpotWin: number;
+      /** Decimal string on wire (§1.1); not subject to line win cap. */
+      jackpotWin: string | number;
       goldenWildPositions: [number, number][];
     };
   };
