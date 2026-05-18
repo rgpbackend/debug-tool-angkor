@@ -597,14 +597,68 @@ button.primary {
   text-shadow: 0 0 2px rgb(0 0 0 / 55%);
 }
 
-.sym-W {
-  background: color-mix(in srgb, gold 35%, var(--bg));
+.sym-W,
+.cell.sym-W {
+  border-color: color-mix(in srgb, #fbbf24 72%, var(--border));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, #fcd34d 52%, #b45309) 0%,
+    color-mix(in srgb, #d97706 42%, var(--bg)) 100%
+  );
+  color: #fffbeb;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #fbbf24 42%, transparent),
+    0 0 14px color-mix(in srgb, #f59e0b 34%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 30%);
 }
 
-.sym-GW {
-  background: color-mix(in srgb, #f59e0b 42%, var(--bg));
+.cell.cell-wild .cell-symbol {
+  font-weight: 900;
+  font-size: 1.08em;
+  text-shadow:
+    0 0 10px rgb(251 191 36 / 80%),
+    0 1px 2px rgb(0 0 0 / 55%);
+}
+
+.cell.cell-wild.cell-winway {
+  outline-color: color-mix(in srgb, #fbbf24 70%, var(--winway-color, var(--accent)));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, #fbbf24 44%, var(--winway-color, var(--accent))) 0%,
+    color-mix(in srgb, #d97706 32%, var(--bg)) 100%
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #fbbf24 45%, transparent),
+    0 0 12px color-mix(in srgb, #f59e0b 30%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 24%);
+}
+
+.cell.cell-editable.cell-wild .slot-cell-input {
+  color: #fffbeb;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgb(251 191 36 / 70%);
+}
+
+.sym-GW,
+.cell.sym-GW {
+  border-color: color-mix(in srgb, #f59e0b 75%, var(--border));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, #fbbf24 55%, #c2410c) 0%,
+    color-mix(in srgb, #ea580c 40%, var(--bg)) 100%
+  );
+  color: #fff7ed;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #f59e0b 45%, transparent),
+    0 0 12px color-mix(in srgb, #f59e0b 32%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 26%);
   font-size: 0.72rem;
   letter-spacing: -0.04em;
+}
+
+.cell.sym-GW .cell-symbol {
+  font-weight: 900;
+  text-shadow: 0 0 8px rgb(245 158 11 / 75%);
 }
 
 .sym-S,

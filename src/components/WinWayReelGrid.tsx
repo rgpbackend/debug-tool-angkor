@@ -231,11 +231,17 @@ export default function WinWayReelGrid({
                   const winHit = wayIndices.length > 0;
                   const gwHit = goldenWildHighlightKeys?.has(key) ?? false;
                   const isScatter = sym === "S";
+                  const isWild = sym === "W";
                   const cellClass = `cell sym-${sym}${isScatter ? " cell-scatter" : ""}${
-                    winHit ? " cell-winway" : ""
-                  }${gwHit ? " cell-golden-wild" : ""}${
-                    editable ? " cell-editable" : ""
-                  }`;
+                    isWild ? " cell-wild" : ""
+                  }${winHit ? " cell-winway" : ""}${
+                    gwHit ? " cell-golden-wild" : ""
+                  }${editable ? " cell-editable" : ""}`;
+                  const cellTitle = isScatter
+                    ? "Scatter"
+                    : isWild
+                      ? "Wild"
+                      : undefined;
                   const cellStyle = winHit
                     ? ({
                         "--winway-color": selectedColor,
@@ -248,7 +254,7 @@ export default function WinWayReelGrid({
                         key={`reel-r${ci + 1}-slot-${ri + 1}`}
                         className={cellClass}
                         style={cellStyle}
-                        title={isScatter ? "Scatter" : undefined}
+                        title={cellTitle}
                       >
                         <input
                           className="slot-cell-input"
@@ -263,7 +269,9 @@ export default function WinWayReelGrid({
                           aria-label={
                             isScatter
                               ? `Reel ${ci + 1} row ${ri + 1}, scatter`
-                              : `Reel ${ci + 1} row ${ri + 1}`
+                              : isWild
+                                ? `Reel ${ci + 1} row ${ri + 1}, wild`
+                                : `Reel ${ci + 1} row ${ri + 1}`
                           }
                           disabled={editDisabled}
                         />
@@ -276,7 +284,7 @@ export default function WinWayReelGrid({
                       key={`reel-r${ci + 1}-slot-${ri + 1}`}
                       className={cellClass}
                       style={cellStyle}
-                      title={isScatter ? "Scatter" : undefined}
+                      title={cellTitle}
                     >
                       <span className="cell-symbol">{sym}</span>
                     </div>
