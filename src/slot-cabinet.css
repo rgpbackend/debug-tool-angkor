@@ -91,6 +91,7 @@
   min-height: 0;
   padding: var(--slot-pad);
   display: flex;
+  contain: layout style;
 }
 
 .slot-reel-window {
@@ -331,8 +332,36 @@
   );
 }
 
-.slot-controls--console {
+.slot-console-bar {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.65rem, 1.8cqw, 1rem);
   width: 100%;
+  min-width: 0;
+}
+
+.cheat-fab--console {
+  position: static;
+  flex-shrink: 0;
+  width: clamp(2.5rem, 6.5cqw, 2.85rem);
+  height: clamp(2.5rem, 6.5cqw, 2.85rem);
+  margin: 0;
+  opacity: 0.85;
+  border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 60%, var(--border));
+  background: color-mix(in srgb, var(--slot-frame-mid) 50%, var(--bg));
+  color: var(--text-h);
+  box-shadow: var(--shadow);
+}
+
+.cheat-fab--console:hover {
+  opacity: 1;
+  transform: scale(1.04);
+  border-color: var(--accent-border);
+}
+
+.slot-controls--console {
+  flex: 1;
+  min-width: 0;
   max-width: none;
   margin: 0;
   padding: 0;
@@ -340,17 +369,22 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
+  justify-content: flex-end;
   align-items: center;
-  gap: clamp(0.65rem, 2cqw, 1.25rem);
+}
+
+.slot-play-cluster {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1.2cqw, 0.75rem);
+  flex-wrap: nowrap;
 }
 
 .slot-controls--console .slot-bet-cluster {
   flex-direction: row;
   align-items: center;
   gap: clamp(0.5rem, 1.5cqw, 0.85rem);
-  justify-self: start;
 }
 
 .slot-controls--console .slot-bet-label {
@@ -378,7 +412,7 @@
 }
 
 .slot-controls--console .slot-spin-btn {
-  justify-self: end;
+  flex-shrink: 0;
   min-width: clamp(6.5rem, 18cqw, 9rem);
   padding: clamp(0.55rem, 1.5cqh, 0.75rem) clamp(1.25rem, 4cqw, 2.25rem);
   font-size: clamp(0.88rem, 2.5cqw, 1.08rem);
@@ -392,18 +426,6 @@
   box-shadow:
     0 4px 16px color-mix(in srgb, var(--accent) 40%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 28%);
-}
-
-.slot-stage .cheat-fab {
-  right: clamp(0.5rem, 2cqw, 1.25rem);
-  bottom: calc(var(--slot-console-h) + clamp(0.65rem, 2cqh, 1.1rem));
-  width: clamp(2.35rem, 6cqw, 2.75rem);
-  height: clamp(2.35rem, 6cqw, 2.75rem);
-  z-index: 25;
-  border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 60%, var(--border));
-  background: color-mix(in srgb, var(--slot-frame-mid) 50%, var(--bg));
-  color: var(--text-h);
-  box-shadow: var(--shadow);
 }
 
 /* Narrow cabinet: legend strip on top (same grid areas, stacked) */
@@ -456,19 +478,25 @@
 }
 
 /* Console stacks on very narrow */
-@container slot-cabinet (max-width: 420px) {
-  .slot-controls--console {
-    grid-template-columns: 1fr;
-    justify-items: stretch;
+@container slot-cabinet (max-width: 520px) {
+  .slot-console-bar {
+    flex-wrap: wrap;
+    justify-content: space-between;
   }
 
-  .slot-controls--console .slot-bet-cluster {
+  .slot-controls--console {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .slot-play-cluster {
+    flex-wrap: wrap;
     justify-content: center;
     width: 100%;
   }
 
   .slot-controls--console .slot-spin-btn {
-    justify-self: stretch;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: min(100%, 9rem);
   }
 }

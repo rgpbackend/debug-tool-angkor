@@ -34,9 +34,9 @@ export default function SlotControls({
       role="group"
       aria-label="Bet and spin"
     >
-      <div className="slot-bet-cluster">
-        <span className="slot-bet-label">Bet</span>
-        <div className="slot-bet-stepper">
+      <div className="slot-play-cluster">
+        <div className="slot-bet-cluster">
+          <div className="slot-bet-stepper">
           <button
             type="button"
             className="slot-bet-step"
@@ -70,17 +70,18 @@ export default function SlotControls({
           >
             +
           </button>
+          </div>
         </div>
-      </div>
 
-      <button
-        type="button"
-        className="slot-spin-btn"
-        onClick={onSpin}
-        disabled={!canSpin}
-      >
-        {spinning ? "Spinning…" : "Spin"}
-      </button>
+        <button
+          type="button"
+          className="slot-spin-btn"
+          onClick={onSpin}
+          disabled={!canSpin}
+        >
+          {spinning ? "Spinning…" : "Spin"}
+        </button>
+      </div>
     </div>
   );
 }

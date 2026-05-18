@@ -68,6 +68,8 @@ export function useGameSession() {
   const defaults = useMemo(() => readEnvDefaults(), []);
   const clientRef = useRef<BrowserWsClient | null>(null);
   const heartbeatTimerRef = useRef<number | null>(null);
+  /** True while awaiting spin response — blocks jackpot loading UI churn. */
+  const spinBusyRef = useRef(false);
 
   const [activeTab, setActiveTab] = useState<"game" | "history" | "jackpots">(
     "game",
@@ -94,6 +96,10 @@ export function useGameSession() {
 
   const [lastSpin, setLastSpin] = useState<SpinResponsePayload | null>(null);
   const [lastRound, setLastRound] = useState<LastRound | null>(null);
+  /** Snapshot of round view at spin start; keeps reels / win ways stable while spinning. */
+  const [spinFreeze, setSpinFreeze] = useState<
+    SpinResponsePayload | LastRound | null
+  >(null);
   const [cheatStatus, setCheatStatus] = useState<string | null>(null);
   const [cheatArmed, setCheatArmed] = useState(false);
   const [forceJackpotArmed, setForceJackpotArmed] = useState(false);
@@ -141,6 +147,8 @@ export function useGameSession() {
     setJackpotWinnersRefreshToken(0);
     setBetLevels([]);
     setActiveTab("game");
+    spinBusyRef.current = false;
+    setSpinFreeze(null);
     setPhase("disconnected");
   }, [stopHeartbeat]);
 
@@ -163,7 +171,7 @@ export function useGameSession() {
 
   const fetchJackpotPools = useCallback(async () => {
     const client = clientRef.current;
-    if (!client?.isConnected()) {
+    if (!client?.isConnected() || spinBusyRef.current) {
       return;
     }
     setJackpotPoolsLoading(true);
@@ -335,6 +343,8 @@ export function useGameSession() {
       return;
     }
     setError(null);
+    spinBusyRef.current = true;
+    setSpinFreeze(lastSpin ?? lastRound);
     setPhase("spinning");
     try {
       const payloadPromise = client.waitForPayload(
@@ -367,6 +377,8 @@ export function useGameSession() {
         setForceJackpotArmed(false);
       }
       setPhase("joined");
+      spinBusyRef.current = false;
+      setSpinFreeze(null);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
@@ -377,8 +389,13 @@ export function useGameSession() {
         setSessionReady(false);
         setPhase("disconnected");
       }
+    } finally {
+      spinBusyRef.current = false;
+      setSpinFreeze(null);
     }
   }, [
+    lastSpin,
+    lastRound,
     bet,
     cheatArmed,
     forceJackpotArmed,
@@ -500,6 +517,16 @@ export function useGameSession() {
   /** Unified display source: last spin result OR active round from join. */
   const displaySpin = lastSpin ?? lastRound;
 
+  const isSpinning = phase === "spinning";
+
+  /** Frozen during spin so reels / win ways do not flicker before the response. */
+  const viewSpin = useMemo(() => {
+    if (isSpinning && spinFreeze !== null) {
+      return spinFreeze;
+    }
+    return displaySpin;
+  }, [isSpinning, spinFreeze, displaySpin]);
+
   const betLocked = useMemo(() => {
     const round = displaySpin?.round;
     return Boolean(round && round.isFinished === false);
@@ -519,23 +546,23 @@ export function useGameSession() {
   const selectBetValue =
     betLevels.length > 0 && betLevels.includes(bet) ? bet : (betLevels[0] ?? "");
 
-  const winWays = displaySpin?.spin?.winWays ?? [];
+  const winWays = viewSpin?.spin?.winWays ?? [];
 
   const jackpotInfo = useMemo(
-    () => (displaySpin?.spin ? readSpinJackpot(displaySpin.spin) : null),
-    [displaySpin],
+    () => (viewSpin?.spin ? readSpinJackpot(viewSpin.spin) : null),
+    [viewSpin],
   );
   const retriggerInfo = useMemo(
-    () => (displaySpin?.spin ? readSpinRetrigger(displaySpin.spin) : null),
-    [displaySpin],
+    () => (viewSpin?.spin ? readSpinRetrigger(viewSpin.spin) : null),
+    [viewSpin],
   );
   const goldenWildHighlightKeys = useMemo(
     () => buildGoldenWildHighlightSet(jackpotInfo?.goldenWildPositions),
     [jackpotInfo],
   );
   const featureBadges = useMemo(
-    () => readRoundFeatureBadges(displaySpin),
-    [displaySpin],
+    () => readRoundFeatureBadges(viewSpin),
+    [viewSpin],
   );
 
   return {
@@ -573,7 +600,9 @@ export function useGameSession() {
     canSpin,
     canCheat,
     busyConnect,
+    isSpinning,
     displaySpin,
+    viewSpin,
     betLocked,
     selectBetValue,
     winWays,

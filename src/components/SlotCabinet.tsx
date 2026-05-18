@@ -12,6 +12,7 @@ type SlotCabinetProps = {
   canSpin: boolean;
   spinning: boolean;
   onSpin: () => void;
+  onOpenCheat?: () => void;
 };
 
 export default function SlotCabinet({
@@ -25,6 +26,7 @@ export default function SlotCabinet({
   canSpin,
   spinning,
   onSpin,
+  onOpenCheat,
 }: Readonly<SlotCabinetProps>) {
   const hasReels = reels != null && emptyMessage == null;
 
@@ -46,15 +48,30 @@ export default function SlotCabinet({
         </div>
 
         <footer className="slot-cabinet-console">
-          <SlotControls
-            betValue={betValue}
-            betLevels={betLevels}
-            onBetChange={onBetChange}
-            betDisabled={betDisabled}
-            canSpin={canSpin}
-            spinning={spinning}
-            onSpin={onSpin}
-          />
+          <div className="slot-console-bar">
+            {onOpenCheat ? (
+              <button
+                type="button"
+                className="cheat-fab cheat-fab--console"
+                onClick={onOpenCheat}
+                aria-label="Open cheat tools"
+                title="Cheat tools (dev)"
+              >
+                <span className="cheat-fab-icon" aria-hidden>
+                  ⚙
+                </span>
+              </button>
+            ) : null}
+            <SlotControls
+              betValue={betValue}
+              betLevels={betLevels}
+              onBetChange={onBetChange}
+              betDisabled={betDisabled}
+              canSpin={canSpin}
+              spinning={spinning}
+              onSpin={onSpin}
+            />
+          </div>
         </footer>
       </div>
     </div>

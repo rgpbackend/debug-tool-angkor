@@ -161,7 +161,7 @@ export default function WinWayReelGrid({
             })}
             </ul>
           ) : (
-            <p className="winway-legend-empty muted" aria-live="polite">
+            <p className="winway-legend-empty muted">
               No win ways this spin
             </p>
           )}
@@ -170,7 +170,7 @@ export default function WinWayReelGrid({
 
       <div className="reels-wrap winway-reels-main slot-reels-stage">
         {cabinet && (respinVisible || freeSpinVisible) ? (
-          <div className="slot-reels-hud" aria-live="polite">
+          <div className="slot-reels-hud">
             {respinVisible ? (
               <div
                 className="slot-reels-badge slot-reels-badge--respin"

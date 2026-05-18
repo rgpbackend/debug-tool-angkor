@@ -36,7 +36,8 @@ export default function GameScreen(session: Readonly<GameSession>) {
     jackpotWinnersRefreshToken,
     jackpotPoolsByTier,
     jackpotPoolsLoading,
-    displaySpin,
+    viewSpin,
+    isSpinning,
     winWays,
     jackpotInfo,
     retriggerInfo,
@@ -99,16 +100,13 @@ export default function GameScreen(session: Readonly<GameSession>) {
             <JackpotPoolsBar
               poolsByTier={jackpotPoolsByTier}
               connected={sessionReady}
-              loading={jackpotPoolsLoading}
+              loading={jackpotPoolsLoading && !isSpinning}
             />
-            {(error || phase !== "joined") && (
+            {error ? (
               <div className="slot-status-bar">
-                <span className="slot-phase">
-                  Phase: <strong>{phase}</strong>
-                </span>
-                {error ? <span className="error slot-error">{error}</span> : null}
+                <span className="error slot-error">{error}</span>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="slot-playfield">
@@ -146,10 +144,10 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 ) : undefined
               }
               reels={
-                displaySpin?.spin ? (
+                viewSpin?.spin ? (
                   <WinWayReelGrid
                     cabinet
-                    reels={displaySpin.spin.reels}
+                    reels={viewSpin.spin.reels}
                     winWays={winWays}
                     goldenWildHighlightKeys={goldenWildHighlightKeys}
                     respinVisible={featureBadges.respin.visible}
@@ -160,9 +158,9 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 ) : null
               }
               emptyMessage={
-                !displaySpin
+                !viewSpin
                   ? "Press Spin to play"
-                  : !displaySpin.spin
+                  : !viewSpin.spin
                     ? "No spin data in this round"
                     : null
               }
@@ -171,22 +169,11 @@ export default function GameScreen(session: Readonly<GameSession>) {
               onBetChange={setBet}
               betDisabled={betDisabled}
               canSpin={canSpin}
-              spinning={phase === "spinning"}
+              spinning={isSpinning}
               onSpin={() => void spin()}
+              onOpenCheat={() => setCheatOpen(true)}
             />
           </div>
-
-          <button
-            type="button"
-            className="cheat-fab"
-            onClick={() => setCheatOpen(true)}
-            aria-label="Open cheat tools"
-            title="Cheat tools (dev)"
-          >
-            <span className="cheat-fab-icon" aria-hidden>
-              ⚙
-            </span>
-          </button>
 
           <CheatModal
             open={cheatOpen}
