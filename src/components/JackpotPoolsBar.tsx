@@ -31,37 +31,22 @@ function PoolCard({
       className={`jackpot-pool-card jackpot-pool-${tier.toLowerCase()}${isStatic ? " jackpot-pool-static" : " jackpot-pool-progressive"}`}
     >
       <span className="jackpot-pool-tier">{TIER_LABELS[tier]}</span>
-      {isStatic ? (
-        <>
-          <span className="jackpot-pool-amount-label">Prize</span>
-          <span className="jackpot-pool-amount">
-            {pool?.seedAmount ?? "—"}
-          </span>
-        </>
-      ) : (
-        <>
-          <span className="jackpot-pool-amount-label">Pool</span>
-          <span className="jackpot-pool-amount">
-            {pool?.currentAmount ?? "—"}
-          </span>
-        </>
-      )}
+      <span className="jackpot-pool-amount">
+        {isStatic ? (pool?.seedAmount ?? "—") : (pool?.currentAmount ?? "—")}
+      </span>
     </div>
   );
 }
 
 function PoolGroup({
-  title,
   tiers,
   poolsByTier,
 }: Readonly<{
-  title: string;
   tiers: readonly JackpotTier[];
   poolsByTier: JackpotPoolsByTier;
 }>) {
   return (
     <div className="jackpot-pools-group">
-      <h4 className="jackpot-pools-group-title">{title}</h4>
       <div className="jackpot-pools-group-grid">
         {tiers.map((tier) => (
           <PoolCard key={tier} tier={tier} pool={poolsByTier[tier]} />
@@ -96,13 +81,8 @@ export default function JackpotPoolsBar({
         )}
       </div>
       <div className="jackpot-pools-groups">
+        <PoolGroup tiers={STATIC_JACKPOT_TIERS} poolsByTier={poolsByTier} />
         <PoolGroup
-          title="Static jackpots"
-          tiers={STATIC_JACKPOT_TIERS}
-          poolsByTier={poolsByTier}
-        />
-        <PoolGroup
-          title="Progressive jackpots"
           tiers={PROGRESSIVE_JACKPOT_TIERS}
           poolsByTier={poolsByTier}
         />
