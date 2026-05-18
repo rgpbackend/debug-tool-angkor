@@ -1,4 +1,4 @@
-import type { HeartbeatFrame, WsFrame, WsFrame5 } from "./protocol";
+import type { HeartbeatFrame, JackpotTier, WsFrame, WsFrame5 } from "./protocol";
 
 export function connectFrame(
   agentId: string,
@@ -30,8 +30,11 @@ export function cheatFrame(gameRoute: string, reels: string[][]): WsFrame {
   return [6, "MiniGame", gameRoute, { cmd: "2001", reels }];
 }
 
-export function forceJackpotNextSpinFrame(gameRoute: string): WsFrame {
-  return [6, "MiniGame", gameRoute, { cmd: "2002" }];
+export function forceJackpotNextSpinFrame(
+  gameRoute: string,
+  tier: JackpotTier,
+): WsFrame {
+  return [6, "MiniGame", gameRoute, { cmd: "2002", tier }];
 }
 
 export function heartbeatFrame(): HeartbeatFrame {

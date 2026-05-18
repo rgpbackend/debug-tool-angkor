@@ -314,6 +314,18 @@ export function isJackpotWinHistoryPayload(
   return hasCmd(payload, "1511") && Array.isArray(payload.items);
 }
 
+/** Matches cmd 2002 force-jackpot arm response. */
+export function isForceJackpotResponse(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    hasCmd(payload, "2002") &&
+    payload.c !== 1 &&
+    payload.errorCode == null &&
+    typeof payload.tier === "string"
+  );
+}
+
 /** Matches cmd 1521 jackpot winner broadcast. */
 export function isJackpotWinnerPush(
   payload: Record<string, unknown>,

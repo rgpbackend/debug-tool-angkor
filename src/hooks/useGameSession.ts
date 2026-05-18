@@ -23,6 +23,7 @@ import { resetAccessToken } from "../api/resetToken";
 import {
   BrowserWsClient,
   StompTokenBannedError,
+  isForceJackpotResponse,
   isHistoryDetailPayload,
   isHistoryListPayload,
   isJackpotPoolsPayload,
@@ -54,6 +55,7 @@ import {
   type HistoryListPayload,
   type JoinResponsePayload,
   type JackpotPool,
+  type JackpotTier,
   type JackpotPoolsByTier,
   type JackpotPoolsPayload,
   type JackpotWinHistoryPayload,
@@ -115,6 +117,7 @@ export function useGameSession() {
   >(null);
   const [cheatArmed, setCheatArmed] = useState(false);
   const [forceJackpotArmed, setForceJackpotArmed] = useState(false);
+  const [forceJackpotBusy, setForceJackpotBusy] = useState(false);
   const [cheatGridDirty, setCheatGridDirty] = useState(false);
 
 
@@ -511,22 +514,34 @@ export function useGameSession() {
     }
   }, [cheatGrid, gameRoute, phase, sessionReady]);
 
-  const sendForceJackpot = useCallback(() => {
-    const client = clientRef.current;
-    if (!client?.isConnected() || phase !== "joined" || !sessionReady) {
-      return;
-    }
+  const sendForceJackpot = useCallback(
+    async (tier: JackpotTier): Promise<void> => {
+      const client = clientRef.current;
+      if (!client?.isConnected() || phase !== "joined" || !sessionReady) {
+        throw new Error("Connect and join the game before arming jackpot cheat.");
+      }
 
-    setError(null);
-    try {
-      const frame = forceJackpotNextSpinFrame(gameRoute.trim());
-      client.sendFrame(frame);
-      setForceJackpotArmed(true);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      setError(message);
-    }
-  }, [gameRoute, phase, sessionReady]);
+      setError(null);
+      setForceJackpotBusy(true);
+      try {
+        const payloadPromise = client.waitForPayload(
+          isForceJackpotResponse,
+          "force jackpot",
+        );
+        const frame = forceJackpotNextSpinFrame(gameRoute.trim(), tier);
+        client.sendFrame(frame);
+        await payloadPromise;
+        setForceJackpotArmed(true);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message);
+        throw e;
+      } finally {
+        setForceJackpotBusy(false);
+      }
+    },
+    [gameRoute, phase, sessionReady],
+  );
 
   const fetchHistoryList = useCallback(
     async (page: number): Promise<HistoryListPayload> => {
@@ -677,6 +692,7 @@ export function useGameSession() {
     spin,
     sendCheat,
     sendForceJackpot,
+    forceJackpotBusy,
     fetchHistoryList,
     fetchHistoryDetail,
     fetchJackpotWinHistory,

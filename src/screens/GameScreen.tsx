@@ -30,6 +30,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
     cheatGridDirty,
     sendCheat,
     sendForceJackpot,
+    forceJackpotBusy,
     updateCheatCell,
     fetchHistoryList,
     fetchHistoryDetail,
@@ -171,6 +172,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 cheatGridDirty={cheatGridDirty}
                 balance={balance}
                 balanceConnected={sessionReady}
+                forceJackpotBusy={forceJackpotBusy}
                 onSetCheat={sendCheat}
                 onForceJackpot={sendForceJackpot}
               />

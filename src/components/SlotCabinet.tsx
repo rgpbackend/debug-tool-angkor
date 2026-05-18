@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { JackpotTier } from "../ws/protocol";
 import SlotConsoleBalance from "./SlotConsoleBalance";
 import SlotConsoleCheat from "./SlotConsoleCheat";
 import SlotControls from "./SlotControls";
@@ -18,8 +19,9 @@ type SlotCabinetProps = {
   cheatGridDirty?: boolean;
   balance?: string | null;
   balanceConnected?: boolean;
+  forceJackpotBusy?: boolean;
   onSetCheat?: () => void;
-  onForceJackpot?: () => void;
+  onForceJackpot?: (tier: JackpotTier) => void | Promise<void>;
   jackpotPools?: ReactNode;
   statusError?: string | null;
 };
@@ -39,6 +41,7 @@ export default function SlotCabinet({
   cheatGridDirty = false,
   balance = null,
   balanceConnected = false,
+  forceJackpotBusy = false,
   onSetCheat,
   onForceJackpot,
   jackpotPools,
@@ -82,6 +85,7 @@ export default function SlotCabinet({
               <SlotConsoleCheat
                 canCheat={canCheat}
                 cheatGridDirty={cheatGridDirty}
+                forceJackpotBusy={forceJackpotBusy}
                 onSetCheat={onSetCheat}
                 onForceJackpot={onForceJackpot}
               />

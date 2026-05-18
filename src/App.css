@@ -196,6 +196,50 @@
   margin-bottom: 0;
 }
 
+.force-jackpot-modal {
+  width: min(100%, 26rem);
+}
+
+.force-jackpot-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.force-jackpot-tier-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.force-jackpot-tier-option:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.force-jackpot-tier-option--selected {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.force-jackpot-tier-kind {
+  font-size: 0.72rem;
+}
+
+.force-jackpot-modal-actions {
+  justify-content: flex-end;
+}
+
 .token-ban-modal-lead {
   margin: 0 0 0.65rem;
   font-size: 0.9rem;
