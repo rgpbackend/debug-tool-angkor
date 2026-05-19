@@ -17,6 +17,8 @@ export interface BrowserWsClientOptions {
 type PayloadMatcher = (payload: Record<string, unknown>) => boolean;
 type PayloadHandler = (payload: Record<string, unknown>) => void;
 type StompErrorHandler = (code: number) => void;
+export type WsDisconnectInfo = { code: number; reason: string };
+type DisconnectHandler = (info: WsDisconnectInfo) => void;
 
 interface PayloadListenerRegistration {
   matcher: PayloadMatcher;
@@ -32,8 +34,11 @@ export class BrowserWsClient {
   private lastClose: { code: number; reason: string } | null = null;
   private readonly payloadListeners = new Set<PayloadListenerRegistration>();
   private readonly stompErrorListeners = new Set<StompErrorHandler>();
+  private readonly disconnectListeners = new Set<DisconnectHandler>();
   private persistentMessageHandler: ((ev: MessageEvent<string | Blob>) => void) | null =
     null;
+  private persistentCloseHandler: ((ev: CloseEvent) => void) | null = null;
+  private closingIntentionally = false;
 
   private readonly endpoint: string;
   private readonly options: BrowserWsClientOptions;
@@ -56,8 +61,9 @@ export class BrowserWsClient {
 
       socket.addEventListener("open", () => {
         window.clearTimeout(timer);
+        this.closingIntentionally = false;
         this.socket = socket;
-        this.attachPersistentMessageHandler();
+        this.attachPersistentSocketHandlers();
         resolve();
       });
 
@@ -96,7 +102,7 @@ export class BrowserWsClient {
   ): () => void {
     const registration: PayloadListenerRegistration = { matcher, handler };
     this.payloadListeners.add(registration);
-    this.attachPersistentMessageHandler();
+    this.attachPersistentSocketHandlers();
     return () => {
       this.payloadListeners.delete(registration);
     };
@@ -104,9 +110,17 @@ export class BrowserWsClient {
 
   addStompErrorListener(handler: StompErrorHandler): () => void {
     this.stompErrorListeners.add(handler);
-    this.attachPersistentMessageHandler();
+    this.attachPersistentSocketHandlers();
     return () => {
       this.stompErrorListeners.delete(handler);
+    };
+  }
+
+  addDisconnectListener(handler: DisconnectHandler): () => void {
+    this.disconnectListeners.add(handler);
+    this.attachPersistentSocketHandlers();
+    return () => {
+      this.disconnectListeners.delete(handler);
     };
   }
 
@@ -180,11 +194,19 @@ export class BrowserWsClient {
   }
 
   close(): void {
-    this.detachPersistentMessageHandler();
+    this.closingIntentionally = true;
+    this.detachPersistentSocketHandlers();
     this.payloadListeners.clear();
     this.stompErrorListeners.clear();
+    this.disconnectListeners.clear();
     this.socket?.close();
     this.socket = null;
+    this.closingIntentionally = false;
+  }
+
+  private attachPersistentSocketHandlers(): void {
+    this.attachPersistentMessageHandler();
+    this.attachPersistentCloseHandler();
   }
 
   private attachPersistentMessageHandler(): void {
@@ -220,6 +242,43 @@ export class BrowserWsClient {
       this.socket.removeEventListener("message", this.persistentMessageHandler);
     }
     this.persistentMessageHandler = null;
+  }
+
+  private attachPersistentCloseHandler(): void {
+    if (!this.socket || this.persistentCloseHandler) {
+      return;
+    }
+    this.persistentCloseHandler = (ev) => {
+      this.lastClose = {
+        code: ev.code,
+        reason: ev.reason || "no reason",
+      };
+      if (this.closingIntentionally) {
+        return;
+      }
+      this.detachPersistentMessageHandler();
+      this.socket = null;
+      this.dispatchDisconnect(this.lastClose);
+    };
+    this.socket.addEventListener("close", this.persistentCloseHandler);
+  }
+
+  private detachPersistentCloseHandler(): void {
+    if (this.socket && this.persistentCloseHandler) {
+      this.socket.removeEventListener("close", this.persistentCloseHandler);
+    }
+    this.persistentCloseHandler = null;
+  }
+
+  private detachPersistentSocketHandlers(): void {
+    this.detachPersistentMessageHandler();
+    this.detachPersistentCloseHandler();
+  }
+
+  private dispatchDisconnect(info: WsDisconnectInfo): void {
+    for (const handler of this.disconnectListeners) {
+      handler(info);
+    }
   }
 
   private dispatchStompError(code: number): void {

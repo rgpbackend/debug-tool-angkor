@@ -1248,9 +1248,20 @@ button.primary {
 }
 
 .hist-meta-label {
-  min-width: 4rem;
+  min-width: 6.5rem;
+  flex-shrink: 0;
   color: var(--text);
   font-size: 0.78rem;
+}
+
+.hist-amount-col,
+.hist-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.hist-table th.hist-amount-col {
+  text-align: right;
 }
 
 .hist-meta-row code {

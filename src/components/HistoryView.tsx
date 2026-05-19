@@ -48,20 +48,26 @@ function profitClass(profit: number): string {
   return "";
 }
 
-function formatBalanceTrace(
-  before: string | undefined,
-  after: string | undefined,
-): string | null {
-  if (before && after) {
-    return `${formatCreditAmount(before)} → ${formatCreditAmount(after)}`;
+function formatHistoryBalance(value: string | undefined): string {
+  if (!value) {
+    return "—";
   }
-  if (after) {
-    return formatCreditAmount(after);
+  return formatCreditAmount(value);
+}
+
+function formatHistoryAmount(value: number): string {
+  return formatCreditAmount(String(value));
+}
+
+function formatHistoryProfit(value: number): string {
+  const formatted = formatHistoryAmount(Math.abs(value));
+  if (value > 0) {
+    return `+${formatted}`;
   }
-  if (before) {
-    return formatCreditAmount(before);
+  if (value < 0) {
+    return `−${formatted}`;
   }
-  return null;
+  return formatted;
 }
 
 // ---------------------------------------------------------------------------
@@ -122,52 +128,38 @@ function DetailPanel({ detail, onBack }: Readonly<DetailPanelProps>) {
         <div>
           <p className="hist-meta-row">
             <span className="hist-meta-label">Bet</span>
-            {detail.bet}
+            <span className="hist-amount">
+              {formatHistoryAmount(detail.bet)}
+            </span>
           </p>
           <p className="hist-meta-row">
             <span className="hist-meta-label">Win</span>
-            {detail.win}
+            <span className="hist-amount">{formatHistoryAmount(detail.win)}</span>
           </p>
           <p className="hist-meta-row">
             <span className="hist-meta-label">Profit</span>
-            <span className={profitClass(detail.profit)}>
-              {detail.profit > 0 ? "+" : ""}
-              {detail.profit}
+            <span className={`hist-amount ${profitClass(detail.profit)}`}>
+              {formatHistoryProfit(detail.profit)}
             </span>
           </p>
-          {formatBalanceTrace(detail.balanceBefore, detail.balanceAfter) ? (
-            <p className="hist-meta-row">
-              <span className="hist-meta-label">Balance</span>
-              {formatBalanceTrace(detail.balanceBefore, detail.balanceAfter)}
-            </p>
-          ) : null}
+          <p className="hist-meta-row">
+            <span className="hist-meta-label">Balance before</span>
+            <span className="hist-amount">
+              {formatHistoryBalance(detail.balanceBefore)}
+            </span>
+          </p>
+          <p className="hist-meta-row">
+            <span className="hist-meta-label">Balance after</span>
+            <span className="hist-amount">
+              {formatHistoryBalance(detail.balanceAfter)}
+            </span>
+          </p>
         </div>
       </div>
 
       {/* Reels grid */}
       <div className="output-section">
         <h3>Reels</h3>
-        {winWays.length > 0 && (
-          <div className="winway-toolbar row">
-            <label className="winway-select-label">
-              Highlight win way
-              <select
-                value={String(safeIndex)}
-                onChange={(e) => setHighlightIndex(Number(e.target.value))}
-              >
-                {winWays.map((way, idx) => (
-                  <option
-                    key={`hist-winway-opt-${way.symbol}-${idx}`}
-                    value={String(idx)}
-                  >
-                    #{idx + 1} {way.symbol} ×{way.matchCount} ways={way.ways}{" "}
-                    payout={way.payout}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
         <div className="reels-wrap">
           <div className="reels" aria-label="History spin reels">
             {detail.reels.map((column, ci) => (
@@ -295,10 +287,11 @@ function ListPanel({
                 <th>#</th>
                 <th>Type</th>
                 <th>Time</th>
-                <th>Bet</th>
-                <th>Win</th>
-                <th>Profit</th>
-                <th>Balance</th>
+                <th className="hist-amount-col">Bet</th>
+                <th className="hist-amount-col">Win</th>
+                <th className="hist-amount-col">Profit</th>
+                <th className="hist-amount-col">Bal. before</th>
+                <th className="hist-amount-col">Bal. after</th>
                 <th></th>
               </tr>
             </thead>
@@ -316,17 +309,20 @@ function ListPanel({
                   <td className="hist-ts muted">
                     {formatTs(item.timestampMillis)}
                   </td>
-                  <td>{item.bet}</td>
-                  <td>{item.win}</td>
-                  <td className={profitClass(item.profit)}>
-                    {item.profit > 0 ? "+" : ""}
-                    {item.profit}
+                  <td className="hist-amount">
+                    {formatHistoryAmount(item.bet)}
                   </td>
-                  <td className="muted hist-ts">
-                    {formatBalanceTrace(
-                      item.balanceBefore,
-                      item.balanceAfter,
-                    ) ?? "—"}
+                  <td className="hist-amount">
+                    {formatHistoryAmount(item.win)}
+                  </td>
+                  <td className={`hist-amount ${profitClass(item.profit)}`}>
+                    {formatHistoryProfit(item.profit)}
+                  </td>
+                  <td className="hist-amount">
+                    {formatHistoryBalance(item.balanceBefore)}
+                  </td>
+                  <td className="hist-amount">
+                    {formatHistoryBalance(item.balanceAfter)}
                   </td>
                   <td>
                     <button

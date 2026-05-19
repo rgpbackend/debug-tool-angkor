@@ -71,6 +71,13 @@ import { isTokenBannedStompError } from "../ws/stomp-errors";
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const POST_AUTH_BEFORE_JOIN_MS = 1000;
 
+const WS_CONNECTION_LOST_RE =
+  /timeout|WS closed|WS connect error|not connected|Disconnected before|Disconnected after/i;
+
+function isWsConnectionLostMessage(message: string): boolean {
+  return WS_CONNECTION_LOST_RE.test(message);
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -84,6 +91,9 @@ export function useGameSession() {
   /** True while awaiting spin response — blocks jackpot loading UI churn. */
   const spinBusyRef = useRef(false);
   const stompListenerCleanupRef = useRef<(() => void) | null>(null);
+  const disconnectListenerCleanupRef = useRef<(() => void) | null>(null);
+  const sessionEndingRef = useRef(false);
+  const phaseRef = useRef<GamePhase>("disconnected");
   const cheatBaselineRef = useRef<string[][]>(emptyCheatGrid());
 
   const [jackpotPoolsByTier, setJackpotPoolsByTier] =
@@ -91,7 +101,11 @@ export function useGameSession() {
   const [jackpotPoolsLoading, setJackpotPoolsLoading] = useState(false);
   const [jackpotWinnersRefreshToken, setJackpotWinnersRefreshToken] =
     useState(0);
-  const [phase, setPhase] = useState<GamePhase>("disconnected");
+  const [phase, setPhaseState] = useState<GamePhase>("disconnected");
+  const setPhase = useCallback((next: GamePhase) => {
+    phaseRef.current = next;
+    setPhaseState(next);
+  }, []);
   /** True after connect+join succeeded; used for UI (avoid reading refs during render). */
   const [sessionReady, setSessionReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,39 +151,27 @@ export function useGameSession() {
     setCheatGridDirty(false);
   }, []);
 
-  const startHeartbeat = useCallback(
-    (client: BrowserWsClient) => {
-      stopHeartbeat();
-      heartbeatTimerRef.current = window.setInterval(() => {
-        if (clientRef.current !== client || !client.isConnected()) {
-          stopHeartbeat();
-          return;
-        }
-        try {
-          client.sendFrame(heartbeatFrame());
-        } catch {
-          stopHeartbeat();
-        }
-      }, HEARTBEAT_INTERVAL_MS);
-    },
-    [stopHeartbeat],
-  );
-
   const detachStompListener = useCallback(() => {
     stompListenerCleanupRef.current?.();
     stompListenerCleanupRef.current = null;
+  }, []);
+
+  const detachDisconnectListener = useCallback(() => {
+    disconnectListenerCleanupRef.current?.();
+    disconnectListenerCleanupRef.current = null;
   }, []);
 
   const handleTokenBan = useCallback(() => {
     setTokenBanPromptOpen(true);
     setError("Access token has been banned.");
     stopHeartbeat();
+    detachDisconnectListener();
     detachStompListener();
     clientRef.current?.close();
     clientRef.current = null;
     setSessionReady(false);
     setPhase("disconnected");
-  }, [detachStompListener, stopHeartbeat]);
+  }, [detachDisconnectListener, detachStompListener, stopHeartbeat, setPhase]);
 
   const dismissTokenBanPrompt = useCallback(() => {
     setTokenBanPromptOpen(false);
@@ -193,32 +195,82 @@ export function useGameSession() {
     }
   }, [accessToken, defaults.tokenResetBaseUrl]);
 
+  const endSession = useCallback(
+    (options?: { error?: string | null }) => {
+      if (sessionEndingRef.current) {
+        return;
+      }
+      sessionEndingRef.current = true;
+      detachDisconnectListener();
+      detachStompListener();
+      stopHeartbeat();
+      clientRef.current?.close();
+      clientRef.current = null;
+      setError(options?.error === undefined ? null : options.error);
+      setLastSpin(null);
+      setSessionReady(false);
+      setCheatArmed(false);
+      setForceJackpotArmed(false);
+      setCheatGrid(emptyCheatGrid());
+      cheatBaselineRef.current = emptyCheatGrid();
+      setCheatGridDirty(false);
+      setLastRound(null);
+      setJackpotPoolsByTier(emptyJackpotPoolsByTier());
+      setJackpotPoolsLoading(false);
+      setJackpotWinnersRefreshToken(0);
+      setBetLevels([]);
+      setSymbolCatalog([]);
+      setBalance(null);
+      spinBusyRef.current = false;
+      setSpinFreeze(null);
+      setTokenBanPromptOpen(false);
+      setTokenResetBusy(false);
+      setPhase("disconnected");
+      sessionEndingRef.current = false;
+    },
+    [detachDisconnectListener, detachStompListener, stopHeartbeat, setPhase],
+  );
+
   const disconnect = useCallback(() => {
-    detachStompListener();
-    stopHeartbeat();
-    clientRef.current?.close();
-    clientRef.current = null;
-    setError(null);
-    setLastSpin(null);
-    setSessionReady(false);
-    setCheatArmed(false);
-    setForceJackpotArmed(false);
-    setCheatGrid(emptyCheatGrid());
-    cheatBaselineRef.current = emptyCheatGrid();
-    setCheatGridDirty(false);
-    setLastRound(null);
-    setJackpotPoolsByTier(emptyJackpotPoolsByTier());
-    setJackpotPoolsLoading(false);
-    setJackpotWinnersRefreshToken(0);
-    setBetLevels([]);
-    setSymbolCatalog([]);
-    setBalance(null);
-    spinBusyRef.current = false;
-    setSpinFreeze(null);
-    setTokenBanPromptOpen(false);
-    setTokenResetBusy(false);
-    setPhase("disconnected");
-  }, [detachStompListener, stopHeartbeat]);
+    endSession({ error: null });
+  }, [endSession]);
+
+  const connectionLostLogout = useCallback(
+    (message: string) => {
+      if (phaseRef.current === "disconnected" && clientRef.current === null) {
+        return;
+      }
+      endSession({ error: message });
+    },
+    [endSession],
+  );
+
+  const startHeartbeat = useCallback(
+    (client: BrowserWsClient) => {
+      stopHeartbeat();
+      heartbeatTimerRef.current = window.setInterval(() => {
+        if (clientRef.current !== client) {
+          stopHeartbeat();
+          return;
+        }
+        if (!client.isConnected()) {
+          stopHeartbeat();
+          connectionLostLogout("Connection lost (heartbeat: socket not open)");
+          return;
+        }
+        try {
+          client.sendFrame(heartbeatFrame());
+        } catch (e) {
+          stopHeartbeat();
+          const detail = e instanceof Error ? e.message : String(e);
+          connectionLostLogout(
+            `Connection lost (heartbeat failed: ${detail})`,
+          );
+        }
+      }, HEARTBEAT_INTERVAL_MS);
+    },
+    [connectionLostLogout, stopHeartbeat],
+  );
 
   const applyJackpotPools = useCallback((pools: JackpotPool[]) => {
     if (pools.length === 0) {
@@ -276,8 +328,8 @@ export function useGameSession() {
       return;
     }
 
+    sessionEndingRef.current = false;
     disconnect();
-    setSessionReady(false);
     setPhase("connecting");
 
     const timeoutMs = defaults.timeoutMs;
@@ -291,11 +343,19 @@ export function useGameSession() {
       }
 
       detachStompListener();
+      detachDisconnectListener();
       stompListenerCleanupRef.current = client.addStompErrorListener((code) => {
         if (isTokenBannedStompError(code)) {
           handleTokenBan();
         }
       });
+      disconnectListenerCleanupRef.current = client.addDisconnectListener(
+        (info) => {
+          connectionLostLogout(
+            `Connection lost (code=${info.code}, reason=${info.reason})`,
+          );
+        },
+      );
 
       const connect = connectFrame(agentId.trim(), accessToken.trim(), false);
       client.sendFrame(connect);
@@ -370,20 +430,16 @@ export function useGameSession() {
         return;
       }
       const message = e instanceof Error ? e.message : String(e);
-      setError(message);
-      detachStompListener();
-      stopHeartbeat();
-      client.close();
-      clientRef.current = null;
-      setSessionReady(false);
-      setPhase("disconnected");
+      connectionLostLogout(message);
     }
   }, [
     accessToken,
     agentId,
     defaults.timeoutMs,
+    detachDisconnectListener,
     detachStompListener,
     disconnect,
+    connectionLostLogout,
     gameRoute,
     handleTokenBan,
     startHeartbeat,
@@ -392,6 +448,7 @@ export function useGameSession() {
     fetchJackpotPools,
     applyJackpotPoolsFromPayload,
     applyCheatGridFromReels,
+    setPhase,
   ]);
 
   useEffect(() => {
@@ -476,13 +533,11 @@ export function useGameSession() {
       return spinPayload;
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
-      setError(message);
-      if (client.isConnected()) {
-        setPhase("joined");
+      if (!client.isConnected() || isWsConnectionLostMessage(message)) {
+        connectionLostLogout(message);
       } else {
-        clientRef.current = null;
-        setSessionReady(false);
-        setPhase("disconnected");
+        setError(message);
+        setPhase("joined");
       }
       return null;
     } finally {
@@ -500,6 +555,8 @@ export function useGameSession() {
     applyJackpotPools,
     fetchJackpotPools,
     sessionReady,
+    connectionLostLogout,
+    setPhase,
   ]);
 
   const discardCheatGrid = useCallback(() => {
