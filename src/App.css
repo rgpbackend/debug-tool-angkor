@@ -48,15 +48,10 @@
 
 .game-screen-toolbar {
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
   margin-bottom: 0.25rem;
   flex-wrap: wrap;
-}
-
-.game-tab-bar {
-  margin-bottom: 0;
-  flex: 1;
 }
 
 .logout-btn {
@@ -1043,42 +1038,48 @@ button.primary {
   opacity: 0.55;
 }
 
-/* ====================================================================
-   Tab bar
-   ==================================================================== */
-
-.tab-bar {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 1.1rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0;
-}
-
-.tab {
-  padding: 0.4rem 1rem;
-  border-radius: 6px 6px 0 0;
-  border: 1px solid transparent;
-  border-bottom: none;
-  background: transparent;
-  color: var(--text);
-  font-size: 0.9rem;
-  cursor: pointer;
-  position: relative;
-  bottom: -1px;
-}
-
-.tab:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bg) 85%, var(--code-bg));
+.console-action-btn {
+  flex-shrink: 0;
+  height: var(--slot-console-btn-h, 2.6rem);
+  padding: 0 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 88%, var(--code-bg));
   color: var(--text-h);
-}
-
-.tab.tab-active {
-  background: color-mix(in srgb, var(--bg) 92%, var(--code-bg));
-  border-color: var(--border);
-  border-bottom-color: color-mix(in srgb, var(--bg) 92%, var(--code-bg));
-  color: var(--text-h);
+  font-size: clamp(0.72rem, 1.6cqw, 0.82rem);
   font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.console-action-btn:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+}
+
+.history-modal,
+.jackpot-winners-modal {
+  width: min(100%, 56rem);
+  max-height: min(90vh, 720px);
+  display: flex;
+  flex-direction: column;
+}
+
+.history-modal-body,
+.jackpot-winners-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.history-modal-body .hist-panel,
+.jackpot-winners-modal-body .hist-panel {
+  margin-top: 0;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
 }
 
 /* ====================================================================

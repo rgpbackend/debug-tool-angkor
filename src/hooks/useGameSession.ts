@@ -83,9 +83,6 @@ export function useGameSession() {
   const stompListenerCleanupRef = useRef<(() => void) | null>(null);
   const cheatBaselineRef = useRef<string[][]>(emptyCheatGrid());
 
-  const [activeTab, setActiveTab] = useState<"game" | "history" | "jackpots">(
-    "game",
-  );
   const [jackpotPoolsByTier, setJackpotPoolsByTier] =
     useState<JackpotPoolsByTier>(emptyJackpotPoolsByTier);
   const [jackpotPoolsLoading, setJackpotPoolsLoading] = useState(false);
@@ -210,7 +207,6 @@ export function useGameSession() {
     setJackpotWinnersRefreshToken(0);
     setBetLevels([]);
     setBalance(null);
-    setActiveTab("game");
     spinBusyRef.current = false;
     setSpinFreeze(null);
     setTokenBanPromptOpen(false);
@@ -672,8 +668,6 @@ export function useGameSession() {
   );
 
   return {
-    activeTab,
-    setActiveTab,
     jackpotPoolsByTier,
     jackpotPoolsLoading,
     jackpotWinnersRefreshToken,

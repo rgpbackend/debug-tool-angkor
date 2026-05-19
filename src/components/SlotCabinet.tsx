@@ -22,6 +22,8 @@ type SlotCabinetProps = {
   balance?: string | null;
   balanceConnected?: boolean;
   onSetCheat?: () => void;
+  onOpenHistory?: () => void;
+  onOpenJackpot?: () => void;
   jackpotPools?: ReactNode;
   statusError?: string | null;
 };
@@ -45,6 +47,8 @@ export default function SlotCabinet({
   balance = null,
   balanceConnected = false,
   onSetCheat,
+  onOpenHistory,
+  onOpenJackpot,
   jackpotPools,
   statusError,
 }: Readonly<SlotCabinetProps>) {
@@ -82,13 +86,33 @@ export default function SlotCabinet({
 
         <footer className="slot-cabinet-console">
           <div className="slot-console-bar">
-            {onSetCheat ? (
-              <SlotConsoleCheat
-                canCheat={canCheat}
-                cheatGridDirty={cheatGridDirty}
-                onSetCheat={onSetCheat}
-              />
-            ) : null}
+            <div className="slot-console-leading">
+              {onOpenHistory ? (
+                <button
+                  type="button"
+                  className="console-action-btn"
+                  onClick={onOpenHistory}
+                >
+                  History
+                </button>
+              ) : null}
+              {onOpenJackpot ? (
+                <button
+                  type="button"
+                  className="console-action-btn"
+                  onClick={onOpenJackpot}
+                >
+                  Jackpot
+                </button>
+              ) : null}
+              {onSetCheat ? (
+                <SlotConsoleCheat
+                  canCheat={canCheat}
+                  cheatGridDirty={cheatGridDirty}
+                  onSetCheat={onSetCheat}
+                />
+              ) : null}
+            </div>
             <SlotConsoleBalance
               balance={balance}
               connected={balanceConnected}
