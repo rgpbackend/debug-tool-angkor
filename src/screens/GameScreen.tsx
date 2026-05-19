@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAutoSpin } from "../hooks/useAutoSpin";
 import HistoryView from "../components/HistoryView";
 import JackpotPoolsBar from "../components/JackpotPoolsBar";
 import JackpotWinnersView from "../components/JackpotWinnersView";
@@ -46,7 +47,32 @@ export default function GameScreen(session: Readonly<GameSession>) {
   } = session;
 
   const [reelsPresenting, setReelsPresenting] = useState(false);
+  const [autoSpinActive, setAutoSpinActive] = useState(false);
   const spinUiActive = isSpinning || reelsPresenting;
+  const spinReady = canSpin && !reelsPresenting;
+
+  const stopAutoSpin = useCallback(() => {
+    setAutoSpinActive(false);
+  }, []);
+
+  const startAutoSpin = useCallback(() => {
+    setAutoSpinActive(true);
+    if (!spinUiActive && spinReady) {
+      void spin();
+    }
+  }, [spin, spinReady, spinUiActive]);
+
+  useEffect(() => {
+    if (!sessionReady) {
+      setAutoSpinActive(false);
+    }
+  }, [sessionReady]);
+
+  useEffect(() => {
+    if (activeTab !== "game") {
+      setAutoSpinActive(false);
+    }
+  }, [activeTab]);
 
   const betDisabled =
     spinUiActive ||
@@ -62,6 +88,14 @@ export default function GameScreen(session: Readonly<GameSession>) {
     }
     return buildSpinCelebrations(viewSpin as SpinResponsePayload, winWays);
   }, [spinUiActive, viewSpin, winWays]);
+
+  useAutoSpin({
+    active: autoSpinActive,
+    spinUiActive,
+    canSpin: spinReady,
+    celebrationCount: celebrations.length,
+    spin,
+  });
 
   const celebrationKey = useMemo(() => {
     if (!viewSpin?.spin?.reels) {
@@ -180,9 +214,12 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 betLevels={betLevels}
                 onBetChange={setBet}
                 betDisabled={betDisabled}
-                canSpin={canSpin && !reelsPresenting}
+                canSpin={spinReady}
                 spinning={spinUiActive}
                 onSpin={() => void spin()}
+                autoSpinActive={autoSpinActive}
+                onAutoSpinStart={startAutoSpin}
+                onAutoSpinStop={stopAutoSpin}
                 canCheat={canCheat}
                 cheatGridDirty={cheatGridDirty}
                 balance={balance}

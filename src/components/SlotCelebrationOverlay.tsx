@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  CELEBRATION_DISPLAY_MS,
+  CELEBRATION_EXIT_MS,
+} from "../lib/celebration-timing";
 import type { CelebrationItem } from "../lib/spin-celebrations";
-
-const DISPLAY_MS = 1000;
-const EXIT_MS = 280;
 
 export type SlotCelebrationOverlayProps = {
   items: CelebrationItem[];
@@ -39,10 +40,13 @@ export default function SlotCelebrationOverlay({
     shownItemsRef.current = items;
     setPhase("show");
 
-    const exitTimer = window.setTimeout(() => setPhase("exit"), DISPLAY_MS);
+    const exitTimer = window.setTimeout(
+      () => setPhase("exit"),
+      CELEBRATION_DISPLAY_MS,
+    );
     const hideTimer = window.setTimeout(
       () => setPhase("hidden"),
-      DISPLAY_MS + EXIT_MS,
+      CELEBRATION_DISPLAY_MS + CELEBRATION_EXIT_MS,
     );
 
     return () => {

@@ -10,6 +10,9 @@ type SlotControlsProps = {
   canSpin: boolean;
   spinning: boolean;
   onSpin: () => void;
+  autoSpinActive: boolean;
+  onAutoSpinStart: () => void;
+  onAutoSpinStop: () => void;
 };
 
 export default function SlotControls({
@@ -20,6 +23,9 @@ export default function SlotControls({
   canSpin,
   spinning,
   onSpin,
+  autoSpinActive,
+  onAutoSpinStart,
+  onAutoSpinStop,
 }: Readonly<SlotControlsProps>) {
   const [betModalOpen, setBetModalOpen] = useState(false);
   const hasBetLevels = betLevels.length > 0;
@@ -51,9 +57,19 @@ export default function SlotControls({
 
           <button
             type="button"
+            className={`slot-auto-spin-btn${autoSpinActive ? " slot-auto-spin-btn--stop" : ""}`}
+            onClick={autoSpinActive ? onAutoSpinStop : onAutoSpinStart}
+            disabled={!autoSpinActive && (betDisabled || !canSpin)}
+            aria-pressed={autoSpinActive}
+          >
+            {autoSpinActive ? "Stop" : "Auto spin"}
+          </button>
+
+          <button
+            type="button"
             className="slot-spin-btn"
             onClick={onSpin}
-            disabled={!canSpin}
+            disabled={!canSpin || autoSpinActive}
           >
             {spinning ? "Spinning…" : "Spin"}
           </button>

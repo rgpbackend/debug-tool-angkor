@@ -953,6 +953,55 @@
   line-height: 1.2;
 }
 
+.slot-controls--console .slot-auto-spin-btn {
+  flex-shrink: 0;
+  min-width: clamp(5.5rem, 15cqw, 7.5rem);
+  min-height: var(--slot-console-btn-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(0.85rem, 2.8cqw, 1.35rem);
+  font-size: clamp(0.78rem, 2.1cqw, 0.95rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: clamp(8px, 1.2cqw, 999px);
+  border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 75%, var(--border));
+  background: color-mix(in srgb, var(--slot-frame-mid) 45%, var(--bg));
+  color: var(--text-h);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.slot-controls--console .slot-auto-spin-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--slot-gold) 55%, var(--accent-border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.slot-controls--console .slot-auto-spin-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.slot-controls--console .slot-auto-spin-btn--stop {
+  border-color: color-mix(in srgb, #f87171 65%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #f87171 35%, #7f1d1d) 0%,
+    color-mix(in srgb, #dc2626 55%, #450a0a) 100%
+  );
+  color: #fff;
+  box-shadow:
+    0 4px 14px color-mix(in srgb, #ef4444 35%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 22%);
+}
+
+.slot-controls--console .slot-auto-spin-btn--stop:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #fca5a5 70%, #f87171);
+}
+
 .slot-controls--console .slot-spin-btn {
   flex-shrink: 0;
   min-width: clamp(6.5rem, 18cqw, 9rem);
@@ -1055,6 +1104,7 @@
     width: 100%;
   }
 
+  .slot-controls--console .slot-auto-spin-btn,
   .slot-controls--console .slot-spin-btn {
     flex: 1 1 auto;
     min-width: min(100%, 9rem);

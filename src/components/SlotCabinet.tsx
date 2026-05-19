@@ -14,6 +14,9 @@ type SlotCabinetProps = {
   canSpin: boolean;
   spinning: boolean;
   onSpin: () => void;
+  autoSpinActive: boolean;
+  onAutoSpinStart: () => void;
+  onAutoSpinStop: () => void;
   canCheat?: boolean;
   cheatGridDirty?: boolean;
   balance?: string | null;
@@ -34,6 +37,9 @@ export default function SlotCabinet({
   canSpin,
   spinning,
   onSpin,
+  autoSpinActive,
+  onAutoSpinStart,
+  onAutoSpinStop,
   canCheat = false,
   cheatGridDirty = false,
   balance = null,
@@ -95,6 +101,9 @@ export default function SlotCabinet({
               canSpin={canSpin}
               spinning={spinning}
               onSpin={onSpin}
+              autoSpinActive={autoSpinActive}
+              onAutoSpinStart={onAutoSpinStart}
+              onAutoSpinStop={onAutoSpinStop}
             />
           </div>
         </footer>
