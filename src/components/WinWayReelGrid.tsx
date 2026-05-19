@@ -1,6 +1,17 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EXPECTED_CHEAT_REEL_SIZES } from "../lib/cheat";
+import {
+  REEL_SPIN,
+  createSpinLoopSegment,
+  initialReelStates,
+  placeholderResult,
+  spinningReelStates,
+  type ReelVisualState,
+} from "../lib/reel-spin";
 import type { WinWay } from "../ws/protocol";
+import SlotReelColumn from "./SlotReelColumn";
+
+const REEL_COUNT = EXPECTED_CHEAT_REEL_SIZES.length;
 
 const WINWAY_COLORS = [
   "#3b82f6",
@@ -70,6 +81,10 @@ export interface WinWayReelGridProps {
   /** Free-spin scatter collection meter (0–target). */
   freeSpinScatterCollected?: number;
   freeSpinScatterTarget?: number;
+  /** Server spin request in flight. */
+  spinning?: boolean;
+  /** Fired when reel presentation starts or finishes (spin + staggered stop). */
+  onPresentationChange?: (active: boolean) => void;
   /** Cabinet: cells become inputs bound to editGrid. */
   editable?: boolean;
   editGrid?: string[][];
@@ -94,23 +109,180 @@ export default function WinWayReelGrid({
   freeSpinVisible = false,
   freeSpinScatterCollected = 0,
   freeSpinScatterTarget = 5,
+  spinning = false,
+  onPresentationChange,
   editable = false,
   editGrid,
   editDisabled = false,
   onEditCellChange,
 }: Readonly<WinWayReelGridProps>) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [presentationActive, setPresentationActive] = useState(false);
+  const [reelStates, setReelStates] = useState<ReelVisualState[]>(() =>
+    initialReelStates(REEL_COUNT),
+  );
+  const [loopSegments, setLoopSegments] = useState<string[][]>([]);
+  const [placeholderResults, setPlaceholderResults] = useState<string[][]>([]);
+  const [bouncingReel, setBouncingReel] = useState<number | null>(null);
+
+  const spinStartRef = useRef(0);
+  const spinCycleRef = useRef(false);
+  const stopScheduledRef = useRef(false);
+  const stoppedReelsRef = useRef<Set<number>>(new Set());
+  const stopTimersRef = useRef<number[]>([]);
+  const bounceTimerRef = useRef<number | null>(null);
+
+  const clearStopTimers = useCallback(() => {
+    stopTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    stopTimersRef.current = [];
+  }, []);
+
+  const finishPresentation = useCallback(() => {
+    if (!spinCycleRef.current) {
+      return;
+    }
+    clearStopTimers();
+    spinCycleRef.current = false;
+    stopScheduledRef.current = false;
+    stoppedReelsRef.current.clear();
+    setPresentationActive(false);
+    onPresentationChange?.(false);
+  }, [clearStopTimers, onPresentationChange]);
+
+  const beginPresentation = useCallback(() => {
+    clearStopTimers();
+    spinCycleRef.current = true;
+    stopScheduledRef.current = false;
+    stoppedReelsRef.current.clear();
+    spinStartRef.current = Date.now();
+    setPresentationActive(true);
+    onPresentationChange?.(true);
+    setReelStates(spinningReelStates(REEL_COUNT));
+    setLoopSegments(
+      EXPECTED_CHEAT_REEL_SIZES.map(() => createSpinLoopSegment()),
+    );
+    setPlaceholderResults(
+      EXPECTED_CHEAT_REEL_SIZES.map((len) => placeholderResult(len)),
+    );
+    setBouncingReel(null);
+  }, [clearStopTimers, onPresentationChange]);
 
   useEffect(() => {
     setSelectedIndex(0);
   }, [winWays]);
 
-  const safeSelectedIndex =
-    winWays.length === 0
-      ? 0
-      : Math.min(Math.max(selectedIndex, 0), winWays.length - 1);
+  useEffect(() => {
+    if (!spinning || !cabinet) {
+      return;
+    }
+    beginPresentation();
+  }, [spinning, cabinet, beginPresentation]);
 
-  const fullCellWinWays = useMemo(() => buildCellWinWayMap(winWays), [winWays]);
+  useEffect(() => {
+    if (spinning || !cabinet || !spinCycleRef.current || stopScheduledRef.current) {
+      return;
+    }
+
+    stopScheduledRef.current = true;
+
+    const elapsed = Date.now() - spinStartRef.current;
+    const delayBeforeStop = Math.max(0, REEL_SPIN.minSpinMs - elapsed);
+
+    clearStopTimers();
+
+    const scheduleStop = window.setTimeout(() => {
+      EXPECTED_CHEAT_REEL_SIZES.forEach((_, ci) => {
+        const timer = window.setTimeout(() => {
+          setReelStates((prev) => {
+            if (prev[ci] !== "spinning") {
+              return prev;
+            }
+            const next = [...prev];
+            next[ci] = "stopping";
+            return next;
+          });
+        }, ci * REEL_SPIN.stopIntervalMs);
+        stopTimersRef.current.push(timer);
+      });
+    }, delayBeforeStop);
+
+    stopTimersRef.current.push(scheduleStop);
+
+    const fallbackFinishMs =
+      delayBeforeStop +
+      (REEL_COUNT - 1) * REEL_SPIN.stopIntervalMs +
+      REEL_SPIN.stopDurationMs +
+      REEL_SPIN.bounceMs +
+      120;
+    const fallbackTimer = window.setTimeout(() => {
+      if (!spinCycleRef.current) {
+        return;
+      }
+      setReelStates(EXPECTED_CHEAT_REEL_SIZES.map(() => "stopped"));
+      finishPresentation();
+    }, fallbackFinishMs);
+    stopTimersRef.current.push(fallbackTimer);
+
+    return clearStopTimers;
+  }, [spinning, cabinet, reels, clearStopTimers, finishPresentation]);
+
+  useEffect(
+    () => () => {
+      clearStopTimers();
+      if (bounceTimerRef.current != null) {
+        window.clearTimeout(bounceTimerRef.current);
+      }
+    },
+    [clearStopTimers],
+  );
+
+  const handleReelStopped = useCallback(
+    (ci: number) => {
+      if (stoppedReelsRef.current.has(ci)) {
+        return;
+      }
+      stoppedReelsRef.current.add(ci);
+
+      setReelStates((prev) => {
+        if (prev[ci] === "stopped") {
+          return prev;
+        }
+        const next = [...prev];
+        next[ci] = "stopped";
+        return next;
+      });
+
+      setBouncingReel(ci);
+      if (bounceTimerRef.current != null) {
+        window.clearTimeout(bounceTimerRef.current);
+      }
+      bounceTimerRef.current = window.setTimeout(() => {
+        setBouncingReel(null);
+        bounceTimerRef.current = null;
+      }, REEL_SPIN.bounceMs);
+
+      if (stoppedReelsRef.current.size >= REEL_COUNT) {
+        finishPresentation();
+      }
+    },
+    [finishPresentation],
+  );
+
+  const showWinPresentation = cabinet ? !presentationActive && !spinning : true;
+  const displayWinWays = showWinPresentation ? winWays : [];
+  const displayGoldenWild = showWinPresentation
+    ? goldenWildHighlightKeys
+    : undefined;
+
+  const safeSelectedIndex =
+    displayWinWays.length === 0
+      ? 0
+      : Math.min(Math.max(selectedIndex, 0), displayWinWays.length - 1);
+
+  const fullCellWinWays = useMemo(
+    () => buildCellWinWayMap(displayWinWays),
+    [displayWinWays],
+  );
   const cellWinWays = useMemo(
     () => filterCellWinWayMap(fullCellWinWays, safeSelectedIndex),
     [fullCellWinWays, safeSelectedIndex],
@@ -122,7 +294,8 @@ export default function WinWayReelGrid({
     ? "winway-reels-layout winway-reels-layout--cabinet"
     : "winway-reels-layout";
 
-  const showLegendSlot = cabinet || winWays.length > 0;
+  const showLegendSlot = cabinet || displayWinWays.length > 0;
+  const reelsBusy = spinning || presentationActive;
 
   const featureHud =
     respinVisible || freeSpinVisible ? (
@@ -181,61 +354,61 @@ export default function WinWayReelGrid({
     <div className={layoutClass}>
       {showLegendSlot ? (
         <aside
-          className={`winway-legend-panel${cabinet && winWays.length === 0 ? " winway-legend-panel--empty" : ""}`}
+          className={`winway-legend-panel${cabinet && displayWinWays.length === 0 ? " winway-legend-panel--empty" : ""}`}
           aria-label="Win ways legend"
         >
           {cabinet ? (
             <p className="winway-legend-heading">Win ways</p>
           ) : null}
-          {winWays.length > 0 ? (
+          {displayWinWays.length > 0 ? (
             <ul
               className="winway-legend"
               role="listbox"
               aria-label="Select win way"
             >
-              {winWays.map((way, idx) => {
-              const color = winWayColor(idx);
-              const isActive = idx === safeSelectedIndex;
-              return (
-                <li
-                  key={`winway-legend-${way.symbol}-${idx}`}
-                  className={`winway-legend-item${isActive ? " winway-legend-item-active" : ""}`}
-                  role="option"
-                  aria-selected={isActive}
-                >
-                  <button
-                    type="button"
-                    className="winway-legend-btn"
-                    onClick={() => setSelectedIndex(idx)}
+              {displayWinWays.map((way, idx) => {
+                const color = winWayColor(idx);
+                const isActive = idx === safeSelectedIndex;
+                return (
+                  <li
+                    key={`winway-legend-${way.symbol}-${idx}`}
+                    className={`winway-legend-item${isActive ? " winway-legend-item-active" : ""}`}
+                    role="option"
+                    aria-selected={isActive}
                   >
-                    <span
-                      className="winway-legend-swatch"
-                      style={{ background: color }}
-                      aria-hidden
-                    />
-                    <span className="winway-legend-body">
+                    <button
+                      type="button"
+                      className="winway-legend-btn"
+                      onClick={() => setSelectedIndex(idx)}
+                    >
                       <span
-                        className="winway-legend-num"
-                        style={{ color: isActive ? color : undefined }}
-                      >
-                        #{idx + 1}
+                        className="winway-legend-swatch"
+                        style={{ background: color }}
+                        aria-hidden
+                      />
+                      <span className="winway-legend-body">
+                        <span
+                          className="winway-legend-num"
+                          style={{ color: isActive ? color : undefined }}
+                        >
+                          #{idx + 1}
+                        </span>
+                        <span className="winway-legend-text">
+                          {way.symbol} ×{way.matchCount}
+                        </span>
+                        <span className="winway-legend-meta muted">
+                          {way.ways} way{way.ways === 1 ? "" : "s"} ·{" "}
+                          {String(way.payout)}
+                        </span>
                       </span>
-                      <span className="winway-legend-text">
-                        {way.symbol} ×{way.matchCount}
-                      </span>
-                      <span className="winway-legend-meta muted">
-                        {way.ways} way{way.ways === 1 ? "" : "s"} ·{" "}
-                        {String(way.payout)}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="winway-legend-empty muted">
-              No win ways this spin
+              {reelsBusy ? "Spinning…" : "No win ways this spin"}
             </p>
           )}
         </aside>
@@ -246,86 +419,60 @@ export default function WinWayReelGrid({
       <div className="reels-wrap winway-reels-main slot-reels-stage">
         {!cabinet ? featureHud : null}
         <div
-          className={`reels${editable ? " reels--editable" : ""}`}
+          className={`reels reels--5${editable ? " reels--editable" : ""}${
+            reelsBusy ? " reels--busy" : ""
+          }`}
           aria-label={ariaLabel}
+          aria-busy={reelsBusy}
         >
           {EXPECTED_CHEAT_REEL_SIZES.map((colLen, ci) => {
             const column = reels[ci] ?? [];
+            const visualState = cabinet ? reelStates[ci] : "idle";
+
+            if (!cabinet) {
+              return (
+                <SlotReelColumn
+                  key={`reel-r${ci + 1}-cells-${colLen}`}
+                  reelIndex={ci}
+                  colLen={colLen}
+                  column={column}
+                  loopSegment={[]}
+                  motionResult={[]}
+                  reelState="idle"
+                  bouncing={false}
+                  editable={editable}
+                  editGrid={editGrid}
+                  editDisabled={editDisabled}
+                  showWinPresentation={showWinPresentation}
+                  cellWinWays={cellWinWays}
+                  goldenWildHighlightKeys={displayGoldenWild}
+                  selectedColor={selectedColor}
+                  onEditCellChange={onEditCellChange}
+                  onReelStopped={handleReelStopped}
+                />
+              );
+            }
+
             return (
-              <div
+              <SlotReelColumn
                 key={`reel-r${ci + 1}-cells-${colLen}`}
-                className="reel-col"
-              >
-                {Array.from({ length: colLen }, (_, ri) => {
-                  const sym =
-                    editable && editGrid
-                      ? (editGrid[ci]?.[ri] ?? "")
-                      : (column[ri] ?? "");
-                  const key = cellKey(ci, ri);
-                  const wayIndices = cellWinWays.get(key) ?? [];
-                  const winHit = wayIndices.length > 0;
-                  const gwHit = goldenWildHighlightKeys?.has(key) ?? false;
-                  const isScatter = sym === "S";
-                  const isWild = sym === "W";
-                  const cellClass = `cell sym-${sym}${isScatter ? " cell-scatter" : ""}${
-                    isWild ? " cell-wild" : ""
-                  }${winHit ? " cell-winway" : ""}${
-                    gwHit ? " cell-golden-wild" : ""
-                  }${editable ? " cell-editable" : ""}`;
-                  const cellTitle = isScatter
-                    ? "Scatter"
-                    : isWild
-                      ? "Wild"
-                      : undefined;
-                  const cellStyle = winHit
-                    ? ({
-                        "--winway-color": selectedColor,
-                      } as CSSProperties)
-                    : undefined;
-
-                  if (editable && onEditCellChange) {
-                    return (
-                      <div
-                        key={`reel-r${ci + 1}-slot-${ri + 1}`}
-                        className={cellClass}
-                        style={cellStyle}
-                        title={cellTitle}
-                      >
-                        <input
-                          className="slot-cell-input"
-                          value={editGrid?.[ci]?.[ri] ?? ""}
-                          onChange={(e) =>
-                            onEditCellChange(ci, ri, colLen, e.target.value)
-                          }
-                          maxLength={2}
-                          inputMode="text"
-                          autoComplete="off"
-                          spellCheck={false}
-                          aria-label={
-                            isScatter
-                              ? `Reel ${ci + 1} row ${ri + 1}, scatter`
-                              : isWild
-                                ? `Reel ${ci + 1} row ${ri + 1}, wild`
-                                : `Reel ${ci + 1} row ${ri + 1}`
-                          }
-                          disabled={editDisabled}
-                        />
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={`reel-r${ci + 1}-slot-${ri + 1}`}
-                      className={cellClass}
-                      style={cellStyle}
-                      title={cellTitle}
-                    >
-                      <span className="cell-symbol">{sym}</span>
-                    </div>
-                  );
-                })}
-              </div>
+                reelIndex={ci}
+                colLen={colLen}
+                column={column}
+                loopSegment={loopSegments[ci] ?? []}
+                motionResult={placeholderResults[ci] ?? []}
+                reelState={visualState}
+                bouncing={bouncingReel === ci}
+                editable={editable}
+                editGrid={editGrid}
+                editDisabled={editDisabled || reelsBusy}
+                showWinPresentation={showWinPresentation}
+                cellWinWays={cellWinWays}
+                goldenWildHighlightKeys={displayGoldenWild}
+                selectedColor={selectedColor}
+                onEditCellChange={onEditCellChange}
+                onReelStopped={handleReelStopped}
+              />
             );
           })}
         </div>

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import HistoryView from "../components/HistoryView";
 import JackpotPoolsBar from "../components/JackpotPoolsBar";
 import JackpotWinnersView from "../components/JackpotWinnersView";
@@ -45,8 +45,11 @@ export default function GameScreen(session: Readonly<GameSession>) {
     featureBadges,
   } = session;
 
+  const [reelsPresenting, setReelsPresenting] = useState(false);
+  const spinUiActive = isSpinning || reelsPresenting;
+
   const betDisabled =
-    phase === "spinning" ||
+    spinUiActive ||
     !sessionReady ||
     betLocked ||
     betLevels.length === 0;
@@ -54,11 +57,11 @@ export default function GameScreen(session: Readonly<GameSession>) {
   const hasSpinReels = Boolean(viewSpin?.spin?.reels);
 
   const celebrations = useMemo(() => {
-    if (isSpinning || !viewSpin?.spin) {
+    if (spinUiActive || !viewSpin?.spin) {
       return [];
     }
     return buildSpinCelebrations(viewSpin as SpinResponsePayload, winWays);
-  }, [isSpinning, viewSpin, winWays]);
+  }, [spinUiActive, viewSpin, winWays]);
 
   const celebrationKey = useMemo(() => {
     if (!viewSpin?.spin?.reels) {
@@ -136,7 +139,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 celebrations={
                   <SlotCelebrationOverlay
                     items={celebrations}
-                    visible={!isSpinning && celebrations.length > 0}
+                    visible={!spinUiActive && celebrations.length > 0}
                     resetKey={celebrationKey}
                   />
                 }
@@ -145,8 +148,10 @@ export default function GameScreen(session: Readonly<GameSession>) {
                     <WinWayReelGrid
                       cabinet
                       editable
+                      spinning={isSpinning}
+                      onPresentationChange={setReelsPresenting}
                       editGrid={cheatGrid}
-                      editDisabled={!canCheat || isSpinning}
+                      editDisabled={!canCheat || spinUiActive}
                       onEditCellChange={updateCheatCell}
                       reels={viewSpin.spin.reels}
                       winWays={winWays}
@@ -175,8 +180,8 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 betLevels={betLevels}
                 onBetChange={setBet}
                 betDisabled={betDisabled}
-                canSpin={canSpin}
-                spinning={isSpinning}
+                canSpin={canSpin && !reelsPresenting}
+                spinning={spinUiActive}
                 onSpin={() => void spin()}
                 canCheat={canCheat}
                 cheatGridDirty={cheatGridDirty}
