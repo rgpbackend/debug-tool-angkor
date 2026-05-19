@@ -1,33 +1,34 @@
 import { useCallback, useEffect, useRef } from "react";
-import { CELEBRATION_SEQUENCE_MS } from "../lib/celebration-timing";
 
-const AUTO_SPIN_PAUSE_MS = 2000;
-const CAN_SPIN_RETRY_MS = 500;
+const AUTO_SPIN_BETWEEN_ROUNDS_MS = 0;
 
 type UseAutoSpinArgs = {
   active: boolean;
-  spinUiActive: boolean;
-  canSpin: boolean;
-  celebrationCount: number;
-  spin: () => void | Promise<void>;
+  /** True when no round runner work and no spin/reel presentation. */
+  roundIdle: boolean;
+  canStartRound: boolean;
+  onRunRound: () => void | Promise<void>;
 };
 
+/**
+ * Schedules the next full round (base → features → end) after the previous
+ * round fully settles — not after each individual cmd 1500 step.
+ */
 export function useAutoSpin({
   active,
-  spinUiActive,
-  canSpin,
-  celebrationCount,
-  spin,
+  roundIdle,
+  canStartRound,
+  onRunRound,
 }: UseAutoSpinArgs): void {
   const activeRef = useRef(active);
-  const spinRef = useRef(spin);
-  const canSpinRef = useRef(canSpin);
   const timerRef = useRef<number | null>(null);
-  const prevSpinUiActiveRef = useRef(spinUiActive);
+  const prevRoundIdleRef = useRef(roundIdle);
+  const onRunRoundRef = useRef(onRunRound);
+  const canStartRoundRef = useRef(canStartRound);
 
   activeRef.current = active;
-  spinRef.current = spin;
-  canSpinRef.current = canSpin;
+  onRunRoundRef.current = onRunRound;
+  canStartRoundRef.current = canStartRound;
 
   const clearTimer = useCallback(() => {
     if (timerRef.current != null) {
@@ -36,29 +37,19 @@ export function useAutoSpin({
     }
   }, []);
 
-  const runSpin = useCallback(() => {
-    if (!activeRef.current) {
-      return;
-    }
-    if (!canSpinRef.current) {
-      timerRef.current = window.setTimeout(runSpin, CAN_SPIN_RETRY_MS);
-      return;
-    }
-    void spinRef.current();
-  }, []);
-
-  const scheduleAfterEffects = useCallback(() => {
+  const scheduleNextRound = useCallback(() => {
     clearTimer();
-    if (!activeRef.current) {
+    if (!activeRef.current || !canStartRoundRef.current) {
       return;
     }
-    const delay =
-      (celebrationCount > 0 ? CELEBRATION_SEQUENCE_MS : 0) + AUTO_SPIN_PAUSE_MS;
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
-      runSpin();
-    }, delay);
-  }, [celebrationCount, clearTimer, runSpin]);
+      if (!activeRef.current || !canStartRoundRef.current) {
+        return;
+      }
+      void onRunRoundRef.current();
+    }, AUTO_SPIN_BETWEEN_ROUNDS_MS);
+  }, [clearTimer]);
 
   useEffect(() => {
     if (!active) {
@@ -67,14 +58,15 @@ export function useAutoSpin({
   }, [active, clearTimer]);
 
   useEffect(() => {
-    const wasBusy = prevSpinUiActiveRef.current;
-    prevSpinUiActiveRef.current = spinUiActive;
+    const wasIdle = prevRoundIdleRef.current;
+    prevRoundIdleRef.current = roundIdle;
 
-    if (!active || !wasBusy || spinUiActive) {
+    if (!active || !roundIdle || wasIdle) {
       return;
     }
-    scheduleAfterEffects();
-  }, [spinUiActive, active, scheduleAfterEffects]);
+
+    scheduleNextRound();
+  }, [roundIdle, active, scheduleNextRound]);
 
   useEffect(() => () => clearTimer(), [clearTimer]);
 }

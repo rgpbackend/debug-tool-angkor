@@ -423,10 +423,15 @@ export function useGameSession() {
     [stopHeartbeat],
   );
 
-  const spin = useCallback(async () => {
+  const spin = useCallback(async (): Promise<SpinResponsePayload | null> => {
     const client = clientRef.current;
-    if (!client?.isConnected() || phase !== "joined" || !sessionReady) {
-      return;
+    if (
+      !client?.isConnected() ||
+      phase !== "joined" ||
+      !sessionReady ||
+      spinBusyRef.current
+    ) {
+      return null;
     }
     setError(null);
     spinBusyRef.current = true;
@@ -462,6 +467,7 @@ export function useGameSession() {
       setPhase("joined");
       spinBusyRef.current = false;
       setSpinFreeze(null);
+      return spinPayload;
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
@@ -472,6 +478,7 @@ export function useGameSession() {
         setSessionReady(false);
         setPhase("disconnected");
       }
+      return null;
     } finally {
       spinBusyRef.current = false;
       setSpinFreeze(null);

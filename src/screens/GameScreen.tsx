@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAutoSpin } from "../hooks/useAutoSpin";
+import { useRoundRunner } from "../hooks/useRoundRunner";
 import HistoryView from "../components/HistoryView";
 import JackpotPoolsBar from "../components/JackpotPoolsBar";
 import JackpotWinnersView from "../components/JackpotWinnersView";
@@ -49,18 +50,30 @@ export default function GameScreen(session: Readonly<GameSession>) {
   const [reelsPresenting, setReelsPresenting] = useState(false);
   const [autoSpinActive, setAutoSpinActive] = useState(false);
   const spinUiActive = isSpinning || reelsPresenting;
-  const spinReady = canSpin && !reelsPresenting;
+  const spinUiActiveRef = useRef(spinUiActive);
+  spinUiActiveRef.current = spinUiActive;
+
+  const { roundRunning, executeRound, cancelRound } = useRoundRunner({
+    spin,
+    isSpinUiActive: () => spinUiActiveRef.current,
+    canStartRound: canSpin && !spinUiActive,
+  });
+
+  const roundBusy = roundRunning || spinUiActive;
+  const roundIdle = !roundBusy;
+  const controlsReady = canSpin && !roundRunning && !spinUiActive;
 
   const stopAutoSpin = useCallback(() => {
     setAutoSpinActive(false);
-  }, []);
+    cancelRound();
+  }, [cancelRound]);
 
   const startAutoSpin = useCallback(() => {
     setAutoSpinActive(true);
-    if (!spinUiActive && spinReady) {
-      void spin();
+    if (roundIdle && controlsReady) {
+      void executeRound();
     }
-  }, [spin, spinReady, spinUiActive]);
+  }, [executeRound, controlsReady, roundIdle]);
 
   useEffect(() => {
     if (!sessionReady) {
@@ -75,7 +88,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
   }, [activeTab]);
 
   const betDisabled =
-    spinUiActive ||
+    roundBusy ||
     !sessionReady ||
     betLocked ||
     betLevels.length === 0;
@@ -91,10 +104,9 @@ export default function GameScreen(session: Readonly<GameSession>) {
 
   useAutoSpin({
     active: autoSpinActive,
-    spinUiActive,
-    canSpin: spinReady,
-    celebrationCount: celebrations.length,
-    spin,
+    roundIdle,
+    canStartRound: controlsReady,
+    onRunRound: executeRound,
   });
 
   const celebrationKey = useMemo(() => {
@@ -185,7 +197,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
                       spinning={isSpinning}
                       onPresentationChange={setReelsPresenting}
                       editGrid={cheatGrid}
-                      editDisabled={!canCheat || spinUiActive}
+                      editDisabled={!canCheat || roundBusy}
                       onEditCellChange={updateCheatCell}
                       reels={viewSpin.spin.reels}
                       winWays={winWays}
@@ -214,9 +226,9 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 betLevels={betLevels}
                 onBetChange={setBet}
                 betDisabled={betDisabled}
-                canSpin={spinReady}
-                spinning={spinUiActive}
-                onSpin={() => void spin()}
+                canSpin={controlsReady}
+                spinning={roundBusy}
+                onSpin={() => void executeRound()}
                 autoSpinActive={autoSpinActive}
                 onAutoSpinStart={startAutoSpin}
                 onAutoSpinStop={stopAutoSpin}
