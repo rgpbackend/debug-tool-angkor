@@ -4,13 +4,15 @@ export const REEL_SPIN = {
   /** Delay between each reel stop trigger (left → right). */
   stopIntervalMs: 420,
   /** Deceleration duration for a single reel landing. */
-  stopDurationMs: 780,
+  stopDurationMs: 860,
   /** Symbols in one seamless loop segment (duplicated in the strip). */
   loopSegmentLength: 16,
   /** Symbols after the result for decel headroom. */
   tailLength: 4,
-  /** Scroll speed while spinning (px/s) — kept moderate to reduce eye strain. */
-  spinSpeedPxPerSec: 880,
+  /** Time to ease from rest into cruise spin speed. */
+  spinRampUpMs: 480,
+  /** Peak scroll speed during the spin loop (px/s) — no sustained “blur” phase. */
+  spinCruiseSpeedPxPerSec: 620,
   /** Brief settle after a reel lands. */
   bounceMs: 220,
 } as const;
@@ -100,6 +102,13 @@ export function spinningReelStates(count: number): ReelVisualState[] {
   return Array.from({ length: count }, () => "spinning");
 }
 
-export function easeOutCubic(t: number): number {
-  return 1 - (1 - t) ** 3;
+/** Smooth 0→1 ramp (no abrupt jerk at start/end). */
+export function smoothstep01(t: number): number {
+  const x = Math.max(0, Math.min(1, t));
+  return x * x * (3 - 2 * x);
+}
+
+/** Gentle landing — slow in and slow out (avoids a fast “whip” at decel start). */
+export function easeInOutSine(t: number): number {
+  return -(Math.cos(Math.PI * Math.max(0, Math.min(1, t))) - 1) / 2;
 }

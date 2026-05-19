@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import {
   REEL_SPIN,
-  easeOutCubic,
+  easeInOutSine,
+  smoothstep01,
   type ReelVisualState,
   type UnifiedReelStrip,
 } from "../lib/reel-spin";
@@ -106,7 +107,8 @@ export function useReelStripMotion({
     ).matches;
 
     if (reelState === "spinning") {
-      let last = performance.now();
+      const spinPhaseStart = performance.now();
+      let last = spinPhaseStart;
 
       const tick = (now: number) => {
         const el = stripRef.current;
@@ -129,7 +131,12 @@ export function useReelStripMotion({
         const dt = Math.min(0.032, (now - last) / 1000);
         last = now;
 
-        const next = offsetRef.current - REEL_SPIN.spinSpeedPxPerSec * dt;
+        const rampT =
+          (now - spinPhaseStart) / Math.max(1, REEL_SPIN.spinRampUpMs);
+        const speedPxPerSec =
+          REEL_SPIN.spinCruiseSpeedPxPerSec * smoothstep01(rampT);
+
+        const next = offsetRef.current - speedPxPerSec * dt;
         offsetRef.current = wrapLoopOffset(next, loopBandLowPx, loopSpanPx);
         applyOffset(offsetRef.current);
         rafRef.current = requestAnimationFrame(tick);
@@ -173,7 +180,7 @@ export function useReelStripMotion({
 
     const tick = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
-      const eased = easeOutCubic(t);
+      const eased = easeInOutSine(t);
       const current = startPx - distancePx * eased;
       offsetRef.current = current;
       applyOffset(current);
