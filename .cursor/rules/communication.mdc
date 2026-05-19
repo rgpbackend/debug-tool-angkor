@@ -1,0 +1,45 @@
+---
+description: English-only codebase; Vietnamese for user communication and planning.
+alwaysApply: true
+---
+
+# English Code, Vietnamese Communication
+
+## Codebase (English only)
+
+All repository artifacts must be written in **English**:
+
+- Source code, identifiers, and string literals shown in the UI
+- Comments, JSDoc, and docstrings
+- Commit messages, PR titles/descriptions, and README/docs in the repo
+- Test names, error messages, logs, and config labels
+
+Do not introduce Vietnamese (or other non-English text) into the codebase unless the user explicitly requests localized UI copy for a specific locale feature.
+
+## User communication (Vietnamese)
+
+When talking to the user:
+
+- Explain findings, plans, summaries, and questions in **Vietnamese**
+- Use Vietnamese for task breakdowns, trade-offs, and review feedback
+- Keep code citations, paths, commands, and API names in their original English form
+
+## Examples
+
+```tsx
+// BAD — Vietnamese UI string in code
+<h2>Chọn mức cược</h2>
+
+// GOOD
+<h2>Select bet amount</h2>
+```
+
+```tsx
+// BAD — Vietnamese comment
+/** Danh sách spin đã kết thúc. */
+
+// GOOD
+/** Paginated list of finished spins. */
+```
+
+When the user asks for a plan: respond in Vietnamese; implement in English.

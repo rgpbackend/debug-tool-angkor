@@ -58,7 +58,7 @@ export default function BetPickerModal({
         aria-labelledby="bet-picker-modal-title"
       >
         <header className="cheat-modal-header">
-          <h2 id="bet-picker-modal-title">Chọn mức cược</h2>
+          <h2 id="bet-picker-modal-title">Select bet amount</h2>
           <button
             type="button"
             className="cheat-modal-close"
@@ -70,7 +70,7 @@ export default function BetPickerModal({
         </header>
 
         <p className="cheat-hint muted">
-          Mức cược hiện tại: <strong>{formatBet(betValue)}</strong>
+          Current bet: <strong>{formatBet(betValue)}</strong>
         </p>
 
         <div className="bet-picker-grid" role="listbox" aria-label="Bet amount">

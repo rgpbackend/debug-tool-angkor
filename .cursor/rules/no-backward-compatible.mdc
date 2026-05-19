@@ -1,0 +1,27 @@
+---
+description: Forbid backward-compatible logic, fallbacks, and legacy dual-path behavior in this repository.
+alwaysApply: true
+---
+
+# No Backward-Compatible Policy
+
+This repository does not allow backward-compatible implementation patterns.
+
+## Hard Rules
+
+- Do not add any fallback path for legacy schema, payload, config, or behavior.
+- Do not keep dual-path code such as `new logic + old logic` in the same flow.
+- Do not add migration shims, compatibility flags, adapters, or temporary bridge layers.
+- Do not preserve deprecated fields "for compatibility"; remove or replace directly.
+- Do not use or introduce the term `backward-compatible` in code comments, docs, or PR descriptions for this repo.
+
+## Required Behavior
+
+- Implement only the target behavior requested now, as a single source of truth.
+- If existing code contains compatibility branches, prefer removing them when touching that area.
+- If removal could break external consumers, stop and ask the user for explicit rollout instructions instead of implementing compatibility code.
+
+## Examples
+
+- Bad: `if (newField == null) { useLegacyField(); }`
+- Good: `requireNonNull(newField);` and update callers/tests to the new contract.

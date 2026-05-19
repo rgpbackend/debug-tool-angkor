@@ -41,7 +41,7 @@ export function heartbeatFrame(): HeartbeatFrame {
   return ["7", "MiniGame", "1", 2];
 }
 
-/** cmd 1502 — Level 1: danh sách spins đã kết thúc (phân trang). */
+/** cmd 1502 — Level 1: paginated list of finished spins. */
 export function historyListFrame(
   gameRoute: string,
   page: number,
@@ -63,7 +63,7 @@ export function jackpotWinHistoryFrame(
   return [6, "MiniGame", gameRoute, { cmd: "1511", limit }];
 }
 
-/** cmd 1503 — Level 2: chi tiết 1 spin trong round đã kết thúc. */
+/** cmd 1503 — Level 2: detail for one spin in a finished round. */
 export function historyDetailFrame(
   gameRoute: string,
   roundId: string,

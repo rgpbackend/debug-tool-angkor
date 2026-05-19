@@ -88,8 +88,8 @@ export default function ForceJackpotModal({
         </header>
 
         <p className="cheat-hint muted">
-          Chọn loại jackpot — lượt <strong>base spin</strong> tiếp theo sẽ thắng
-          chắc chắn tier đó (cmd <code>2002</code>).
+          Pick a jackpot tier — the next <strong>base spin</strong> is guaranteed
+          to win that tier (cmd <code>2002</code>).
         </p>
 
         <div
