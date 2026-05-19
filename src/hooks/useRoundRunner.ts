@@ -57,9 +57,32 @@ export function useRoundRunner({
     }
   }, []);
 
+  const executeStep = useCallback(async () => {
+    if (roundRunningRef.current || !canStartRoundRef.current) {
+      return;
+    }
+
+    cancelRef.current = false;
+    roundRunningRef.current = true;
+    setRoundRunning(true);
+
+    try {
+      const payload = await spinRef.current();
+      if (!payload || cancelRef.current) {
+        return;
+      }
+
+      await waitAfterSpinStep(payload, () => isSpinUiActiveRef.current());
+    } finally {
+      roundRunningRef.current = false;
+      setRoundRunning(false);
+    }
+  }, []);
+
   return {
     roundRunning,
     executeRound,
+    executeStep,
     cancelRound,
   };
 }

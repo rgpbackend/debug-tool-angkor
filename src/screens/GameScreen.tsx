@@ -56,11 +56,12 @@ export default function GameScreen(session: Readonly<GameSession>) {
   const spinUiActiveRef = useRef(spinUiActive);
   spinUiActiveRef.current = spinUiActive;
 
-  const { roundRunning, executeRound, cancelRound } = useRoundRunner({
-    spin,
-    isSpinUiActive: () => spinUiActiveRef.current,
-    canStartRound: canSpin && !spinUiActive,
-  });
+  const { roundRunning, executeRound, executeStep, cancelRound } =
+    useRoundRunner({
+      spin,
+      isSpinUiActive: () => spinUiActiveRef.current,
+      canStartRound: canSpin && !spinUiActive,
+    });
 
   const roundBusy = roundRunning || spinUiActive;
   const roundIdle = !roundBusy;
@@ -198,8 +199,10 @@ export default function GameScreen(session: Readonly<GameSession>) {
               onBetChange={setBet}
               betDisabled={betDisabled}
               canSpin={controlsReady}
+              canSpinControls={controlsReady && !autoSpinActive}
               spinning={roundBusy}
               onSpin={() => void executeRound()}
+              onManualSpin={() => void executeStep()}
               autoSpinActive={autoSpinActive}
               onAutoSpinStart={startAutoSpin}
               onAutoSpinStop={stopAutoSpin}

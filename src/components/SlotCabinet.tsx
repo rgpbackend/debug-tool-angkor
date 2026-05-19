@@ -11,8 +11,11 @@ type SlotCabinetProps = {
   onBetChange: (value: string) => void;
   betDisabled: boolean;
   canSpin: boolean;
+  /** Spin / Manual cluster; defaults to {@link canSpin}. */
+  canSpinControls?: boolean;
   spinning: boolean;
   onSpin: () => void;
+  onManualSpin: () => void;
   autoSpinActive: boolean;
   onAutoSpinStart: () => void;
   onAutoSpinStop: () => void;
@@ -33,8 +36,10 @@ export default function SlotCabinet({
   onBetChange,
   betDisabled,
   canSpin,
+  canSpinControls = canSpin,
   spinning,
   onSpin,
+  onManualSpin,
   autoSpinActive,
   onAutoSpinStart,
   onAutoSpinStop,
@@ -83,7 +88,7 @@ export default function SlotCabinet({
               {onOpenHistory ? (
                 <button
                   type="button"
-                  className="console-action-btn"
+                  className="slot-console-chip-btn"
                   onClick={onOpenHistory}
                 >
                   History
@@ -92,12 +97,21 @@ export default function SlotCabinet({
               {onOpenJackpot ? (
                 <button
                   type="button"
-                  className="console-action-btn"
+                  className="slot-console-chip-btn"
                   onClick={onOpenJackpot}
                 >
                   Jackpot
                 </button>
               ) : null}
+              <button
+                type="button"
+                className={`slot-console-chip-btn slot-auto-spin-btn${autoSpinActive ? " slot-auto-spin-btn--stop" : ""}`}
+                onClick={autoSpinActive ? onAutoSpinStop : onAutoSpinStart}
+                disabled={!autoSpinActive && (betDisabled || !canSpin)}
+                aria-pressed={autoSpinActive}
+              >
+                {autoSpinActive ? "Stop" : "Auto"}
+              </button>
             </div>
             <SlotConsoleBalance
               balance={balance}
@@ -108,12 +122,10 @@ export default function SlotCabinet({
               betLevels={betLevels}
               onBetChange={onBetChange}
               betDisabled={betDisabled}
-              canSpin={canSpin}
+              canSpin={canSpinControls}
               spinning={spinning}
               onSpin={onSpin}
-              autoSpinActive={autoSpinActive}
-              onAutoSpinStart={onAutoSpinStart}
-              onAutoSpinStop={onAutoSpinStop}
+              onManualSpin={onManualSpin}
             />
           </div>
         </footer>
