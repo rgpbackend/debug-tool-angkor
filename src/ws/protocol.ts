@@ -153,26 +153,19 @@ export const JACKPOT_TIERS: readonly JackpotTier[] = [
 ] as const;
 
 /** Fixed-prize tiers (prize = bet × tier multiplier). */
-export const STATIC_JACKPOT_TIERS: readonly JackpotTier[] = [
-  "NANO",
-  "CYBER",
-] as const;
+export const STATIC_JACKPOT_TIERS = ["NANO", "CYBER"] as const satisfies readonly JackpotTier[];
 
-export const STATIC_JACKPOT_BET_MULTIPLIERS: Record<
-  (typeof STATIC_JACKPOT_TIERS)[number],
-  number
-> = {
+export type StaticJackpotTier = (typeof STATIC_JACKPOT_TIERS)[number];
+
+export const STATIC_JACKPOT_BET_MULTIPLIERS: Record<StaticJackpotTier, number> = {
   NANO: 20,
   CYBER: 50,
 };
 
 /** Progressive pool tiers (current amount grows until won). */
-export const PROGRESSIVE_JACKPOT_TIERS: readonly JackpotTier[] = [
-  "GUARDIAN",
-  "ETERNAL",
-] as const;
+export const PROGRESSIVE_JACKPOT_TIERS = ["GUARDIAN", "ETERNAL"] as const satisfies readonly JackpotTier[];
 
-export function isStaticJackpotTier(tier: JackpotTier): boolean {
+export function isStaticJackpotTier(tier: JackpotTier): tier is StaticJackpotTier {
   return (STATIC_JACKPOT_TIERS as readonly string[]).includes(tier);
 }
 
