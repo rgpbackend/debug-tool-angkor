@@ -10,11 +10,6 @@ export default function App() {
 
   return (
     <div className="game-app">
-      <header className="game-header">
-        <h1>The Last Guardian of Angkor</h1>
-        <p className="game-sub">WebSocket test client</p>
-      </header>
-
       {session.sessionReady ? (
         <GameScreen {...session} />
       ) : (
