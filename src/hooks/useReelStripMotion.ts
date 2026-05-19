@@ -12,6 +12,16 @@ type UseReelStripMotionArgs = {
   onStopped: () => void;
 };
 
+/**
+ * `offsetPx` = distance from the top of the strip to the top of the viewport.
+ *
+ * Render uses `translateY(-offsetPx)`:
+ *   • Decreasing `offsetPx` → strip slides DOWN in pixels → symbols inside the
+ *     viewport scroll top → bottom (consistent for both spin loop and decel).
+ *   • Spin starts at `previousResultStartIndex` (bottom of strip) and decels
+ *     to `newResultStartIndex` (top of strip).
+ */
+
 function measureCellStep(stripEl: HTMLElement): number {
   const cells = stripEl.querySelectorAll<HTMLElement>(".cell");
   if (cells.length >= 2) {
@@ -20,18 +30,16 @@ function measureCellStep(stripEl: HTMLElement): number {
   return cells[0]?.offsetHeight ?? 0;
 }
 
-/** Forward scroll (top → bottom): increase offset, cycle inside the loop band. */
-function advanceForwardSpinOffset(
-  offset: number,
-  loopStartPx: number,
+function wrapLoopOffset(
+  offsetPx: number,
+  loopBandLowPx: number,
   loopSpanPx: number,
-  deltaPx: number,
 ): number {
-  const next = offset + deltaPx;
-  if (next < loopStartPx) {
-    return next;
+  if (offsetPx >= loopBandLowPx) {
+    return offsetPx;
   }
-  return loopStartPx + ((next - loopStartPx) % loopSpanPx);
+  const below = loopBandLowPx - offsetPx;
+  return loopBandLowPx + loopSpanPx - (below % loopSpanPx);
 }
 
 export function useReelStripMotion({
@@ -46,13 +54,13 @@ export function useReelStripMotion({
   const onStoppedRef = useRef(onStopped);
   onStoppedRef.current = onStopped;
 
-  const applyOffset = useCallback((offset: number) => {
+  const applyOffset = useCallback((offsetPx: number) => {
     const el = stripRef.current;
     if (!el) {
       return;
     }
     const snapped =
-      Math.round(offset * devicePixelRatio) / devicePixelRatio;
+      Math.round(offsetPx * devicePixelRatio) / devicePixelRatio;
     el.style.transform = `translate3d(0, ${-snapped}px, 0)`;
   }, []);
 
@@ -74,9 +82,18 @@ export function useReelStripMotion({
     if (reelState !== "spinning") {
       return;
     }
-    offsetRef.current = 0;
-    applyOffset(0);
-  }, [reelState, strip.resultStartIndex, applyOffset]);
+    const el = stripRef.current;
+    if (!el) {
+      return;
+    }
+    const step = measureCellStep(el);
+    if (step > 0) {
+      cellStepRef.current = step;
+    }
+    const initialOffset = strip.previousResultStartIndex * cellStepRef.current;
+    offsetRef.current = initialOffset;
+    applyOffset(initialOffset);
+  }, [reelState, strip.previousResultStartIndex, strip.symbols, applyOffset]);
 
   useEffect(() => {
     if (reelState !== "spinning" && reelState !== "stopping") {
@@ -101,23 +118,19 @@ export function useReelStripMotion({
         if (cellStepRef.current <= 0) {
           cellStepRef.current = measureCellStep(el);
         }
-
         const step = cellStepRef.current;
         if (step <= 0) {
           rafRef.current = requestAnimationFrame(tick);
           return;
         }
 
-        const loopStartPx = strip.previousResultLength * step;
-        const loopSpanPx = strip.loopSegmentLength * step * 2;
+        const loopBandLowPx = strip.loopBandStartIndex * step;
+        const loopSpanPx = strip.loopSegmentLength * step;
         const dt = Math.min(0.032, (now - last) / 1000);
         last = now;
-        offsetRef.current = advanceForwardSpinOffset(
-          offsetRef.current,
-          loopStartPx,
-          loopSpanPx,
-          REEL_SPIN.spinSpeedPxPerSec * dt,
-        );
+
+        const next = offsetRef.current - REEL_SPIN.spinSpeedPxPerSec * dt;
+        offsetRef.current = wrapLoopOffset(next, loopBandLowPx, loopSpanPx);
         applyOffset(offsetRef.current);
         rafRef.current = requestAnimationFrame(tick);
       };
@@ -139,32 +152,37 @@ export function useReelStripMotion({
     }
 
     const step = cellStepRef.current;
+    const targetPx = strip.newResultStartIndex * step;
+
     if (step <= 0 || reducedMotion) {
-      const target = strip.resultStartIndex * (step || 1);
-      offsetRef.current = target;
-      applyOffset(target);
+      offsetRef.current = targetPx;
+      applyOffset(targetPx);
       onStoppedRef.current();
       return;
     }
 
-    const target = strip.resultStartIndex * step;
-    const start = offsetRef.current;
-    const distance = Math.max(step, target - start);
+    const loopSpanPx = strip.loopSegmentLength * step;
+    const startPx = offsetRef.current;
+    let distancePx = startPx - targetPx;
+    if (distancePx < step) {
+      distancePx = step + loopSpanPx;
+    }
+
     const duration = REEL_SPIN.stopDurationMs;
     const startTime = performance.now();
 
     const tick = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
       const eased = easeOutCubic(t);
-      const current = start + distance * eased;
+      const current = startPx - distancePx * eased;
       offsetRef.current = current;
       applyOffset(current);
 
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
-        offsetRef.current = target;
-        applyOffset(target);
+        offsetRef.current = targetPx;
+        applyOffset(targetPx);
         onStoppedRef.current();
       }
     };

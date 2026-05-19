@@ -34,10 +34,12 @@ export type ReelVisualState = "idle" | "spinning" | "stopping" | "stopped";
 export type UnifiedReelStrip = {
   symbols: string[];
   loopSegmentLength: number;
-  /** Row count of the settled symbols shown before this spin. */
-  previousResultLength: number;
-  /** Index in `symbols` where the new result rows begin. */
-  resultStartIndex: number;
+  /** Strip index where the seamless loop band begins (right after newResult). */
+  loopBandStartIndex: number;
+  /** Strip index where the new (target) result rows begin. Always 0. */
+  newResultStartIndex: number;
+  /** Strip index where the previous (initial) result rows begin. */
+  previousResultStartIndex: number;
 };
 
 export function randomSpinSymbol(): string {
@@ -51,8 +53,13 @@ export function buildSpinStrip(length: number): string[] {
 }
 
 /**
- * Motion strip: previous result → loop blur → new result.
- * Offset 0 aligns the viewport on `previousResult` when the spin starts.
+ * Motion strip layout (top → bottom in DOM):
+ *   [ newResult | loopA | loopB | previousResult | tail ]
+ *
+ * Render once `translateY = -previousResultStartIndex * step` so the viewport
+ * starts on the previous result, then animate translateY toward 0 — strip
+ * shifts downward in pixels, which scrolls symbols top → bottom inside the
+ * viewport for both the spinning loop and the landing decel.
  */
 export function buildUnifiedReelStrip(
   previousResult: string[],
@@ -60,13 +67,20 @@ export function buildUnifiedReelStrip(
   result: string[],
 ): UnifiedReelStrip {
   const tail = buildSpinStrip(REEL_SPIN.tailLength);
-  const loopSegmentLength = loopSegment.length;
-  const previousResultLength = previousResult.length;
+  const loopLen = loopSegment.length;
+  const newLen = result.length;
   return {
-    symbols: [...previousResult, ...loopSegment, ...loopSegment, ...result, ...tail],
-    loopSegmentLength,
-    previousResultLength,
-    resultStartIndex: previousResultLength + loopSegmentLength * 2,
+    symbols: [
+      ...result,
+      ...loopSegment,
+      ...loopSegment,
+      ...previousResult,
+      ...tail,
+    ],
+    loopSegmentLength: loopLen,
+    newResultStartIndex: 0,
+    loopBandStartIndex: newLen,
+    previousResultStartIndex: newLen + loopLen * 2,
   };
 }
 
