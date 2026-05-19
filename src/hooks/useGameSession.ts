@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { readEnvDefaults } from "../config";
 import {
   CHEAT_SYMBOL_OPTIONS,
+  isAllowedCheatSymbolInput,
   cheatGridFromSpinReels,
   cheatGridsEqual,
   cloneCheatGrid,
@@ -116,6 +117,7 @@ export function useGameSession() {
   const [forceJackpotArmed, setForceJackpotArmed] = useState(false);
   const [forceJackpotBusy, setForceJackpotBusy] = useState(false);
   const [cheatGridDirty, setCheatGridDirty] = useState(false);
+  const [cheatInputRejectTick, setCheatInputRejectTick] = useState(0);
 
 
   const stopHeartbeat = useCallback(() => {
@@ -492,6 +494,11 @@ export function useGameSession() {
     sessionReady,
   ]);
 
+  const discardCheatGrid = useCallback(() => {
+    setCheatGrid(cloneCheatGrid(cheatBaselineRef.current));
+    setCheatGridDirty(false);
+  }, []);
+
   const sendCheat = useCallback(() => {
     const client = clientRef.current;
     if (!client?.isConnected() || phase !== "joined" || !sessionReady) {
@@ -599,6 +606,10 @@ export function useGameSession() {
 
   const updateCheatCell = useCallback(
     (reelIndex: number, rowIndex: number, colLen: number, value: string) => {
+      if (!isAllowedCheatSymbolInput(value)) {
+        setCheatInputRejectTick((tick) => tick + 1);
+        return;
+      }
       setCheatGrid((prev) => {
         const next = setCheatCellValue(prev, reelIndex, rowIndex, colLen, value);
         setCheatGridDirty(!cheatGridsEqual(next, cheatBaselineRef.current));
@@ -692,6 +703,8 @@ export function useGameSession() {
     disconnect,
     spin,
     sendCheat,
+    discardCheatGrid,
+    cheatArmed,
     sendForceJackpot,
     forceJackpotBusy,
     fetchHistoryList,
@@ -713,6 +726,7 @@ export function useGameSession() {
     featureBadges,
     cheatSymbolOptions: CHEAT_SYMBOL_OPTIONS,
     cheatGridDirty,
+    cheatInputRejectTick,
     tokenBanPromptOpen,
     tokenResetBusy,
     confirmTokenReset,

@@ -24,6 +24,17 @@ export function emptyCheatGrid(): string[][] {
   );
 }
 
+export function normalizeCheatSymbol(symbol: string): string {
+  return symbol.trim().toUpperCase();
+}
+
+export function isCheatCellOverridden(
+  editValue: string,
+  sourceValue: string,
+): boolean {
+  return normalizeCheatSymbol(editValue) !== normalizeCheatSymbol(sourceValue);
+}
+
 export function cheatGridsEqual(a: string[][], b: string[][]): boolean {
   return EXPECTED_CHEAT_REEL_SIZES.every((expectedLen, ci) => {
     for (let ri = 0; ri < expectedLen; ri += 1) {
@@ -50,6 +61,18 @@ export function cheatGridFromSpinReels(reels: string[][]): string[][] {
       return raw.trim().toUpperCase();
     });
   });
+}
+
+/** True while typing or when value is a complete allowed symbol (empty allowed). */
+export function isAllowedCheatSymbolInput(raw: string): boolean {
+  const value = raw.trim().toUpperCase();
+  if (!value) {
+    return true;
+  }
+  if (VALID_CHEAT_SYMBOLS.has(value)) {
+    return true;
+  }
+  return CHEAT_SYMBOL_OPTIONS.some((symbol) => symbol.startsWith(value));
 }
 
 function normalizeCheatSymbolInput(raw: string): string {

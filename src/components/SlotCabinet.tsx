@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import SlotConsoleBalance from "./SlotConsoleBalance";
-import SlotConsoleCheat from "./SlotConsoleCheat";
 import SlotControls from "./SlotControls";
 
 type SlotCabinetProps = {
@@ -17,11 +16,8 @@ type SlotCabinetProps = {
   autoSpinActive: boolean;
   onAutoSpinStart: () => void;
   onAutoSpinStop: () => void;
-  canCheat?: boolean;
-  cheatGridDirty?: boolean;
   balance?: string | null;
   balanceConnected?: boolean;
-  onSetCheat?: () => void;
   onOpenHistory?: () => void;
   onOpenJackpot?: () => void;
   jackpotPools?: ReactNode;
@@ -42,11 +38,8 @@ export default function SlotCabinet({
   autoSpinActive,
   onAutoSpinStart,
   onAutoSpinStop,
-  canCheat = false,
-  cheatGridDirty = false,
   balance = null,
   balanceConnected = false,
-  onSetCheat,
   onOpenHistory,
   onOpenJackpot,
   jackpotPools,
@@ -104,13 +97,6 @@ export default function SlotCabinet({
                 >
                   Jackpot
                 </button>
-              ) : null}
-              {onSetCheat ? (
-                <SlotConsoleCheat
-                  canCheat={canCheat}
-                  cheatGridDirty={cheatGridDirty}
-                  onSetCheat={onSetCheat}
-                />
               ) : null}
             </div>
             <SlotConsoleBalance

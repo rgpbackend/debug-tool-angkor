@@ -1,5 +1,6 @@
 import { useMemo, type CSSProperties } from "react";
 import { useReelStripMotion } from "../hooks/useReelStripMotion";
+import { isCheatCellOverridden } from "../lib/cheat";
 import {
   buildUnifiedReelStrip,
   type ReelVisualState,
@@ -49,9 +50,16 @@ function renderSymbolCell(
     goldenWildHighlightKeys?: Set<string>;
     selectedColor: string;
     onEditCellChange?: SlotReelColumnProps["onEditCellChange"];
+    sourceColumn?: string[];
   },
 ) {
   const key = cellKey(ci, ri);
+  const editValue = options.editGrid?.[ci]?.[ri] ?? sym;
+  const sourceValue = options.sourceColumn?.[ri] ?? sym;
+  const isOverridden =
+    options.editable &&
+    options.editGrid != null &&
+    isCheatCellOverridden(editValue, sourceValue);
   const wayIndices = options.cellWinWays.get(key) ?? [];
   const winHit = options.showWinPresentation && wayIndices.length > 0;
   const gwHit =
@@ -63,8 +71,14 @@ function renderSymbolCell(
     isWild ? " cell-wild" : ""
   }${winHit ? " cell-winway" : ""}${gwHit ? " cell-golden-wild" : ""}${
     options.editable ? " cell-editable" : ""
-  }`;
-  const cellTitle = isScatter ? "Scatter" : isWild ? "Wild" : undefined;
+  }${isOverridden ? " cell-cheat-overridden" : ""}`;
+  const cellTitle = isOverridden
+    ? "Overridden cheat cell"
+    : isScatter
+      ? "Scatter"
+      : isWild
+        ? "Wild"
+        : undefined;
   const cellStyle = winHit
     ? ({ "--winway-color": options.selectedColor } as CSSProperties)
     : undefined;
@@ -190,7 +204,10 @@ export default function SlotReelColumn({
     return (
       <div className={reelColClass} style={reelColStyle} data-rows={colLen}>
         {displayColumn.map((sym, ri) =>
-          renderSymbolCell(sym, ci, ri, colLen, cellOptions),
+          renderSymbolCell(sym, ci, ri, colLen, {
+            ...cellOptions,
+            sourceColumn: column,
+          }),
         )}
       </div>
     );

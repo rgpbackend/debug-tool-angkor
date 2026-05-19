@@ -95,6 +95,15 @@ export interface WinWayReelGridProps {
     colLen: number,
     value: string,
   ) => void;
+  /** Cabinet editable: pending edits not yet sent. */
+  cheatGridDirty?: boolean;
+  /** Cabinet editable: cheat grid sent and armed for next spin. */
+  cheatArmed?: boolean;
+  canCheat?: boolean;
+  onConfirmCheat?: () => void;
+  onDiscardCheat?: () => void;
+  /** Increments when a disallowed symbol key is entered. */
+  cheatInputRejectTick?: number;
 }
 
 export default function WinWayReelGrid({
@@ -115,7 +124,14 @@ export default function WinWayReelGrid({
   editGrid,
   editDisabled = false,
   onEditCellChange,
+  cheatGridDirty = false,
+  cheatArmed = false,
+  canCheat = false,
+  onConfirmCheat,
+  onDiscardCheat,
+  cheatInputRejectTick = 0,
 }: Readonly<WinWayReelGridProps>) {
+  const [cheatRejectActive, setCheatRejectActive] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [presentationActive, setPresentationActive] = useState(false);
   const [reelStates, setReelStates] = useState<ReelVisualState[]>(() =>
@@ -132,6 +148,15 @@ export default function WinWayReelGrid({
   const stoppedReelsRef = useRef<Set<number>>(new Set());
   const stopTimersRef = useRef<number[]>([]);
   const bounceTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (cheatInputRejectTick === 0) {
+      return;
+    }
+    setCheatRejectActive(true);
+    const timer = window.setTimeout(() => setCheatRejectActive(false), 480);
+    return () => window.clearTimeout(timer);
+  }, [cheatInputRejectTick]);
 
   const clearStopTimers = useCallback(() => {
     stopTimersRef.current.forEach((timer) => window.clearTimeout(timer));
@@ -425,8 +450,11 @@ export default function WinWayReelGrid({
 
       <div className="reels-wrap winway-reels-main slot-reels-stage">
         {!cabinet ? featureHud : null}
+        <div className="slot-reels-grid-anchor">
         <div
           className={`reels reels--5${editable ? " reels--editable" : ""}${
+            cheatArmed ? " reels--cheat-armed" : ""
+          }${cheatRejectActive ? " reels--cheat-reject" : ""}${
             reelsBusy ? " reels--busy" : ""
           }`}
           aria-label={ariaLabel}
@@ -487,6 +515,29 @@ export default function WinWayReelGrid({
               />
             );
           })}
+        </div>
+        {editable && cheatGridDirty ? (
+          <div className="cheat-edit-actions" role="group" aria-label="Cheat grid edits">
+            <button
+              type="button"
+              className="cheat-edit-btn cheat-edit-btn--discard"
+              aria-label="Discard cheat edits"
+              disabled={editDisabled || reelsBusy}
+              onClick={onDiscardCheat}
+            >
+              <span aria-hidden>×</span>
+            </button>
+            <button
+              type="button"
+              className="cheat-edit-btn cheat-edit-btn--confirm"
+              aria-label="Apply cheat grid"
+              disabled={!canCheat || editDisabled || reelsBusy}
+              onClick={onConfirmCheat}
+            >
+              <span aria-hidden>✓</span>
+            </button>
+          </div>
+        ) : null}
         </div>
       </div>
     </div>

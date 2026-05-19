@@ -28,7 +28,10 @@ export default function GameScreen(session: Readonly<GameSession>) {
     canCheat,
     cheatGrid,
     cheatGridDirty,
+    cheatInputRejectTick,
+    cheatArmed,
     sendCheat,
+    discardCheatGrid,
     sendForceJackpot,
     forceJackpotBusy,
     updateCheatCell,
@@ -161,6 +164,12 @@ export default function GameScreen(session: Readonly<GameSession>) {
                     editGrid={cheatGrid}
                     editDisabled={!canCheat || roundBusy}
                     onEditCellChange={updateCheatCell}
+                    cheatGridDirty={cheatGridDirty}
+                    cheatInputRejectTick={cheatInputRejectTick}
+                    cheatArmed={cheatArmed}
+                    canCheat={canCheat}
+                    onConfirmCheat={sendCheat}
+                    onDiscardCheat={discardCheatGrid}
                     reels={viewSpin.spin.reels}
                     winWays={winWays}
                     goldenWildHighlightKeys={goldenWildHighlightKeys}
@@ -194,11 +203,8 @@ export default function GameScreen(session: Readonly<GameSession>) {
               autoSpinActive={autoSpinActive}
               onAutoSpinStart={startAutoSpin}
               onAutoSpinStop={stopAutoSpin}
-              canCheat={canCheat}
-              cheatGridDirty={cheatGridDirty}
               balance={balance}
               balanceConnected={sessionReady}
-              onSetCheat={sendCheat}
             />
           </SlotStageBlock>
         </div>

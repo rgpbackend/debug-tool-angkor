@@ -62,7 +62,7 @@ export default function SlotControls({
             disabled={!autoSpinActive && (betDisabled || !canSpin)}
             aria-pressed={autoSpinActive}
           >
-            {autoSpinActive ? "Stop" : "Auto spin"}
+            {autoSpinActive ? "Stop" : "Auto"}
           </button>
 
           <button
