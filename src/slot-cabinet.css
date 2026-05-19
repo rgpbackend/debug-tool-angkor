@@ -589,6 +589,8 @@
 /* Console footer */
 .slot-cabinet-console {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
   min-height: var(--slot-console-h);
   padding: clamp(0.45rem, 1.2cqw, 0.75rem) var(--slot-pad)
     clamp(0.55rem, 1.4cqw, 0.85rem);
@@ -601,7 +603,9 @@
 }
 
 .slot-console-bar {
-  display: flex;
+  --slot-console-btn-h: clamp(2.45rem, 6.5cqh, 2.85rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: clamp(0.65rem, 1.8cqw, 1rem);
   width: 100%;
@@ -609,14 +613,16 @@
 }
 
 .slot-console-balance {
-  flex: 1 1 auto;
+  grid-column: 2;
+  justify-self: center;
   min-width: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.12rem;
-  padding: 0.2rem clamp(0.5rem, 2cqw, 1rem);
+  padding: 0 clamp(0.5rem, 2cqw, 1rem);
   text-align: center;
 }
 
@@ -640,9 +646,13 @@
 }
 
 .slot-console-cheat {
-  flex-shrink: 0;
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  align-self: center;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 0.35rem;
   max-width: min(100%, 22rem);
 }
@@ -650,14 +660,18 @@
 .slot-console-cheat-buttons {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: center;
   gap: 0.4rem;
 }
 
 .slot-cheat-btn {
   flex: 1 1 0;
   min-width: 0;
-  padding: 0.45rem 0.65rem;
+  min-height: var(--slot-console-btn-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.65rem;
   font-size: clamp(0.72rem, 1.8cqw, 0.82rem);
   white-space: nowrap;
 }
@@ -718,9 +732,13 @@
 }
 
 .slot-controls--console {
-  flex: 1;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+  width: auto;
   min-width: 0;
-  max-width: none;
+  max-width: 100%;
   margin: 0;
   padding: 0;
   border: 0;
@@ -757,7 +775,8 @@
   justify-content: center;
   gap: 0.1rem;
   min-width: clamp(5.5rem, 14cqw, 7.5rem);
-  padding: clamp(0.35rem, 1cqh, 0.5rem) clamp(0.65rem, 1.8cqw, 1rem);
+  min-height: var(--slot-console-btn-h);
+  padding: 0 clamp(0.65rem, 1.8cqw, 1rem);
   border-radius: clamp(6px, 0.8cqw, 10px);
   border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 70%, var(--border));
   background: var(--bg);
@@ -797,7 +816,11 @@
 .slot-controls--console .slot-spin-btn {
   flex-shrink: 0;
   min-width: clamp(6.5rem, 18cqw, 9rem);
-  padding: clamp(0.55rem, 1.5cqh, 0.75rem) clamp(1.25rem, 4cqw, 2.25rem);
+  min-height: var(--slot-console-btn-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(1.25rem, 4cqw, 2.25rem);
   font-size: clamp(0.88rem, 2.5cqw, 1.08rem);
   border-radius: clamp(8px, 1.2cqw, 999px);
   border-color: color-mix(in srgb, var(--slot-gold) 55%, var(--accent));
@@ -850,9 +873,18 @@
 
 /* Console stacks on very narrow */
 @container slot-cabinet (max-width: 520px) {
+  .slot-console-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
   .slot-console-cheat {
+    grid-column: auto;
+    grid-row: auto;
     max-width: none;
-    flex: 1 1 100%;
+    width: 100%;
   }
 
   .slot-console-cheat-buttons {
@@ -864,19 +896,16 @@
     min-width: min(100%, 9rem);
   }
 
-  .slot-console-bar {
-    flex-wrap: wrap;
-    justify-content: space-between;
-  }
-
   .slot-console-balance {
-    flex: 1 1 100%;
-    order: 0;
+    grid-column: auto;
+    order: -1;
     padding: 0.15rem 0 0.35rem;
   }
 
   .slot-controls--console {
-    flex: 1 1 100%;
+    grid-column: auto;
+    grid-row: auto;
+    width: 100%;
     justify-content: center;
   }
 
