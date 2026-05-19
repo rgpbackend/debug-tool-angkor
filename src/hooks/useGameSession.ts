@@ -16,6 +16,7 @@ import {
   readBalanceString,
   readRoundBetString,
   readRoundFeatureBadges,
+  readSpinBalanceAfter,
   readSpinJackpot,
   readSpinRetrigger,
   resolveBetFromLevels,
@@ -52,9 +53,10 @@ import {
   parseHistoryDetailPayload,
   parseHistoryListPayload,
   parseJackpotPoolsFromPayload,
+  parseJoinResponsePayload,
+  type GameSymbol,
   type HistoryDetailPayload,
   type HistoryListPayload,
-  type JoinResponsePayload,
   type JackpotPool,
   type JackpotTier,
   type JackpotPoolsByTier,
@@ -102,6 +104,7 @@ export function useGameSession() {
   const [gameRoute, setGameRoute] = useState(defaults.gameRoute);
   const [bet, setBet] = useState("1");
   const [betLevels, setBetLevels] = useState<string[]>([]);
+  const [symbolCatalog, setSymbolCatalog] = useState<GameSymbol[]>([]);
   const [balance, setBalance] = useState<string | null>(null);
   const [cheatGrid, setCheatGrid] = useState<string[][]>(() =>
     emptyCheatGrid(),
@@ -208,6 +211,7 @@ export function useGameSession() {
     setJackpotPoolsLoading(false);
     setJackpotWinnersRefreshToken(0);
     setBetLevels([]);
+    setSymbolCatalog([]);
     setBalance(null);
     spinBusyRef.current = false;
     setSpinFreeze(null);
@@ -317,8 +321,8 @@ export function useGameSession() {
       const join = joinFrame(gameRoute.trim());
       client.sendFrame(join);
 
-      const joinPayload =
-        (await joinPayloadPromise) as unknown as JoinResponsePayload;
+      const rawJoinPayload = await joinPayloadPromise;
+      const joinPayload = parseJoinResponsePayload(rawJoinPayload);
 
       if (clientRef.current !== client) {
         return;
@@ -330,6 +334,8 @@ export function useGameSession() {
           : "socket not open";
         throw new Error(`Disconnected after connect/join (${detail})`);
       }
+
+      setSymbolCatalog(joinPayload.symbols);
 
       if (joinPayload.lastRound) {
         setLastRound(joinPayload.lastRound);
@@ -346,11 +352,11 @@ export function useGameSession() {
           )
         : null;
       setBet(resolveBetFromLevels(levels, roundBet ?? bet));
-      setBalance(readBalanceString(joinPayload as unknown as Record<string, unknown>));
-
-      applyJackpotPoolsFromPayload(
-        joinPayload as unknown as Record<string, unknown>,
+      setBalance(
+        joinPayload.balance ?? readBalanceString(rawJoinPayload) ?? null,
       );
+
+      applyJackpotPoolsFromPayload(rawJoinPayload);
 
       setSessionReady(true);
       setPhase("joined");
@@ -447,7 +453,9 @@ export function useGameSession() {
       setLastSpin(spinPayload);
       setLastRound(null);
       applyCheatGridFromReels(spinPayload.spin.reels);
-      const nextBalance = readBalanceString(payload);
+      const nextBalance = readSpinBalanceAfter(
+        spinPayload.spin as unknown as Record<string, unknown>,
+      );
       if (nextBalance != null) {
         setBalance(nextBalance);
       }
@@ -697,6 +705,7 @@ export function useGameSession() {
     bet,
     setBet,
     betLevels,
+    symbolCatalog,
     balance,
     cheatGrid,
     connectAndJoin,

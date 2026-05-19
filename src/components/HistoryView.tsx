@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { formatCreditAmount } from "../lib/session-utils";
 import type {
   HistoryDetailPayload,
   HistoryItem,
@@ -45,6 +46,22 @@ function profitClass(profit: number): string {
     return "hist-profit-neg";
   }
   return "";
+}
+
+function formatBalanceTrace(
+  before: string | undefined,
+  after: string | undefined,
+): string | null {
+  if (before && after) {
+    return `${formatCreditAmount(before)} → ${formatCreditAmount(after)}`;
+  }
+  if (after) {
+    return formatCreditAmount(after);
+  }
+  if (before) {
+    return formatCreditAmount(before);
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,6 +135,12 @@ function DetailPanel({ detail, onBack }: Readonly<DetailPanelProps>) {
               {detail.profit}
             </span>
           </p>
+          {formatBalanceTrace(detail.balanceBefore, detail.balanceAfter) ? (
+            <p className="hist-meta-row">
+              <span className="hist-meta-label">Balance</span>
+              {formatBalanceTrace(detail.balanceBefore, detail.balanceAfter)}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -275,6 +298,7 @@ function ListPanel({
                 <th>Bet</th>
                 <th>Win</th>
                 <th>Profit</th>
+                <th>Balance</th>
                 <th></th>
               </tr>
             </thead>
@@ -297,6 +321,12 @@ function ListPanel({
                   <td className={profitClass(item.profit)}>
                     {item.profit > 0 ? "+" : ""}
                     {item.profit}
+                  </td>
+                  <td className="muted hist-ts">
+                    {formatBalanceTrace(
+                      item.balanceBefore,
+                      item.balanceAfter,
+                    ) ?? "—"}
                   </td>
                   <td>
                     <button

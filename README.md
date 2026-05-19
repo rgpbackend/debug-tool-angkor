@@ -4,7 +4,9 @@ Minimal web client for **The Last Guardian of Angkor**: connect, join, spin, and
 
 ## Protocol
 
-See the repo guide: [../docs/frontend-backend-websocket-guide.md](../docs/frontend-backend-websocket-guide.md).
+See the WebSocket integration guide (v25): [WebSocket Integration Guide of The Last Guardian of Angkor](https://ossworks.atlassian.net/wiki/spaces/YAM/pages/297435300/WebSocket+Integration+Guide+of+The+Last+Guardian+of+Angkor).
+
+Monetary fields on the wire are **plain decimal strings** with 4 fractional digits (e.g. `"1000.0000"`), not JSON numbers.
 
 ## Setup
 

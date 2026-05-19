@@ -23,18 +23,48 @@ export function hasCmd(
   return cmd === expected || cmd === Number(expected);
 }
 
+export type SymbolKind =
+  | "LOW_PAY"
+  | "MID_PAY"
+  | "HIGH_PAY"
+  | "WILD"
+  | "GOLDEN_WILD"
+  | "SCATTER";
+
+const SYMBOL_KINDS: readonly SymbolKind[] = [
+  "LOW_PAY",
+  "MID_PAY",
+  "HIGH_PAY",
+  "WILD",
+  "GOLDEN_WILD",
+  "SCATTER",
+];
+
+export interface GameSymbol {
+  id: string;
+  displayName: string;
+  kind: SymbolKind;
+  payouts?: Record<string, string>;
+  substitutes?: boolean;
+}
+
+export interface GuardianWildPayload {
+  triggered: boolean;
+  originalReels: string[][];
+  addedPositions: [number, number][];
+}
+
 export interface SpinResponsePayload {
-  /** Wallet balance after spin when server includes it. */
-  balance?: string;
   spin: {
-    spinId: string;
     spinType: string;
     reels: string[][];
     /** Credited line/feature win for this spin (decimal string on wire). */
     win: string | number;
+    balanceBefore?: string;
+    balanceAfter?: string;
     triggers: string[];
     winWays?: WinWay[];
-    guardianWild?: any;
+    guardianWild: GuardianWildPayload;
     retrigger: {
       triggered: boolean;
       scatterCount: number;
@@ -52,14 +82,15 @@ export interface SpinResponsePayload {
   round: {
     roundId: string;
     state: string;
-    bet: number;
-    totalWin: number;
+    bet: string | number;
+    totalWin: string | number;
     isFinished: boolean;
   };
   state: {
     freeSpin: {
       active: boolean;
       spinsLeft: number;
+      preScatterCount?: number;
       scatterCollected: number;
       triggeredScatterCount: number;
       currentStep: number;
@@ -70,7 +101,7 @@ export interface SpinResponsePayload {
       origin: string;
       currentStep: number;
       totalSteps: number;
-      stickyWildExpansionSteps: Record<string, number>;
+      spinsLeft: number;
       stickyWildAnchorRows: Record<string, number>;
     };
   };
@@ -87,11 +118,10 @@ export type LastRound = Omit<SpinResponsePayload, 'spin'> & {
 export interface JoinResponsePayload {
   cmd: string | number;
   c: number;
-  symbols: string[];
+  symbols: GameSymbol[];
   /** Allowed stake amounts as decimal strings (§1.1). */
   betLevels?: string[];
   balance?: string;
-  paylines?: unknown;
   lastRound: LastRound | null;
 }
 
@@ -99,7 +129,7 @@ export interface WinWay {
   symbol: string;
   matchCount: number;
   ways: number;
-  payout: number;
+  payout: string | number;
   positions: number[][];
 }
 
@@ -121,6 +151,8 @@ export interface HistoryItem {
   bet: number;
   win: number;
   profit: number;
+  balanceBefore?: string;
+  balanceAfter?: string;
 }
 
 export interface HistoryListPayload {
@@ -352,6 +384,8 @@ export function parseHistoryListItem(row: unknown): HistoryItem | null {
     return null;
   }
   const spinIndex = Number(r.spinIndex ?? r.stepIndex ?? 0);
+  const balanceBefore = readWireDecimalString(r.balanceBefore);
+  const balanceAfter = readWireDecimalString(r.balanceAfter);
   return {
     roundId: r.roundId,
     spinIndex,
@@ -363,6 +397,8 @@ export function parseHistoryListItem(row: unknown): HistoryItem | null {
     bet: readHistoryAmount(r.bet),
     win: readHistoryAmount(r.win),
     profit: readHistoryAmount(r.profit),
+    ...(balanceBefore ? { balanceBefore } : {}),
+    ...(balanceAfter ? { balanceAfter } : {}),
   };
 }
 
@@ -400,6 +436,9 @@ export function parseHistoryDetailPayload(
       )
     : [];
 
+  const balanceBefore = readWireDecimalString(payload.balanceBefore);
+  const balanceAfter = readWireDecimalString(payload.balanceAfter);
+
   return {
     cmd: payload.cmd as string | number,
     roundId: String(payload.roundId ?? ""),
@@ -415,6 +454,8 @@ export function parseHistoryDetailPayload(
     bet: readHistoryAmount(payload.bet),
     win: readHistoryAmount(payload.win),
     profit: readHistoryAmount(payload.profit),
+    ...(balanceBefore ? { balanceBefore } : {}),
+    ...(balanceAfter ? { balanceAfter } : {}),
     reels,
     winWays,
   };
@@ -438,7 +479,127 @@ export interface HistoryDetailPayload {
   bet: number;
   win: number;
   profit: number;
+  balanceBefore?: string;
+  balanceAfter?: string;
   /** Column-major grid, same layout as live spin reels. */
   reels: string[][];
   winWays: HistoryWinWay[];
+}
+
+function isSymbolKind(value: unknown): value is SymbolKind {
+  return (
+    typeof value === "string" &&
+    (SYMBOL_KINDS as readonly string[]).includes(value)
+  );
+}
+
+function readWireDecimalString(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toFixed(4);
+  }
+  return undefined;
+}
+
+export function parseGameSymbols(raw: unknown): GameSymbol[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const symbols: GameSymbol[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      continue;
+    }
+    const row = entry as Record<string, unknown>;
+    if (typeof row.id !== "string" || typeof row.displayName !== "string") {
+      continue;
+    }
+    if (!isSymbolKind(row.kind)) {
+      continue;
+    }
+    let payouts: Record<string, string> | undefined;
+    if (
+      row.payouts !== null &&
+      typeof row.payouts === "object" &&
+      !Array.isArray(row.payouts)
+    ) {
+      const parsed: Record<string, string> = {};
+      for (const [key, val] of Object.entries(
+        row.payouts as Record<string, unknown>,
+      )) {
+        if (typeof val === "string") {
+          parsed[key] = val;
+        } else if (typeof val === "number" && Number.isFinite(val)) {
+          parsed[key] = String(val);
+        }
+      }
+      if (Object.keys(parsed).length > 0) {
+        payouts = parsed;
+      }
+    }
+    symbols.push({
+      id: row.id,
+      displayName: row.displayName,
+      kind: row.kind,
+      ...(payouts ? { payouts } : {}),
+      ...(row.substitutes === true ? { substitutes: true } : {}),
+    });
+  }
+  return symbols;
+}
+
+export function parseJoinResponsePayload(
+  payload: Record<string, unknown>,
+): JoinResponsePayload {
+  const betLevels = Array.isArray(payload.betLevels)
+    ? payload.betLevels.filter(
+        (level): level is string => typeof level === "string",
+      )
+    : undefined;
+  const lastRound =
+    payload.lastRound === null || payload.lastRound === undefined
+      ? null
+      : (payload.lastRound as LastRound);
+  return {
+    cmd: payload.cmd as string | number,
+    c: Number(payload.c ?? 0),
+    symbols: parseGameSymbols(payload.symbols),
+    ...(betLevels?.length ? { betLevels } : {}),
+    ...(readWireDecimalString(payload.balance)
+      ? { balance: readWireDecimalString(payload.balance) }
+      : {}),
+    lastRound,
+  };
+}
+
+/** Tuple `[reel, row]` or object `{ reelIndex, rowIndex }` on wire. */
+export function parseJackpotGoldenWildPositions(
+  raw: unknown,
+): [number, number][] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const positions: [number, number][] = [];
+  for (const item of raw) {
+    if (
+      Array.isArray(item) &&
+      item.length === 2 &&
+      typeof item[0] === "number" &&
+      typeof item[1] === "number"
+    ) {
+      positions.push([item[0], item[1]]);
+      continue;
+    }
+    if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+      const row = item as Record<string, unknown>;
+      const reelIndex = row.reelIndex;
+      const rowIndex = row.rowIndex;
+      if (typeof reelIndex === "number" && typeof rowIndex === "number") {
+        positions.push([reelIndex, rowIndex]);
+      }
+    }
+  }
+  return positions;
 }

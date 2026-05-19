@@ -254,10 +254,22 @@ function isObject(v: unknown): v is Record<string, unknown> {
 export function isJoinResponsePayload(
   payload: Record<string, unknown>,
 ): boolean {
+  if (
+    !hasCmd(payload, "1005") ||
+    typeof payload.c !== "number" ||
+    !Array.isArray(payload.symbols)
+  ) {
+    return false;
+  }
+  const first = payload.symbols[0];
+  if (first === undefined) {
+    return true;
+  }
   return (
-    hasCmd(payload, "1005") &&
-    typeof payload.c === "number" &&
-    Array.isArray(payload.symbols)
+    typeof first === "object" &&
+    first !== null &&
+    !Array.isArray(first) &&
+    typeof (first as Record<string, unknown>).id === "string"
   );
 }
 

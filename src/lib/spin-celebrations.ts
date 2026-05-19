@@ -37,8 +37,7 @@ function spinTriggers(spin: SpinResponsePayload["spin"]): string[] {
 }
 
 function guardianWildTriggered(spin: SpinResponsePayload["spin"]): boolean {
-  const g = spin.guardianWild as Record<string, unknown> | undefined;
-  return Boolean(g?.triggered);
+  return Boolean(spin.guardianWild?.triggered);
 }
 
 function sumWinWayPayouts(ways: WinWay[]): string | null {

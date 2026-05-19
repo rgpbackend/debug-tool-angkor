@@ -1,4 +1,8 @@
-import type { JoinResponsePayload, SpinResponsePayload } from "../ws/protocol";
+import {
+  parseJackpotGoldenWildPositions,
+  type JoinResponsePayload,
+  type SpinResponsePayload,
+} from "../ws/protocol";
 
 /** Monetary wire value per §1.1 — decimal string (4 dp) or legacy JSON number. */
 export function readDecimalWire(value: unknown, fallback = "0.0000"): string {
@@ -31,6 +35,20 @@ export function readBalanceString(
   }
   if (typeof balance === "number" && Number.isFinite(balance)) {
     return String(balance);
+  }
+  return null;
+}
+
+/** Wallet balance after a spin (cmd 1500) — `spin.balanceAfter` only. */
+export function readSpinBalanceAfter(
+  spin: Record<string, unknown>,
+): string | null {
+  const after = spin.balanceAfter;
+  if (typeof after === "string" && after.trim()) {
+    return after.trim();
+  }
+  if (typeof after === "number" && Number.isFinite(after)) {
+    return after.toFixed(4);
   }
   return null;
 }
@@ -125,20 +143,9 @@ export function readSpinJackpot(spin: SpinResponsePayload["spin"]): {
       goldenWildPositions: [],
     };
   }
-  const pairsRaw = j.goldenWildPositions;
-  const goldenWildPositions: [number, number][] = [];
-  if (Array.isArray(pairsRaw)) {
-    for (const item of pairsRaw) {
-      if (
-        Array.isArray(item) &&
-        item.length === 2 &&
-        typeof item[0] === "number" &&
-        typeof item[1] === "number"
-      ) {
-        goldenWildPositions.push([item[0], item[1]]);
-      }
-    }
-  }
+  const goldenWildPositions = parseJackpotGoldenWildPositions(
+    j.goldenWildPositions,
+  );
   return {
     triggered: Boolean(j.triggered),
     tier: typeof j.tier === "string" ? j.tier : null,
@@ -187,11 +194,16 @@ export function readRoundFeatureBadges(
       ? Math.max(0, freeSpin.scatterCollected)
       : 0;
 
+  const respinSpinsLeft =
+    typeof respin?.spinsLeft === "number" ? respin.spinsLeft : null;
   const respinCurrent =
     typeof respin?.currentStep === "number" ? respin.currentStep : 0;
   const respinTotal =
     typeof respin?.totalSteps === "number" ? respin.totalSteps : 0;
-  const respinRemaining = Math.max(0, respinTotal - respinCurrent);
+  const respinRemaining =
+    respinSpinsLeft !== null
+      ? Math.max(0, respinSpinsLeft)
+      : Math.max(0, respinTotal - respinCurrent);
   const respinVisible = Boolean(respin?.active) || respinRemaining > 0;
 
   return {
