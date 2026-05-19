@@ -20,6 +20,20 @@ function measureCellStep(stripEl: HTMLElement): number {
   return cells[0]?.offsetHeight ?? 0;
 }
 
+/** Forward scroll (top → bottom): increase offset, cycle inside the loop band. */
+function advanceForwardSpinOffset(
+  offset: number,
+  loopStartPx: number,
+  loopSpanPx: number,
+  deltaPx: number,
+): number {
+  const next = offset + deltaPx;
+  if (next < loopStartPx) {
+    return next;
+  }
+  return loopStartPx + ((next - loopStartPx) % loopSpanPx);
+}
+
 export function useReelStripMotion({
   reelState,
   strip,
@@ -56,12 +70,13 @@ export function useReelStripMotion({
     }
   }, [reelState, strip.symbols]);
 
-  useEffect(() => {
-    if (reelState === "spinning") {
-      offsetRef.current = 0;
-      applyOffset(0);
+  useLayoutEffect(() => {
+    if (reelState !== "spinning") {
+      return;
     }
-  }, [reelState, strip.loopSegmentLength, applyOffset]);
+    offsetRef.current = 0;
+    applyOffset(0);
+  }, [reelState, strip.resultStartIndex, applyOffset]);
 
   useEffect(() => {
     if (reelState !== "spinning" && reelState !== "stopping") {
@@ -93,11 +108,16 @@ export function useReelStripMotion({
           return;
         }
 
-        const loopLen = strip.loopSegmentLength * step;
+        const loopStartPx = strip.previousResultLength * step;
+        const loopSpanPx = strip.loopSegmentLength * step * 2;
         const dt = Math.min(0.032, (now - last) / 1000);
         last = now;
-        offsetRef.current =
-          (offsetRef.current + REEL_SPIN.spinSpeedPxPerSec * dt) % loopLen;
+        offsetRef.current = advanceForwardSpinOffset(
+          offsetRef.current,
+          loopStartPx,
+          loopSpanPx,
+          REEL_SPIN.spinSpeedPxPerSec * dt,
+        );
         applyOffset(offsetRef.current);
         rafRef.current = requestAnimationFrame(tick);
       };

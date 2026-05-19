@@ -123,6 +123,7 @@ export default function WinWayReelGrid({
   );
   const [loopSegments, setLoopSegments] = useState<string[][]>([]);
   const [placeholderResults, setPlaceholderResults] = useState<string[][]>([]);
+  const [spinOriginReels, setSpinOriginReels] = useState<string[][]>([]);
   const [bouncingReel, setBouncingReel] = useState<number | null>(null);
 
   const spinStartRef = useRef(0);
@@ -158,6 +159,12 @@ export default function WinWayReelGrid({
     setPresentationActive(true);
     onPresentationChange?.(true);
     setReelStates(spinningReelStates(REEL_COUNT));
+    setSpinOriginReels(
+      EXPECTED_CHEAT_REEL_SIZES.map((len, ci) => {
+        const col = reels[ci] ?? [];
+        return Array.from({ length: len }, (_, ri) => col[ri] ?? "");
+      }),
+    );
     setLoopSegments(
       EXPECTED_CHEAT_REEL_SIZES.map(() => createSpinLoopSegment()),
     );
@@ -165,7 +172,7 @@ export default function WinWayReelGrid({
       EXPECTED_CHEAT_REEL_SIZES.map((len) => placeholderResult(len)),
     );
     setBouncingReel(null);
-  }, [clearStopTimers, onPresentationChange]);
+  }, [clearStopTimers, onPresentationChange, reels]);
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -427,6 +434,9 @@ export default function WinWayReelGrid({
         >
           {EXPECTED_CHEAT_REEL_SIZES.map((colLen, ci) => {
             const column = reels[ci] ?? [];
+            const originColumn =
+              spinOriginReels[ci] ??
+              Array.from({ length: colLen }, (_, ri) => column[ri] ?? "");
             const visualState = cabinet ? reelStates[ci] : "idle";
 
             if (!cabinet) {
@@ -435,6 +445,7 @@ export default function WinWayReelGrid({
                   key={`reel-r${ci + 1}-cells-${colLen}`}
                   reelIndex={ci}
                   colLen={colLen}
+                  originColumn={originColumn}
                   column={column}
                   loopSegment={[]}
                   motionResult={[]}
@@ -458,6 +469,7 @@ export default function WinWayReelGrid({
                 key={`reel-r${ci + 1}-cells-${colLen}`}
                 reelIndex={ci}
                 colLen={colLen}
+                originColumn={originColumn}
                 column={column}
                 loopSegment={loopSegments[ci] ?? []}
                 motionResult={placeholderResults[ci] ?? []}

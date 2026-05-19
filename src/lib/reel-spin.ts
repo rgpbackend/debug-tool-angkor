@@ -34,6 +34,9 @@ export type ReelVisualState = "idle" | "spinning" | "stopping" | "stopped";
 export type UnifiedReelStrip = {
   symbols: string[];
   loopSegmentLength: number;
+  /** Row count of the settled symbols shown before this spin. */
+  previousResultLength: number;
+  /** Index in `symbols` where the new result rows begin. */
   resultStartIndex: number;
 };
 
@@ -47,17 +50,23 @@ export function buildSpinStrip(length: number): string[] {
   return Array.from({ length }, () => randomSpinSymbol());
 }
 
-/** One strip for both spin and stop — loop segment is reused so motion never jumps. */
+/**
+ * Motion strip: previous result → loop blur → new result.
+ * Offset 0 aligns the viewport on `previousResult` when the spin starts.
+ */
 export function buildUnifiedReelStrip(
+  previousResult: string[],
   loopSegment: string[],
   result: string[],
 ): UnifiedReelStrip {
   const tail = buildSpinStrip(REEL_SPIN.tailLength);
   const loopSegmentLength = loopSegment.length;
+  const previousResultLength = previousResult.length;
   return {
-    symbols: [...loopSegment, ...loopSegment, ...result, ...tail],
+    symbols: [...previousResult, ...loopSegment, ...loopSegment, ...result, ...tail],
     loopSegmentLength,
-    resultStartIndex: loopSegmentLength * 2,
+    previousResultLength,
+    resultStartIndex: previousResultLength + loopSegmentLength * 2,
   };
 }
 

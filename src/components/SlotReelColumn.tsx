@@ -8,6 +8,8 @@ import {
 type SlotReelColumnProps = {
   reelIndex: number;
   colLen: number;
+  /** Settled symbols before this spin (viewport start position). */
+  originColumn: string[];
   column: string[];
   loopSegment: string[];
   motionResult: string[];
@@ -126,6 +128,7 @@ function renderMotionSymbol(sym: string, ci: number, stripIndex: number) {
 export default function SlotReelColumn({
   reelIndex: ci,
   colLen,
+  originColumn,
   column,
   loopSegment,
   motionResult,
@@ -143,8 +146,8 @@ export default function SlotReelColumn({
 }: Readonly<SlotReelColumnProps>) {
   const stripResult = reelState === "stopping" ? column : motionResult;
   const motionStrip = useMemo(
-    () => buildUnifiedReelStrip(loopSegment, stripResult),
-    [loopSegment, stripResult],
+    () => buildUnifiedReelStrip(originColumn, loopSegment, stripResult),
+    [originColumn, loopSegment, stripResult],
   );
 
   const stripRef = useReelStripMotion({
