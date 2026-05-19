@@ -124,9 +124,13 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 jackpotPools={
                   <JackpotPoolsBar
                     embedded
+                    betAmount={selectBetValue}
                     poolsByTier={jackpotPoolsByTier}
                     connected={sessionReady}
                     loading={jackpotPoolsLoading && !isSpinning}
+                    canCheat={canCheat}
+                    forceJackpotBusy={forceJackpotBusy}
+                    onForceJackpot={sendForceJackpot}
                   />
                 }
                 celebrations={
@@ -178,9 +182,7 @@ export default function GameScreen(session: Readonly<GameSession>) {
                 cheatGridDirty={cheatGridDirty}
                 balance={balance}
                 balanceConnected={sessionReady}
-                forceJackpotBusy={forceJackpotBusy}
                 onSetCheat={sendCheat}
-                onForceJackpot={sendForceJackpot}
               />
             </SlotStageBlock>
           </div>

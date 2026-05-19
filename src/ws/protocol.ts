@@ -152,11 +152,19 @@ export const JACKPOT_TIERS: readonly JackpotTier[] = [
   "ETERNAL",
 ] as const;
 
-/** Fixed-prize tiers (seed amount is the displayed prize). */
+/** Fixed-prize tiers (prize = bet × tier multiplier). */
 export const STATIC_JACKPOT_TIERS: readonly JackpotTier[] = [
   "NANO",
   "CYBER",
 ] as const;
+
+export const STATIC_JACKPOT_BET_MULTIPLIERS: Record<
+  (typeof STATIC_JACKPOT_TIERS)[number],
+  number
+> = {
+  NANO: 20,
+  CYBER: 50,
+};
 
 /** Progressive pool tiers (current amount grows until won). */
 export const PROGRESSIVE_JACKPOT_TIERS: readonly JackpotTier[] = [
@@ -166,6 +174,21 @@ export const PROGRESSIVE_JACKPOT_TIERS: readonly JackpotTier[] = [
 
 export function isStaticJackpotTier(tier: JackpotTier): boolean {
   return (STATIC_JACKPOT_TIERS as readonly string[]).includes(tier);
+}
+
+/** Static tier display amount: bet × multiplier (4 dp). */
+export function formatStaticJackpotPoolAmount(
+  bet: string,
+  tier: JackpotTier,
+): string | null {
+  if (!isStaticJackpotTier(tier)) {
+    return null;
+  }
+  const betNum = Number(bet);
+  if (!Number.isFinite(betNum)) {
+    return null;
+  }
+  return (betNum * STATIC_JACKPOT_BET_MULTIPLIERS[tier]).toFixed(4);
 }
 
 export interface JackpotPool {

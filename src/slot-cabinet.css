@@ -199,6 +199,17 @@
   background: color-mix(in srgb, #fff 6%, var(--bg));
 }
 
+.jackpot-pools--embedded .jackpot-pool-cheat-btn {
+  width: clamp(1.25rem, 3.2cqw, 1.5rem);
+  height: clamp(1.25rem, 3.2cqw, 1.5rem);
+  border-color: color-mix(in srgb, var(--slot-gold-dim) 55%, var(--border));
+  background: color-mix(in srgb, var(--slot-frame-mid) 35%, var(--bg));
+}
+
+.jackpot-pools--embedded .jackpot-pool-cheat-btn-icon {
+  font-size: clamp(0.58rem, 1.5cqw, 0.68rem);
+}
+
 .jackpot-pools--embedded .jackpot-pool-tier {
   font-size: clamp(0.58rem, 1.5cqw, 0.68rem);
 }

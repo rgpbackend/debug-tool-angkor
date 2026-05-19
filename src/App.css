@@ -196,50 +196,6 @@
   margin-bottom: 0;
 }
 
-.force-jackpot-modal {
-  width: min(100%, 26rem);
-}
-
-.force-jackpot-tier-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
-  margin-top: 0.75rem;
-}
-
-.force-jackpot-tier-option {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
-  width: 100%;
-  margin: 0;
-  padding: 0.65rem 0.75rem;
-  text-align: left;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.force-jackpot-tier-option:hover:not(:disabled) {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
-}
-
-.force-jackpot-tier-option--selected {
-  border-color: var(--accent-border);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
-}
-
-.force-jackpot-tier-kind {
-  font-size: 0.72rem;
-}
-
-.force-jackpot-modal-actions {
-  justify-content: flex-end;
-}
-
 .bet-picker-modal {
   width: min(100%, 22rem);
   max-height: min(90vh, 420px);
@@ -902,6 +858,49 @@ button.primary {
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg);
+}
+
+.jackpot-pool-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.jackpot-pool-cheat-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  margin: 0;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  color: var(--text-h);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.jackpot-pool-cheat-btn:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+}
+
+.jackpot-pool-cheat-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.jackpot-pool-cheat-btn-icon {
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
 .jackpot-pool-tier {
