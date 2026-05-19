@@ -124,6 +124,59 @@ export default function WinWayReelGrid({
 
   const showLegendSlot = cabinet || winWays.length > 0;
 
+  const featureHud =
+    respinVisible || freeSpinVisible ? (
+      <div className="slot-reels-hud">
+        <div className="slot-reels-hud-status-cluster">
+          {freeSpinVisible ? (
+            <div className="slot-reels-hud-freespin-row">
+              <div
+                className="slot-scatter-tracker"
+                title="Collect scatters during free spins"
+                role="img"
+                aria-label={`${freeSpinScatterCollected} of ${freeSpinScatterTarget} scatters collected`}
+              >
+                <div className="slot-scatter-tracker-slots">
+                  {Array.from({ length: freeSpinScatterTarget }, (_, index) => {
+                    const filled = index < freeSpinScatterCollected;
+                    return (
+                      <span
+                        key={`scatter-slot-${index}`}
+                        className={`slot-scatter-tracker-slot${filled ? " slot-scatter-tracker-slot--filled" : ""}`}
+                        aria-hidden
+                      >
+                        S
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+              <div
+                className="slot-reels-badge slot-reels-badge--freespin"
+                title="Free spins remaining"
+              >
+                <span className="slot-reels-badge-label">Free spin</span>
+                <span className="slot-reels-badge-count">
+                  {freeSpinRemaining ?? 0}
+                </span>
+              </div>
+            </div>
+          ) : null}
+          {respinVisible ? (
+            <div
+              className="slot-reels-badge slot-reels-badge--respin"
+              title="Respin remaining"
+            >
+              <span className="slot-reels-badge-label">Respin</span>
+              <span className="slot-reels-badge-count">
+                {respinRemaining ?? 0}
+              </span>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    ) : null;
+
   return (
     <div className={layoutClass}>
       {showLegendSlot ? (
@@ -188,59 +241,10 @@ export default function WinWayReelGrid({
         </aside>
       ) : null}
 
+      {cabinet ? featureHud : null}
+
       <div className="reels-wrap winway-reels-main slot-reels-stage">
-        {cabinet && (respinVisible || freeSpinVisible) ? (
-          <div className="slot-reels-hud">
-            {respinVisible ? (
-              <div
-                className="slot-reels-badge slot-reels-badge--respin"
-                title="Respin remaining"
-              >
-                <span className="slot-reels-badge-label">Respin</span>
-                <span className="slot-reels-badge-count">
-                  {respinRemaining ?? 0}
-                </span>
-              </div>
-            ) : null}
-            {freeSpinVisible ? (
-              <div className="slot-reels-hud-freespin-cluster">
-                <div
-                  className="slot-scatter-tracker"
-                  title="Collect scatters during free spins"
-                  role="img"
-                  aria-label={`${freeSpinScatterCollected} of ${freeSpinScatterTarget} scatters collected`}
-                >
-                  <div className="slot-scatter-tracker-slots">
-                    {Array.from(
-                      { length: freeSpinScatterTarget },
-                      (_, index) => {
-                        const filled = index < freeSpinScatterCollected;
-                        return (
-                          <span
-                            key={`scatter-slot-${index}`}
-                            className={`slot-scatter-tracker-slot${filled ? " slot-scatter-tracker-slot--filled" : ""}`}
-                            aria-hidden
-                          >
-                            S
-                          </span>
-                        );
-                      },
-                    )}
-                  </div>
-                </div>
-                <div
-                  className="slot-reels-badge slot-reels-badge--freespin"
-                  title="Free spins remaining"
-                >
-                  <span className="slot-reels-badge-label">Free spin</span>
-                  <span className="slot-reels-badge-count">
-                    {freeSpinRemaining ?? 0}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+        {!cabinet ? featureHud : null}
         <div
           className={`reels${editable ? " reels--editable" : ""}`}
           aria-label={ariaLabel}

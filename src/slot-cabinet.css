@@ -156,15 +156,12 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
 }
 
 .slot-reel-window-main .winway-reels-layout--cabinet {
-  height: 100%;
-  max-height: 100%;
+  position: absolute;
+  inset: 0;
 }
 
 .slot-reel-pools {
@@ -224,17 +221,12 @@
   letter-spacing: 0.04em;
 }
 
-/* Cabinet win-way layout — fixed grid slots (legend | reels) */
+/* Cabinet win-way layout — fills playfield; legend + HUD overlay; reels dead-center */
 .winway-reels-layout--cabinet {
-  display: grid;
   width: 100%;
   height: 100%;
   min-height: 0;
-  gap: clamp(0.45rem, 1.2cqw, 0.85rem);
-  grid-template-columns: var(--slot-legend-width) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  grid-template-areas: "legend reels";
-  align-items: stretch;
+  min-width: 0;
 }
 
 .winway-reels-layout--cabinet .winway-legend-heading {
@@ -248,12 +240,14 @@
 }
 
 .winway-reels-layout--cabinet .winway-legend-panel {
-  grid-area: legend;
+  position: absolute;
+  top: clamp(0.35rem, 1.2cqh, 0.65rem);
+  left: clamp(0.35rem, 1.2cqw, 0.75rem);
+  z-index: 4;
   width: var(--slot-legend-width);
   min-width: var(--slot-legend-width);
   max-width: var(--slot-legend-width);
-  min-height: 0;
-  max-height: 100%;
+  max-height: min(45%, calc(100% - 1rem));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -262,6 +256,7 @@
   padding: 0.35rem;
   border-color: color-mix(in srgb, var(--slot-gold-dim) 80%, var(--border));
   background: color-mix(in srgb, var(--slot-screen-bg) 55%, var(--bg));
+  pointer-events: auto;
 }
 
 .winway-reels-layout--cabinet .winway-legend-panel .winway-legend {
@@ -327,19 +322,41 @@
   line-height: 1.2;
 }
 
+.winway-reels-layout--cabinet .winway-reels-main {
+  flex: none;
+  min-width: 0;
+}
+
+.winway-reels-layout--cabinet .reels-wrap {
+  padding: 0;
+}
+
 .winway-reels-layout--cabinet .slot-reels-stage {
-  grid-area: reels;
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex: none;
   min-width: 0;
   min-height: 0;
-  width: 100%;
-  height: 100%;
+  width: fit-content;
+  max-width: calc(100% - 1rem);
+  height: fit-content;
+  max-height: calc(100% - 1rem);
+  margin: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: auto;
-  padding: clamp(2.25rem, 6cqh, 2.75rem) 0.15rem 0.15rem;
+  overflow: visible;
+  padding: 0;
+}
+
+.winway-reels-layout--cabinet .slot-reels-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
 }
 
 .slot-reels-hud {
@@ -369,7 +386,6 @@
 }
 
 .slot-reels-badge--respin {
-  left: clamp(0.35rem, 1.2cqw, 0.75rem);
   border-color: color-mix(in srgb, gold 55%, var(--border));
   background: linear-gradient(
     180deg,
@@ -379,17 +395,25 @@
   color: color-mix(in srgb, gold 85%, #fff);
 }
 
-.slot-reels-hud-freespin-cluster {
+.slot-reels-hud-status-cluster {
   position: absolute;
   top: clamp(0.35rem, 1.2cqh, 0.65rem);
   right: clamp(0.35rem, 1.2cqw, 0.75rem);
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: flex-end;
   gap: clamp(0.3rem, 0.9cqw, 0.45rem);
+  z-index: 4;
 }
 
-.slot-reels-hud-freespin-cluster .slot-reels-badge--freespin {
+.slot-reels-hud-status-cluster .slot-reels-badge {
   position: static;
+}
+
+.slot-reels-hud-freespin-row {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(0.3rem, 0.9cqw, 0.45rem);
 }
 
 .slot-reels-badge--freespin {
@@ -787,20 +811,12 @@
     inset 0 1px 0 rgb(255 255 255 / 28%);
 }
 
-/* Narrow cabinet: legend strip on top (same grid areas, stacked) */
+/* Narrow cabinet: keep legend overlay; horizontal scroll for many win ways */
 @container slot-cabinet (max-width: 720px) {
-  .winway-reels-layout--cabinet {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: var(--slot-legend-row-h) minmax(0, 1fr);
-    grid-template-areas:
-      "legend"
-      "reels";
-  }
-
   .winway-reels-layout--cabinet .winway-legend-panel {
-    width: 100%;
+    width: min(var(--slot-legend-width), calc(100% - 1.5rem));
     min-width: 0;
-    max-width: none;
+    max-width: min(var(--slot-legend-width), calc(100% - 1.5rem));
     max-height: var(--slot-legend-row-h);
   }
 
@@ -817,10 +833,6 @@
   .winway-reels-layout--cabinet .winway-legend-item {
     flex: 0 0 min(11rem, 78vw);
     scroll-snap-align: start;
-  }
-
-  .winway-reels-layout--cabinet .slot-reels-stage {
-    min-height: clamp(8rem, 38cqh, 14rem);
   }
 }
 
