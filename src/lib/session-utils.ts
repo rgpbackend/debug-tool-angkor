@@ -26,33 +26,6 @@ export function formatCreditAmount(amount: string): string {
   });
 }
 
-export function readBalanceString(
-  payload: Record<string, unknown>,
-): string | null {
-  const balance = payload.balance;
-  if (typeof balance === "string" && balance.trim()) {
-    return balance.trim();
-  }
-  if (typeof balance === "number" && Number.isFinite(balance)) {
-    return String(balance);
-  }
-  return null;
-}
-
-/** Wallet balance after a spin (cmd 1500) — `spin.balanceAfter` only. */
-export function readSpinBalanceAfter(
-  spin: Record<string, unknown>,
-): string | null {
-  const after = spin.balanceAfter;
-  if (typeof after === "string" && after.trim()) {
-    return after.trim();
-  }
-  if (typeof after === "number" && Number.isFinite(after)) {
-    return after.toFixed(4);
-  }
-  return null;
-}
-
 export function readRoundBetString(round: { bet: unknown }): string | null {
   if (typeof round.bet === "string") {
     return round.bet;

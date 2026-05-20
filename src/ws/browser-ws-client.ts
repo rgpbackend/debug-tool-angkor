@@ -408,6 +408,26 @@ export function isJackpotWinnerPush(
   );
 }
 
+/** Matches cmd 1530 wallet balance server push. */
+export function isWalletBalancePushPayload(
+  payload: Record<string, unknown>,
+): boolean {
+  if (!hasCmd(payload, "1530")) {
+    return false;
+  }
+  if (payload.c === 1 || payload.errorCode != null) {
+    return false;
+  }
+  const balance = payload.balance;
+  if (typeof balance !== "string" || !balance.trim()) {
+    return false;
+  }
+  const reason = payload.reason;
+  return (
+    reason === "JOIN" || reason === "BET" || reason === "WIN"
+  );
+}
+
 async function parseInboundMessage(
   raw: string | Blob,
 ): Promise<WsInboundMessage | null> {

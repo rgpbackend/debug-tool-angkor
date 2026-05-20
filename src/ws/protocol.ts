@@ -121,8 +121,60 @@ export interface JoinResponsePayload {
   symbols: GameSymbol[];
   /** Allowed stake amounts as decimal strings (§1.1). */
   betLevels?: string[];
-  balance?: string;
   lastRound: LastRound | null;
+}
+
+// --- Wallet balance push (cmd 1530) ---
+
+export type WalletBalanceReason = "JOIN" | "BET" | "WIN";
+
+const WALLET_BALANCE_REASONS: readonly WalletBalanceReason[] = [
+  "JOIN",
+  "BET",
+  "WIN",
+];
+
+export interface WalletBalanceUpdatedPayload {
+  cmd: string | number;
+  c: number;
+  balance: string;
+  reason: WalletBalanceReason;
+  roundId: string | null;
+  timestampMillis: number;
+}
+
+function readWalletBalanceReason(value: unknown): WalletBalanceReason | null {
+  if (
+    typeof value === "string" &&
+    (WALLET_BALANCE_REASONS as readonly string[]).includes(value)
+  ) {
+    return value as WalletBalanceReason;
+  }
+  return null;
+}
+
+export function parseWalletBalancePayload(
+  payload: Record<string, unknown>,
+): WalletBalanceUpdatedPayload | null {
+  const balance = readWireDecimalString(payload.balance);
+  const reason = readWalletBalanceReason(payload.reason);
+  if (!balance || !reason) {
+    return null;
+  }
+  const roundId =
+    payload.roundId === null || payload.roundId === undefined
+      ? null
+      : typeof payload.roundId === "string"
+        ? payload.roundId
+        : null;
+  return {
+    cmd: payload.cmd as string | number,
+    c: Number(payload.c ?? 0),
+    balance,
+    reason,
+    roundId,
+    timestampMillis: Number(payload.timestampMillis ?? 0),
+  };
 }
 
 export interface WinWay {
@@ -567,9 +619,6 @@ export function parseJoinResponsePayload(
     c: Number(payload.c ?? 0),
     symbols: parseGameSymbols(payload.symbols),
     ...(betLevels?.length ? { betLevels } : {}),
-    ...(readWireDecimalString(payload.balance)
-      ? { balance: readWireDecimalString(payload.balance) }
-      : {}),
     lastRound,
   };
 }

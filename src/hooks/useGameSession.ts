@@ -13,10 +13,8 @@ import {
 import {
   buildGoldenWildHighlightSet,
   parseBetLevelsFromJoin,
-  readBalanceString,
   readRoundBetString,
   readRoundFeatureBadges,
-  readSpinBalanceAfter,
   readSpinJackpot,
   readSpinRetrigger,
   resolveBetFromLevels,
@@ -34,6 +32,7 @@ import {
   isJackpotWinnerPush,
   isJoinResponsePayload,
   isSpinResponsePayload,
+  isWalletBalancePushPayload,
 } from "../ws/browser-ws-client";
 import {
   cheatFrame,
@@ -54,6 +53,7 @@ import {
   parseHistoryListPayload,
   parseJackpotPoolsFromPayload,
   parseJoinResponsePayload,
+  parseWalletBalancePayload,
   type GameSymbol,
   type HistoryDetailPayload,
   type HistoryListPayload,
@@ -92,6 +92,7 @@ export function useGameSession() {
   const spinBusyRef = useRef(false);
   const stompListenerCleanupRef = useRef<(() => void) | null>(null);
   const disconnectListenerCleanupRef = useRef<(() => void) | null>(null);
+  const walletListenerCleanupRef = useRef<(() => void) | null>(null);
   const sessionEndingRef = useRef(false);
   const phaseRef = useRef<GamePhase>("disconnected");
   const cheatBaselineRef = useRef<string[][]>(emptyCheatGrid());
@@ -161,17 +162,23 @@ export function useGameSession() {
     disconnectListenerCleanupRef.current = null;
   }, []);
 
+  const detachWalletListener = useCallback(() => {
+    walletListenerCleanupRef.current?.();
+    walletListenerCleanupRef.current = null;
+  }, []);
+
   const handleTokenBan = useCallback(() => {
     setTokenBanPromptOpen(true);
     setError("Access token has been banned.");
     stopHeartbeat();
     detachDisconnectListener();
     detachStompListener();
+    detachWalletListener();
     clientRef.current?.close();
     clientRef.current = null;
     setSessionReady(false);
     setPhase("disconnected");
-  }, [detachDisconnectListener, detachStompListener, stopHeartbeat, setPhase]);
+  }, [detachDisconnectListener, detachStompListener, detachWalletListener, stopHeartbeat, setPhase]);
 
   const dismissTokenBanPrompt = useCallback(() => {
     setTokenBanPromptOpen(false);
@@ -203,6 +210,7 @@ export function useGameSession() {
       sessionEndingRef.current = true;
       detachDisconnectListener();
       detachStompListener();
+      detachWalletListener();
       stopHeartbeat();
       clientRef.current?.close();
       clientRef.current = null;
@@ -228,7 +236,7 @@ export function useGameSession() {
       setPhase("disconnected");
       sessionEndingRef.current = false;
     },
-    [detachDisconnectListener, detachStompListener, stopHeartbeat, setPhase],
+    [detachDisconnectListener, detachStompListener, detachWalletListener, stopHeartbeat, setPhase],
   );
 
   const disconnect = useCallback(() => {
@@ -344,6 +352,7 @@ export function useGameSession() {
 
       detachStompListener();
       detachDisconnectListener();
+      detachWalletListener();
       stompListenerCleanupRef.current = client.addStompErrorListener((code) => {
         if (isTokenBannedStompError(code)) {
           handleTokenBan();
@@ -373,6 +382,16 @@ export function useGameSession() {
           : "socket not open";
         throw new Error(`Disconnected before join (${detail})`);
       }
+
+      walletListenerCleanupRef.current = client.addPayloadListener(
+        isWalletBalancePushPayload,
+        (payload) => {
+          const wallet = parseWalletBalancePayload(payload);
+          if (wallet) {
+            setBalance(wallet.balance);
+          }
+        },
+      );
 
       const joinPayloadPromise = client.waitForPayload(
         isJoinResponsePayload,
@@ -412,9 +431,6 @@ export function useGameSession() {
           )
         : null;
       setBet(resolveBetFromLevels(levels, roundBet ?? bet));
-      setBalance(
-        joinPayload.balance ?? readBalanceString(rawJoinPayload) ?? null,
-      );
 
       applyJackpotPoolsFromPayload(rawJoinPayload);
 
@@ -438,6 +454,7 @@ export function useGameSession() {
     defaults.timeoutMs,
     detachDisconnectListener,
     detachStompListener,
+    detachWalletListener,
     disconnect,
     connectionLostLogout,
     gameRoute,
@@ -510,12 +527,6 @@ export function useGameSession() {
       setLastSpin(spinPayload);
       setLastRound(null);
       applyCheatGridFromReels(spinPayload.spin.reels);
-      const nextBalance = readSpinBalanceAfter(
-        spinPayload.spin as unknown as Record<string, unknown>,
-      );
-      if (nextBalance != null) {
-        setBalance(nextBalance);
-      }
 
       const poolsFromSpin = parseJackpotPoolsFromPayload(payload);
       if (poolsFromSpin) {
