@@ -41,11 +41,15 @@ export function heartbeatFrame(): HeartbeatFrame {
   return ["7", "MiniGame", "1", 2];
 }
 
+/** Default page size for cmd 1502 (guide §8.1). */
+export const HISTORY_LIST_DEFAULT_SIZE = 6;
+
 /** cmd 1502 — Level 1: paginated list of finished spins. */
 export function historyListFrame(
   gameRoute: string,
+  /** 1-based page index (guide §8.1). */
   page: number,
-  size: number,
+  size: number = HISTORY_LIST_DEFAULT_SIZE,
 ): WsFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1502", page, size }];
 }

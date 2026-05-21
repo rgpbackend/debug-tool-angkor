@@ -228,8 +228,8 @@ function ListPanel({
   onSelectItem,
 }: Readonly<ListPanelProps>) {
   const totalPages = data.totalPage;
-  const hasPrev = page > 0;
-  const hasNext = page + 1 < data.totalPage;
+  const hasPrev = page > 1;
+  const hasNext = page < data.totalPage;
 
   return (
     <div className="hist-list">
@@ -246,7 +246,7 @@ function ListPanel({
             ← Prev
           </button>
           <span className="hist-page-info">
-            {totalPages === 0 ? "0 / 0" : `${page + 1} / ${totalPages}`}
+            {totalPages === 0 ? "0 / 0" : `${page} / ${totalPages}`}
           </span>
           <button
             type="button"
@@ -339,6 +339,7 @@ function ListPanel({
 export interface HistoryViewProps {
   /** true when session is joined and spin is not in-flight (safe to send cmds). */
   canQuery: boolean;
+  /** `page` is 1-based (guide §8.1). */
   onFetchList: (page: number) => Promise<HistoryListPayload>;
   onFetchDetail: (
     roundId: string,
@@ -352,7 +353,7 @@ export default function HistoryView({
   onFetchDetail,
 }: Readonly<HistoryViewProps>) {
   const [view, setView] = useState<"list" | "detail">("list");
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [listData, setListData] = useState<HistoryListPayload | null>(null);
   const [detailData, setDetailData] = useState<HistoryDetailPayload | null>(
     null,
@@ -372,7 +373,7 @@ export default function HistoryView({
       try {
         const data = await onFetchList(targetPage);
         setListData(data);
-        setPage(targetPage);
+        setPage(data.page);
         setView("list");
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -405,7 +406,7 @@ export default function HistoryView({
   // hit "Refresh" manually once connected.
   useEffect(() => {
     if (canQueryRef.current) {
-      void fetchList(0);
+      void fetchList(1);
     }
     // Only on mount — intentionally empty deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps

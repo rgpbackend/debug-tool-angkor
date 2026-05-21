@@ -40,6 +40,7 @@ import {
   forceJackpotNextSpinFrame,
   heartbeatFrame,
   historyDetailFrame,
+  HISTORY_LIST_DEFAULT_SIZE,
   historyListFrame,
   jackpotPoolsFrame,
   jackpotWinHistoryFrame,
@@ -639,7 +640,9 @@ export function useGameSession() {
         isHistoryListPayload,
         "history list",
       );
-      client.sendFrame(historyListFrame(gameRoute.trim(), page, 20));
+      client.sendFrame(
+        historyListFrame(gameRoute.trim(), page, HISTORY_LIST_DEFAULT_SIZE),
+      );
       const payload = await payloadPromise;
       return parseHistoryListPayload(payload);
     },

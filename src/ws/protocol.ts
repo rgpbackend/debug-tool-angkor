@@ -208,6 +208,7 @@ export interface HistoryItem {
 export interface HistoryListPayload {
   cmd: string | number;
   items: HistoryItem[];
+  /** 1-based page echoed from the server (guide §8.1). */
   page: number;
   size: number;
   totalItems: number;
@@ -459,8 +460,8 @@ export function parseHistoryListPayload(
   return {
     cmd: payload.cmd as string | number,
     items,
-    page: Number(payload.page ?? 0),
-    size: Number(payload.size ?? 0),
+    page: Number(payload.page ?? 1),
+    size: Number(payload.size ?? 6),
     totalItems: Number(payload.totalItems ?? 0),
     totalPage: Number(payload.totalPage ?? 0),
   };
