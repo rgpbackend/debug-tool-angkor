@@ -48,13 +48,6 @@ function profitClass(profit: number): string {
   return "";
 }
 
-function formatHistoryBalance(value: string | undefined): string {
-  if (!value) {
-    return "—";
-  }
-  return formatCreditAmount(value);
-}
-
 function formatHistoryAmount(value: number): string {
   return formatCreditAmount(String(value));
 }
@@ -140,18 +133,6 @@ function DetailPanel({ detail, onBack }: Readonly<DetailPanelProps>) {
             <span className="hist-meta-label">Profit</span>
             <span className={`hist-amount ${profitClass(detail.profit)}`}>
               {formatHistoryProfit(detail.profit)}
-            </span>
-          </p>
-          <p className="hist-meta-row">
-            <span className="hist-meta-label">Balance before</span>
-            <span className="hist-amount">
-              {formatHistoryBalance(detail.balanceBefore)}
-            </span>
-          </p>
-          <p className="hist-meta-row">
-            <span className="hist-meta-label">Balance after</span>
-            <span className="hist-amount">
-              {formatHistoryBalance(detail.balanceAfter)}
             </span>
           </p>
         </div>
@@ -246,15 +227,15 @@ function ListPanel({
   onPageChange,
   onSelectItem,
 }: Readonly<ListPanelProps>) {
-  const totalPages = Math.max(1, Math.ceil(data.totalCount / data.pageSize));
+  const totalPages = data.totalPage;
   const hasPrev = page > 0;
-  const hasNext = (page + 1) * data.pageSize < data.totalCount;
+  const hasNext = page + 1 < data.totalPage;
 
   return (
     <div className="hist-list">
       <div className="hist-list-toolbar row">
         <span className="muted hist-count">
-          {data.totalCount} spin{data.totalCount !== 1 ? "s" : ""} total
+          {data.totalItems} spin{data.totalItems !== 1 ? "s" : ""} total
         </span>
         <div className="hist-pagination">
           <button
@@ -265,7 +246,7 @@ function ListPanel({
             ← Prev
           </button>
           <span className="hist-page-info">
-            {page + 1} / {totalPages}
+            {totalPages === 0 ? "0 / 0" : `${page + 1} / ${totalPages}`}
           </span>
           <button
             type="button"
@@ -285,29 +266,49 @@ function ListPanel({
             <thead>
               <tr>
                 <th>#</th>
+                <th>Round ID</th>
                 <th>Type</th>
-                <th>Time</th>
                 <th className="hist-amount-col">Bet</th>
                 <th className="hist-amount-col">Win</th>
                 <th className="hist-amount-col">Profit</th>
-                <th className="hist-amount-col">Bal. before</th>
-                <th className="hist-amount-col">Bal. after</th>
-                <th></th>
+                <th>Time</th>
               </tr>
             </thead>
             <tbody>
               {data.items.map((item) => (
-                <tr key={`${item.roundId}-${item.spinIndex}`}>
+                <tr
+                  key={`${item.roundId}-${item.spinIndex}`}
+                  className={loading ? undefined : "hist-row-clickable"}
+                  role="button"
+                  tabIndex={loading ? -1 : 0}
+                  aria-label={`View spin ${item.stepIndex + 1}, round ${item.roundId}`}
+                  onClick={() => {
+                    if (!loading) {
+                      onSelectItem(item);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (loading) {
+                      return;
+                    }
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectItem(item);
+                    }
+                  }}
+                >
                   <td className="muted">{item.stepIndex + 1}</td>
+                  <td>
+                    <code className="hist-round-id" title={item.roundId}>
+                      {item.roundId}
+                    </code>
+                  </td>
                   <td>
                     <span
                       className={`hist-type-badge hist-type-${item.spinType}`}
                     >
                       {item.spinType}
                     </span>
-                  </td>
-                  <td className="hist-ts muted">
-                    {formatTs(item.timestampMillis)}
                   </td>
                   <td className="hist-amount">
                     {formatHistoryAmount(item.bet)}
@@ -318,21 +319,8 @@ function ListPanel({
                   <td className={`hist-amount ${profitClass(item.profit)}`}>
                     {formatHistoryProfit(item.profit)}
                   </td>
-                  <td className="hist-amount">
-                    {formatHistoryBalance(item.balanceBefore)}
-                  </td>
-                  <td className="hist-amount">
-                    {formatHistoryBalance(item.balanceAfter)}
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="primary hist-detail-btn"
-                      onClick={() => onSelectItem(item)}
-                      disabled={loading}
-                    >
-                      Detail
-                    </button>
+                  <td className="hist-ts muted">
+                    {formatTs(item.timestampMillis)}
                   </td>
                 </tr>
               ))}

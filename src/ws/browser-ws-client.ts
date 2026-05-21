@@ -339,7 +339,8 @@ export function isHistoryListPayload(
   return (
     hasCmd(payload, "1502") &&
     Array.isArray(payload.items) &&
-    typeof payload.totalCount === "number"
+    typeof payload.totalItems === "number" &&
+    typeof payload.totalPage === "number"
   );
 }
 

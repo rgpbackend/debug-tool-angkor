@@ -1202,6 +1202,15 @@ button.primary {
   background: color-mix(in srgb, var(--code-bg) 55%, transparent);
 }
 
+.hist-row-clickable {
+  cursor: pointer;
+}
+
+.hist-row-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .hist-row-selected {
   background: color-mix(in srgb, var(--accent) 10%, var(--bg)) !important;
 }
@@ -1211,9 +1220,14 @@ button.primary {
   font-size: 0.75rem;
 }
 
-.hist-detail-btn {
-  padding: 0.2rem 0.6rem;
-  font-size: 0.78rem;
+.hist-round-id {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  max-width: 14rem;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 /* --- Detail panel --- */

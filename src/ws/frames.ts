@@ -45,9 +45,9 @@ export function heartbeatFrame(): HeartbeatFrame {
 export function historyListFrame(
   gameRoute: string,
   page: number,
-  pageSize: number,
+  size: number,
 ): WsFrame {
-  return [6, "MiniGame", gameRoute, { cmd: "1502", page, pageSize }];
+  return [6, "MiniGame", gameRoute, { cmd: "1502", page, size }];
 }
 
 /** cmd 1510 — active jackpot pool amounts per tier. */

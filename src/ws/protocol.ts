@@ -203,16 +203,15 @@ export interface HistoryItem {
   bet: number;
   win: number;
   profit: number;
-  balanceBefore?: string;
-  balanceAfter?: string;
 }
 
 export interface HistoryListPayload {
   cmd: string | number;
   items: HistoryItem[];
   page: number;
-  pageSize: number;
-  totalCount: number;
+  size: number;
+  totalItems: number;
+  totalPage: number;
 }
 
 export interface HistoryWinWay {
@@ -436,8 +435,6 @@ export function parseHistoryListItem(row: unknown): HistoryItem | null {
     return null;
   }
   const spinIndex = Number(r.spinIndex ?? r.stepIndex ?? 0);
-  const balanceBefore = readWireDecimalString(r.balanceBefore);
-  const balanceAfter = readWireDecimalString(r.balanceAfter);
   return {
     roundId: r.roundId,
     spinIndex,
@@ -449,8 +446,6 @@ export function parseHistoryListItem(row: unknown): HistoryItem | null {
     bet: readHistoryAmount(r.bet),
     win: readHistoryAmount(r.win),
     profit: readHistoryAmount(r.profit),
-    ...(balanceBefore ? { balanceBefore } : {}),
-    ...(balanceAfter ? { balanceAfter } : {}),
   };
 }
 
@@ -465,8 +460,9 @@ export function parseHistoryListPayload(
     cmd: payload.cmd as string | number,
     items,
     page: Number(payload.page ?? 0),
-    pageSize: Number(payload.pageSize ?? items.length),
-    totalCount: Number(payload.totalCount ?? items.length),
+    size: Number(payload.size ?? 0),
+    totalItems: Number(payload.totalItems ?? 0),
+    totalPage: Number(payload.totalPage ?? 0),
   };
 }
 
@@ -488,9 +484,6 @@ export function parseHistoryDetailPayload(
       )
     : [];
 
-  const balanceBefore = readWireDecimalString(payload.balanceBefore);
-  const balanceAfter = readWireDecimalString(payload.balanceAfter);
-
   return {
     cmd: payload.cmd as string | number,
     roundId: String(payload.roundId ?? ""),
@@ -506,8 +499,6 @@ export function parseHistoryDetailPayload(
     bet: readHistoryAmount(payload.bet),
     win: readHistoryAmount(payload.win),
     profit: readHistoryAmount(payload.profit),
-    ...(balanceBefore ? { balanceBefore } : {}),
-    ...(balanceAfter ? { balanceAfter } : {}),
     reels,
     winWays,
   };
@@ -531,8 +522,6 @@ export interface HistoryDetailPayload {
   bet: number;
   win: number;
   profit: number;
-  balanceBefore?: string;
-  balanceAfter?: string;
   /** Column-major grid, same layout as live spin reels. */
   reels: string[][];
   winWays: HistoryWinWay[];
