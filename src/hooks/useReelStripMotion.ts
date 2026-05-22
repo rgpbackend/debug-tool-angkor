@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useSyncRef } from "./useSyncRef";
 import {
   REEL_SPIN,
   easeInOutSine,
@@ -53,7 +54,7 @@ export function useReelStripMotion({
   const rafRef = useRef(0);
   const cellStepRef = useRef(0);
   const onStoppedRef = useRef(onStopped);
-  onStoppedRef.current = onStopped;
+  useSyncRef(onStoppedRef, onStopped);
 
   const applyOffset = useCallback((offsetPx: number) => {
     const el = stripRef.current;

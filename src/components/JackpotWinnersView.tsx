@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { JackpotWinHistoryItem, JackpotWinHistoryPayload } from "../ws/protocol";
 
 function formatTs(ms: number): string {
@@ -40,7 +46,9 @@ export default function JackpotWinnersView({
   const [error, setError] = useState<string | null>(null);
 
   const canQueryRef = useRef(canQuery);
-  canQueryRef.current = canQuery;
+  useLayoutEffect(() => {
+    canQueryRef.current = canQuery;
+  });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -65,7 +73,9 @@ export default function JackpotWinnersView({
 
   useEffect(() => {
     if (refreshToken > 0 && canQuery) {
-      void fetchData();
+      queueMicrotask(() => {
+        void fetchData();
+      });
     }
   }, [refreshToken, canQuery, fetchData]);
 

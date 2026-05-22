@@ -37,8 +37,8 @@ export function forceJackpotNextSpinFrame(
   return [6, "MiniGame", gameRoute, { cmd: "2002", tier }];
 }
 
-export function heartbeatFrame(): HeartbeatFrame {
-  return ["7", "MiniGame", "1", 2];
+export function heartbeatFrame(counter: number): HeartbeatFrame {
+  return ["7", "MiniGame", "1", counter];
 }
 
 /** Default page size for cmd 1502 (guide §8.1). */

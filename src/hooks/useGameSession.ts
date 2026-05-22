@@ -19,7 +19,14 @@ import {
   readSpinRetrigger,
   resolveBetFromLevels,
 } from "../lib/session-utils";
-import { resetAccessToken } from "../api/resetToken";
+import { refreshSessionToken } from "../api/auth";
+import { login, playGame } from "../api/agency";
+import {
+  clearGameSession,
+  loadRefreshToken,
+  saveRefreshToken,
+} from "../lib/game-session-storage";
+import { WS_SESSION_REFRESH_INTERVAL_MS } from "../lib/ws-session-refresh";
 import {
   BrowserWsClient,
   StompTokenBannedError,
@@ -37,8 +44,8 @@ import {
 import {
   cheatFrame,
   connectFrame,
-  forceJackpotNextSpinFrame,
   heartbeatFrame,
+  forceJackpotNextSpinFrame,
   historyDetailFrame,
   HISTORY_LIST_DEFAULT_SIZE,
   historyListFrame,
@@ -69,8 +76,8 @@ import {
 import type { GamePhase } from "../ws/game-phase";
 import { isTokenBannedStompError } from "../ws/stomp-errors";
 
-const HEARTBEAT_INTERVAL_MS = 30_000;
 const POST_AUTH_BEFORE_JOIN_MS = 1000;
+const HEARTBEAT_INTERVAL_MS = 30_000;
 
 const WS_CONNECTION_LOST_RE =
   /timeout|WS closed|WS connect error|not connected|Disconnected before|Disconnected after/i;
@@ -89,6 +96,9 @@ export function useGameSession() {
   const defaults = useMemo(() => readEnvDefaults(), []);
   const clientRef = useRef<BrowserWsClient | null>(null);
   const heartbeatTimerRef = useRef<number | null>(null);
+  const heartbeatCounterRef = useRef(1);
+  const sessionRefreshTimerRef = useRef<number | null>(null);
+  const sessionRefreshInFlightRef = useRef(false);
   /** True while awaiting spin response — blocks jackpot loading UI churn. */
   const spinBusyRef = useRef(false);
   const stompListenerCleanupRef = useRef<(() => void) | null>(null);
@@ -97,6 +107,7 @@ export function useGameSession() {
   const sessionEndingRef = useRef(false);
   const phaseRef = useRef<GamePhase>("disconnected");
   const cheatBaselineRef = useRef<string[][]>(emptyCheatGrid());
+  const autoConnectStartedRef = useRef(false);
 
   const [jackpotPoolsByTier, setJackpotPoolsByTier] =
     useState<JackpotPoolsByTier>(emptyJackpotPoolsByTier);
@@ -108,16 +119,18 @@ export function useGameSession() {
     phaseRef.current = next;
     setPhaseState(next);
   }, []);
-  /** True after connect+join succeeded; used for UI (avoid reading refs during render). */
+  /** True after WS connect + auth; GameScreen is shown. */
+  const [gameScreenActive, setGameScreenActive] = useState(false);
+  /** True after join (cmd 1005) succeeded; spin and queries allowed. */
   const [sessionReady, setSessionReady] = useState(false);
+  const joinInFlightRef = useRef(false);
+  const [joinRetryOpen, setJoinRetryOpen] = useState(false);
+  const [joinRetryMessage, setJoinRetryMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tokenBanPromptOpen, setTokenBanPromptOpen] = useState(false);
-  const [tokenResetBusy, setTokenResetBusy] = useState(false);
-
-  const [wsUrl, setWsUrl] = useState(defaults.wsUrl);
-  const [agentId, setAgentId] = useState(defaults.agentId);
-  const [accessToken, setAccessToken] = useState(defaults.accessToken);
-  const [gameRoute, setGameRoute] = useState(defaults.gameRoute);
+  const wsUrl = defaults.wsUrl;
+  const agentId = defaults.agentId;
+  const [accessToken, setAccessToken] = useState("");
+  const [gameRoute, setGameRoute] = useState(defaults.gameId);
   const [bet, setBet] = useState("1");
   const [betLevels, setBetLevels] = useState<string[]>([]);
   const [symbolCatalog, setSymbolCatalog] = useState<GameSymbol[]>([]);
@@ -146,6 +159,14 @@ export function useGameSession() {
     }
   }, []);
 
+  const stopSessionRefresh = useCallback(() => {
+    if (sessionRefreshTimerRef.current !== null) {
+      window.clearInterval(sessionRefreshTimerRef.current);
+      sessionRefreshTimerRef.current = null;
+    }
+    sessionRefreshInFlightRef.current = false;
+  }, []);
+
   const applyCheatGridFromReels = useCallback((reels: string[][]) => {
     const grid = cheatGridFromSpinReels(reels);
     setCheatGrid(grid);
@@ -168,41 +189,6 @@ export function useGameSession() {
     walletListenerCleanupRef.current = null;
   }, []);
 
-  const handleTokenBan = useCallback(() => {
-    setTokenBanPromptOpen(true);
-    setError("Access token has been banned.");
-    stopHeartbeat();
-    detachDisconnectListener();
-    detachStompListener();
-    detachWalletListener();
-    clientRef.current?.close();
-    clientRef.current = null;
-    setSessionReady(false);
-    setPhase("disconnected");
-  }, [detachDisconnectListener, detachStompListener, detachWalletListener, stopHeartbeat, setPhase]);
-
-  const dismissTokenBanPrompt = useCallback(() => {
-    setTokenBanPromptOpen(false);
-  }, []);
-
-  const confirmTokenReset = useCallback(async () => {
-    const token = accessToken.trim();
-    if (!token) {
-      setError("Access token is required to reset");
-      return;
-    }
-    setTokenResetBusy(true);
-    try {
-      await resetAccessToken(defaults.tokenResetBaseUrl, token);
-      setTokenBanPromptOpen(false);
-      setError("Token reset succeeded. Connect again with the same token.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setTokenResetBusy(false);
-    }
-  }, [accessToken, defaults.tokenResetBaseUrl]);
-
   const endSession = useCallback(
     (options?: { error?: string | null }) => {
       if (sessionEndingRef.current) {
@@ -213,10 +199,12 @@ export function useGameSession() {
       detachStompListener();
       detachWalletListener();
       stopHeartbeat();
+      stopSessionRefresh();
       clientRef.current?.close();
       clientRef.current = null;
       setError(options?.error === undefined ? null : options.error);
       setLastSpin(null);
+      setGameScreenActive(false);
       setSessionReady(false);
       setCheatArmed(false);
       setForceJackpotArmed(false);
@@ -232,31 +220,124 @@ export function useGameSession() {
       setBalance(null);
       spinBusyRef.current = false;
       setSpinFreeze(null);
-      setTokenBanPromptOpen(false);
-      setTokenResetBusy(false);
+      joinInFlightRef.current = false;
+      setJoinRetryOpen(false);
+      setJoinRetryMessage(null);
       setPhase("disconnected");
       sessionEndingRef.current = false;
     },
-    [detachDisconnectListener, detachStompListener, detachWalletListener, stopHeartbeat, setPhase],
+    [
+      detachDisconnectListener,
+      detachStompListener,
+      detachWalletListener,
+      stopHeartbeat,
+      stopSessionRefresh,
+      setPhase,
+    ],
   );
 
   const disconnect = useCallback(() => {
     endSession({ error: null });
   }, [endSession]);
 
+  const handleTokenBan = useCallback(() => {
+    clearGameSession();
+    setAccessToken("");
+    endSession({
+      error: "Game session token has been banned. Log in again.",
+    });
+  }, [endSession]);
+
+  const logout = useCallback(() => {
+    clearGameSession();
+    setAccessToken("");
+    disconnect();
+  }, [disconnect]);
+
   const connectionLostLogout = useCallback(
     (message: string) => {
       if (phaseRef.current === "disconnected" && clientRef.current === null) {
         return;
       }
+      clearGameSession();
+      setAccessToken("");
       endSession({ error: message });
     },
     [endSession],
   );
 
+  const handleJoinFailure = useCallback(
+    (message: string) => {
+      setPhase("connected");
+      setJoinRetryMessage(message);
+      setJoinRetryOpen(true);
+    },
+    [setPhase],
+  );
+
+  const dismissJoinRetry = useCallback(() => {
+    setJoinRetryOpen(false);
+    setJoinRetryMessage(null);
+    logout();
+  }, [logout]);
+
+  const reauthWsWithToken = useCallback(
+    (client: BrowserWsClient, wsAccessToken: string) => {
+      client.sendFrame(
+        connectFrame(agentId.trim(), wsAccessToken.trim(), true),
+      );
+    },
+    [agentId],
+  );
+
+  const performWsSessionRefresh = useCallback(
+    async (client: BrowserWsClient) => {
+      if (sessionRefreshInFlightRef.current) {
+        return;
+      }
+      sessionRefreshInFlightRef.current = true;
+      try {
+        if (clientRef.current !== client) {
+          return;
+        }
+        if (!client.isConnected()) {
+          connectionLostLogout("Connection lost (refresh: socket not open)");
+          return;
+        }
+        const storedRefresh = loadRefreshToken();
+        if (!storedRefresh) {
+          connectionLostLogout("Session refresh token missing");
+          return;
+        }
+        const { token, refreshToken } =
+          await refreshSessionToken(storedRefresh);
+        saveRefreshToken(refreshToken);
+        setAccessToken(token);
+        reauthWsWithToken(client, token);
+      } catch (e) {
+        const detail = e instanceof Error ? e.message : String(e);
+        connectionLostLogout(`Session refresh failed: ${detail}`);
+      } finally {
+        sessionRefreshInFlightRef.current = false;
+      }
+    },
+    [connectionLostLogout, reauthWsWithToken],
+  );
+
+  const startSessionRefresh = useCallback(
+    (client: BrowserWsClient) => {
+      stopSessionRefresh();
+      sessionRefreshTimerRef.current = window.setInterval(() => {
+        void performWsSessionRefresh(client);
+      }, WS_SESSION_REFRESH_INTERVAL_MS);
+    },
+    [performWsSessionRefresh, stopSessionRefresh],
+  );
+
   const startHeartbeat = useCallback(
     (client: BrowserWsClient) => {
       stopHeartbeat();
+      heartbeatCounterRef.current = 1;
       heartbeatTimerRef.current = window.setInterval(() => {
         if (clientRef.current !== client) {
           stopHeartbeat();
@@ -268,7 +349,8 @@ export function useGameSession() {
           return;
         }
         try {
-          client.sendFrame(heartbeatFrame());
+          client.sendFrame(heartbeatFrame(heartbeatCounterRef.current));
+          heartbeatCounterRef.current += 1;
         } catch (e) {
           stopHeartbeat();
           const detail = e instanceof Error ? e.message : String(e);
@@ -320,7 +402,8 @@ export function useGameSession() {
     }
   }, [applyJackpotPools, gameRoute]);
 
-  const connectAndJoin = useCallback(async () => {
+  const connectToGame = useCallback(async (wsAccessToken: string) => {
+    const gameToken = wsAccessToken.trim();
     setError(null);
     setLastSpin(null);
     setLastRound(null);
@@ -332,11 +415,12 @@ export function useGameSession() {
       setError("WebSocket URL is required");
       return;
     }
-    if (!accessToken.trim()) {
+    if (!gameToken) {
       setError("Access token is required");
       return;
     }
 
+    setAccessToken(gameToken);
     sessionEndingRef.current = false;
     disconnect();
     setPhase("connecting");
@@ -367,15 +451,54 @@ export function useGameSession() {
         },
       );
 
-      const connect = connectFrame(agentId.trim(), accessToken.trim(), false);
+      const connect = connectFrame(agentId.trim(), gameToken, false);
       client.sendFrame(connect);
       setPhase("connected");
       startHeartbeat(client);
-
-      await delay(POST_AUTH_BEFORE_JOIN_MS);
+      startSessionRefresh(client);
+      setGameScreenActive(true);
+    } catch (e) {
       if (clientRef.current !== client) {
         return;
       }
+      if (e instanceof StompTokenBannedError) {
+        handleTokenBan();
+        return;
+      }
+      const message = e instanceof Error ? e.message : String(e);
+      connectionLostLogout(message);
+    }
+  }, [
+    agentId,
+    defaults.timeoutMs,
+    detachDisconnectListener,
+    detachStompListener,
+    detachWalletListener,
+    disconnect,
+    connectionLostLogout,
+    handleTokenBan,
+    startHeartbeat,
+    startSessionRefresh,
+    wsUrl,
+    setPhase,
+  ]);
+
+  const joinGame = useCallback(async () => {
+    if (sessionReady || joinInFlightRef.current) {
+      return;
+    }
+    const client = clientRef.current;
+    if (!client?.isConnected()) {
+      setError("WebSocket is not connected");
+      return;
+    }
+
+    joinInFlightRef.current = true;
+    setError(null);
+    setPhase("joining");
+
+    try {
+      await delay(POST_AUTH_BEFORE_JOIN_MS);
       if (!client.isConnected()) {
         const closeInfo = client.getLastCloseInfo();
         const detail = closeInfo
@@ -384,6 +507,7 @@ export function useGameSession() {
         throw new Error(`Disconnected before join (${detail})`);
       }
 
+      detachWalletListener();
       walletListenerCleanupRef.current = client.addPayloadListener(
         isWalletBalancePushPayload,
         (payload) => {
@@ -398,8 +522,7 @@ export function useGameSession() {
         isJoinResponsePayload,
         "join response",
       );
-      const join = joinFrame(gameRoute.trim());
-      client.sendFrame(join);
+      client.sendFrame(joinFrame(gameRoute.trim()));
 
       const rawJoinPayload = await joinPayloadPromise;
       const joinPayload = parseJoinResponsePayload(rawJoinPayload);
@@ -412,7 +535,7 @@ export function useGameSession() {
         const detail = closeInfo
           ? `code=${closeInfo.code} reason=${closeInfo.reason}`
           : "socket not open";
-        throw new Error(`Disconnected after connect/join (${detail})`);
+        throw new Error(`Disconnected after join (${detail})`);
       }
 
       setSymbolCatalog(joinPayload.symbols);
@@ -435,39 +558,119 @@ export function useGameSession() {
 
       applyJackpotPoolsFromPayload(rawJoinPayload);
 
+      setJoinRetryOpen(false);
+      setJoinRetryMessage(null);
       setSessionReady(true);
       setPhase("joined");
       void fetchJackpotPools();
     } catch (e) {
-      if (clientRef.current !== client) {
-        return;
-      }
       if (e instanceof StompTokenBannedError) {
         handleTokenBan();
         return;
       }
       const message = e instanceof Error ? e.message : String(e);
-      connectionLostLogout(message);
+      if (!clientRef.current?.isConnected()) {
+        connectionLostLogout(message);
+        return;
+      }
+      handleJoinFailure(message);
+    } finally {
+      joinInFlightRef.current = false;
     }
   }, [
-    accessToken,
-    agentId,
-    defaults.timeoutMs,
-    detachDisconnectListener,
-    detachStompListener,
+    sessionReady,
     detachWalletListener,
-    disconnect,
-    connectionLostLogout,
     gameRoute,
-    handleTokenBan,
-    startHeartbeat,
-    stopHeartbeat,
-    wsUrl,
-    fetchJackpotPools,
     applyJackpotPoolsFromPayload,
     applyCheatGridFromReels,
+    bet,
+    fetchJackpotPools,
+    handleTokenBan,
+    connectionLostLogout,
+    handleJoinFailure,
     setPhase,
   ]);
+
+  const retryJoinGame = useCallback(() => {
+    void joinGame();
+  }, [joinGame]);
+
+  const loginAndEnterGame = useCallback(
+    async (username: string, password: string) => {
+      const trimmedUsername = username.trim();
+      if (!trimmedUsername || !password) {
+        setError("Username and password are required");
+        return;
+      }
+
+      setError(null);
+      setPhase("logging-in");
+
+      try {
+        const { token: userToken } = await login({
+          username: trimmedUsername,
+          password,
+        });
+        setPhase("launching");
+        const { token, refreshToken } = await playGame(
+          userToken,
+          defaults.gameId,
+        );
+        saveRefreshToken(refreshToken);
+        setGameRoute(defaults.gameId);
+        await connectToGame(token);
+      } catch (e) {
+        if (e instanceof StompTokenBannedError) {
+          return;
+        }
+        clearGameSession();
+        setAccessToken("");
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message);
+        setPhase("disconnected");
+      }
+    },
+    [connectToGame, defaults.gameId, setPhase],
+  );
+
+  const resumeFromRefreshToken = useCallback(async () => {
+    const refreshToken = loadRefreshToken();
+    if (!refreshToken) {
+      return;
+    }
+
+    setError(null);
+    setPhase("refreshing");
+    try {
+      const { token, refreshToken: nextRefresh } =
+        await refreshSessionToken(refreshToken);
+      saveRefreshToken(nextRefresh);
+      setGameRoute(defaults.gameId);
+      await connectToGame(token);
+    } catch (e) {
+      if (e instanceof StompTokenBannedError) {
+        return;
+      }
+      clearGameSession();
+      setAccessToken("");
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
+      setPhase("disconnected");
+    }
+  }, [connectToGame, defaults.gameId, setPhase]);
+
+  useEffect(() => {
+    if (autoConnectStartedRef.current || gameScreenActive) {
+      return;
+    }
+    if (!loadRefreshToken()) {
+      return;
+    }
+    autoConnectStartedRef.current = true;
+    queueMicrotask(() => {
+      void resumeFromRefreshToken();
+    });
+  }, [resumeFromRefreshToken, gameScreenActive]);
 
   useEffect(() => {
     const client = clientRef.current;
@@ -498,9 +701,41 @@ export function useGameSession() {
   useEffect(
     () => () => {
       stopHeartbeat();
+      stopSessionRefresh();
     },
-    [stopHeartbeat],
+    [stopHeartbeat, stopSessionRefresh],
   );
+
+  /** Unified display source: last spin result OR active round from join. */
+  const displaySpin = lastSpin ?? lastRound;
+  const isSpinning = phase === "spinning";
+
+  /** Frozen during spin so reels / win ways do not flicker before the response. */
+  const viewSpin = useMemo(() => {
+    if (isSpinning && spinFreeze !== null) {
+      return spinFreeze;
+    }
+    return displaySpin;
+  }, [isSpinning, spinFreeze, displaySpin]);
+
+  const betLocked = useMemo(() => {
+    const round = displaySpin?.round;
+    return Boolean(round && round.isFinished === false);
+  }, [displaySpin]);
+
+  const lockedRoundBet = useMemo(() => {
+    if (!betLocked || !displaySpin?.round) {
+      return null;
+    }
+    return readRoundBetString(displaySpin.round as { bet: unknown });
+  }, [betLocked, displaySpin]);
+
+  const activeBet = useMemo(() => {
+    if (lockedRoundBet) {
+      return resolveBetFromLevels(betLevels, lockedRoundBet);
+    }
+    return bet;
+  }, [lockedRoundBet, betLevels, bet]);
 
   const spin = useCallback(async (): Promise<SpinResponsePayload | null> => {
     const client = clientRef.current;
@@ -521,7 +756,7 @@ export function useGameSession() {
         isSpinResponsePayload,
         "spin response",
       );
-      const frame = spinFrame(gameRoute.trim(), String(bet));
+      const frame = spinFrame(gameRoute.trim(), String(activeBet));
       client.sendFrame(frame);
       const payload = await payloadPromise;
       const spinPayload = payload as unknown as SpinResponsePayload;
@@ -559,7 +794,8 @@ export function useGameSession() {
   }, [
     lastSpin,
     lastRound,
-    bet,
+    activeBet,
+    applyCheatGridFromReels,
     cheatArmed,
     forceJackpotArmed,
     gameRoute,
@@ -702,41 +938,19 @@ export function useGameSession() {
     phase === "joined" &&
     sessionReady &&
     betLevels.length > 0 &&
-    betLevels.includes(bet);
+    betLevels.includes(activeBet);
   const canCheat = phase === "joined" && sessionReady;
-  const busyConnect = phase === "connecting" || phase === "connected";
-
-  /** Unified display source: last spin result OR active round from join. */
-  const displaySpin = lastSpin ?? lastRound;
-
-  const isSpinning = phase === "spinning";
-
-  /** Frozen during spin so reels / win ways do not flicker before the response. */
-  const viewSpin = useMemo(() => {
-    if (isSpinning && spinFreeze !== null) {
-      return spinFreeze;
-    }
-    return displaySpin;
-  }, [isSpinning, spinFreeze, displaySpin]);
-
-  const betLocked = useMemo(() => {
-    const round = displaySpin?.round;
-    return Boolean(round && round.isFinished === false);
-  }, [displaySpin]);
-
-  useEffect(() => {
-    if (!betLocked || !displaySpin?.round) {
-      return;
-    }
-    const roundBet = readRoundBetString(displaySpin.round as { bet: unknown });
-    if (!roundBet) {
-      return;
-    }
-    setBet(resolveBetFromLevels(betLevels, roundBet));
-  }, [betLocked, betLevels, displaySpin]);
+  const busySession =
+    phase === "logging-in" ||
+    phase === "launching" ||
+    phase === "refreshing" ||
+    phase === "connecting" ||
+    phase === "connected";
 
   const selectBetValue =
-    betLevels.length > 0 && betLevels.includes(bet) ? bet : (betLevels[0] ?? "");
+    betLevels.length > 0 && betLevels.includes(activeBet)
+      ? activeBet
+      : (betLevels[0] ?? "");
 
   const winWays = viewSpin?.spin?.winWays ?? [];
 
@@ -762,24 +976,25 @@ export function useGameSession() {
     jackpotPoolsLoading,
     jackpotWinnersRefreshToken,
     phase,
+    gameScreenActive,
     sessionReady,
+    joinGame,
+    joinRetryOpen,
+    joinRetryMessage,
+    joinRetryBusy: phase === "joining",
+    retryJoinGame,
+    dismissJoinRetry,
     error,
     setError,
-    wsUrl,
-    setWsUrl,
-    agentId,
-    setAgentId,
     accessToken,
-    setAccessToken,
-    gameRoute,
-    setGameRoute,
     bet,
     setBet,
     betLevels,
     symbolCatalog,
     balance,
     cheatGrid,
-    connectAndJoin,
+    loginAndEnterGame,
+    logout,
     disconnect,
     spin,
     sendCheat,
@@ -793,7 +1008,7 @@ export function useGameSession() {
     updateCheatCell,
     canSpin,
     canCheat,
-    busyConnect,
+    busySession,
     isSpinning,
     displaySpin,
     viewSpin,
@@ -807,10 +1022,6 @@ export function useGameSession() {
     cheatSymbolOptions: CHEAT_SYMBOL_OPTIONS,
     cheatGridDirty,
     cheatInputRejectTick,
-    tokenBanPromptOpen,
-    tokenResetBusy,
-    confirmTokenReset,
-    dismissTokenBanPrompt,
   };
 }
 

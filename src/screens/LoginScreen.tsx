@@ -1,78 +1,74 @@
 import type { GameSession } from "../hooks/useGameSession";
+import { useState } from "react";
 
 type LoginScreenProps = Pick<
   GameSession,
-  | "wsUrl"
-  | "setWsUrl"
-  | "agentId"
-  | "setAgentId"
-  | "accessToken"
-  | "setAccessToken"
-  | "gameRoute"
-  | "setGameRoute"
-  | "connectAndJoin"
-  | "error"
-  | "busyConnect"
-  | "phase"
+  "loginAndEnterGame" | "error" | "busySession" | "phase"
 >;
 
+function loginButtonLabel(phase: GameSession["phase"], busy: boolean): string {
+  if (!busy) {
+    return "Login";
+  }
+  switch (phase) {
+    case "logging-in":
+      return "Signing in…";
+    case "launching":
+      return "Launching game…";
+    case "refreshing":
+      return "Refreshing session…";
+    case "connecting":
+    case "connected":
+      return "Connecting…";
+    default:
+      return "Please wait…";
+  }
+}
+
 export default function LoginScreen({
-  wsUrl,
-  setWsUrl,
-  agentId,
-  setAgentId,
-  accessToken,
-  setAccessToken,
-  gameRoute,
-  setGameRoute,
-  connectAndJoin,
+  loginAndEnterGame,
   error,
-  busyConnect,
+  busySession,
   phase,
 }: Readonly<LoginScreenProps>) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = () => {
+    void loginAndEnterGame(username, password);
+  };
+
   return (
     <main className="login-screen">
       <div className="login-card panel">
-        <h2>Connect to game</h2>
+        <h2>Sign in</h2>
         <p className="muted login-lead">
-          Enter WebSocket credentials and join the game session.
+          Sign in with your account to launch the game and connect.
         </p>
 
         <div className="field-grid login-fields">
           <label className="span-2">
-            WebSocket URL
+            Username
             <input
-              value={wsUrl}
-              onChange={(e) => setWsUrl(e.target.value)}
-              placeholder="wss://…/websocket"
-              autoComplete="off"
-              disabled={busyConnect}
-            />
-          </label>
-          <label>
-            Agent ID
-            <input
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              disabled={busyConnect}
-            />
-          </label>
-          <label>
-            Game route
-            <input
-              value={gameRoute}
-              onChange={(e) => setGameRoute(e.target.value)}
-              disabled={busyConnect}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              disabled={busySession}
             />
           </label>
           <label className="span-2">
-            Access token
+            Password
             <input
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-              type="text"
-              autoComplete="off"
-              disabled={busyConnect}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              autoComplete="current-password"
+              disabled={busySession}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !busySession) {
+                  handleSubmit();
+                }
+              }}
             />
           </label>
         </div>
@@ -83,14 +79,14 @@ export default function LoginScreen({
           <button
             type="button"
             className="primary"
-            onClick={() => void connectAndJoin()}
-            disabled={busyConnect}
+            onClick={handleSubmit}
+            disabled={busySession}
           >
-            {busyConnect ? "Connecting…" : "Connect + join"}
+            {loginButtonLabel(phase, busySession)}
           </button>
         </div>
 
-        {busyConnect ? (
+        {busySession ? (
           <p className="muted login-phase">
             Phase: <strong>{phase}</strong>
           </p>

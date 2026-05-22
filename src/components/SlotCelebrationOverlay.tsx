@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   CELEBRATION_DISPLAY_MS,
   CELEBRATION_EXIT_MS,
@@ -28,17 +28,27 @@ export default function SlotCelebrationOverlay({
   visible,
   resetKey = "",
 }: Readonly<SlotCelebrationOverlayProps>) {
+  const active = visible && items.length > 0;
   const [phase, setPhase] = useState<Phase>("hidden");
-  const shownItemsRef = useRef<CelebrationItem[]>([]);
+  const [displayItems, setDisplayItems] = useState<CelebrationItem[]>([]);
 
   useEffect(() => {
-    if (!visible || items.length === 0) {
-      setPhase("hidden");
+    if (!active) {
+      queueMicrotask(() => {
+        setPhase("hidden");
+        setDisplayItems([]);
+      });
       return;
     }
 
-    shownItemsRef.current = items;
-    setPhase("show");
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) {
+        return;
+      }
+      setDisplayItems(items);
+      setPhase("show");
+    });
 
     const exitTimer = window.setTimeout(
       () => setPhase("exit"),
@@ -50,16 +60,15 @@ export default function SlotCelebrationOverlay({
     );
 
     return () => {
+      cancelled = true;
       window.clearTimeout(exitTimer);
       window.clearTimeout(hideTimer);
     };
-  }, [visible, resetKey, items]);
+  }, [active, resetKey, items]);
 
-  if (phase === "hidden") {
+  if (!active || phase === "hidden") {
     return null;
   }
-
-  const shownItems = shownItemsRef.current;
 
   return (
     <div
@@ -68,7 +77,7 @@ export default function SlotCelebrationOverlay({
       aria-atomic="true"
     >
       <div className="slot-celebration-stack">
-        {shownItems.map((item, index) => (
+        {displayItems.map((item, index) => (
           <article
             key={item.id}
             className={`slot-celebration slot-celebration--${item.kind}`}

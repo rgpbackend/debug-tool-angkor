@@ -1,32 +1,47 @@
 # Game GUI (WebSocket)
 
-Minimal web client for **The Last Guardian of Angkor**: connect, join, spin, and inspect `spin` / `round` / `state` payloads from the backend over WebSocket.
+Minimal web client for **The Last Guardian of Angkor**: login, launch game, connect over WebSocket, join, spin, and inspect `spin` / `round` / `state` payloads.
 
 ## Protocol
 
-See [frontend-backend-websocket-guide.md](frontend-backend-websocket-guide.md) in this repo (wallet balance via server push `cmd 1530`), or the Confluence guide: [WebSocket Integration Guide of The Last Guardian of Angkor](https://ossworks.atlassian.net/wiki/spaces/YAM/pages/297435300/WebSocket+Integration+Guide+of+The+Last+Guardian+of+Angkor).
+See [frontend-backend-websocket-guide.md](docs/frontend-backend-websocket-guide.md) in this repo (wallet balance via server push `cmd 1530`), or the Confluence guide: [WebSocket Integration Guide of The Last Guardian of Angkor](https://ossworks.atlassian.net/wiki/spaces/YAM/pages/297435300/WebSocket+Integration+Guide+of+The+Last+Guardian+of+Angkor).
+
+Agency REST endpoints are documented in [Luigi WS002.postman_collection.json](docs/Luigi%20WS002.postman_collection.json).
 
 Monetary fields on the wire are **plain decimal strings** with 4 fractional digits (e.g. `"1000.0000"`), not JSON numbers.
 
 ## Setup
 
 ```bash
-cd cheat-gui
 npm install
 cp .env.example .env.local
-# Edit .env.local with VITE_WS_URL and VITE_ACCESS_TOKEN (and optional overrides)
+# Edit .env.local if needed (defaults target agency001 + gob02 WS)
 npm run dev
 ```
 
+## Login flow
+
+1. `POST {VITE_API_BASE_URL}/user/login` with username and password → user JWT
+2. `POST {VITE_API_BASE_URL}/play-game` with Bearer user JWT and `{ gameId }` → WS access token (in memory) + `refreshToken` (stored in `localStorage` only)
+3. WebSocket connect to `VITE_WS_URL` with WS access token, then join `gameId`
+
+On reload, if a refresh token exists, the client calls `VITE_AUTH_REFRESH_URL` to obtain a new WS access token before connecting.
+
+While the WebSocket is open:
+
+- Every **30 seconds** the client sends a STOMP heartbeat frame (`["7","MiniGame","1",2]`).
+- Every **115 seconds** the client refreshes the token pair via the auth API, persists the new refresh token, and sends a reconnect auth frame (`connect` with `reconnect: true`) on the existing socket.
+
 ## Environment variables
 
-| Variable             | Description                                                           |
-| -------------------- | --------------------------------------------------------------------- |
-| `VITE_WS_URL`        | WebSocket endpoint URL                                                |
-| `VITE_AGENT_ID`      | Agent id for connect frame (default `1`)                              |
-| `VITE_ACCESS_TOKEN`  | Access token for connect frame                                        |
-| `VITE_GAME_ROUTE`    | Game route segment (default `game-the-last-guardian-of-angkor`)       |
-| `VITE_WS_TIMEOUT_MS` | Spin response timeout in ms (default `10000`)                         |
+| Variable                    | Description                                                                 |
+| --------------------------- | --------------------------------------------------------------------------- |
+| `VITE_API_BASE_URL`         | Agency API base (default `https://agency001.relaxwmestu.xyz/api/v1`)        |
+| `VITE_WS_URL`               | WebSocket endpoint URL                                                      |
+| `VITE_GAME_ID`              | Game id for play-game and WS join (default `game-the-last-guardian-of-angkor`) |
+| `VITE_AGENT_ID`             | Agent id for connect frame (default `1`)                                    |
+| `VITE_WS_TIMEOUT_MS`        | Spin response timeout in ms (default `10000`)                                 |
+| `VITE_AUTH_REFRESH_URL`     | Optional refresh endpoint (not used in MVP login)                           |
 
 ## Scripts
 
@@ -36,4 +51,4 @@ npm run dev
 
 ## CORS / WSS
 
-The browser opens a direct WebSocket to `VITE_WS_URL`. If the server blocks unknown origins, use an endpoint your environment allows, or configure infrastructure accordingly (this app does not add a backend proxy by default).
+The browser calls the agency REST API and opens a direct WebSocket to `VITE_WS_URL`. If either blocks unknown origins, configure the server or use infrastructure your environment allows (this app does not add a backend proxy by default).

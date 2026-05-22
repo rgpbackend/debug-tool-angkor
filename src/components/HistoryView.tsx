@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { formatCreditAmount } from "../lib/session-utils";
 import type {
   HistoryDetailPayload,
@@ -361,10 +368,10 @@ export default function HistoryView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Stable ref so the auto-fetch effect closure always sees latest canQuery
-  // without re-triggering on each render.
   const canQueryRef = useRef(canQuery);
-  canQueryRef.current = canQuery;
+  useLayoutEffect(() => {
+    canQueryRef.current = canQuery;
+  });
 
   const fetchList = useCallback(
     async (targetPage: number) => {
