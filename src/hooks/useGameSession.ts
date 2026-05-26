@@ -20,7 +20,7 @@ import {
   resolveBetFromLevels,
 } from "../lib/session-utils";
 import { refreshSessionToken } from "../api/auth";
-import { login, playGame } from "../api/agency";
+import { login, playGame, register } from "../api/agency";
 import {
   clearGameSession,
   loadRefreshToken,
@@ -127,6 +127,9 @@ export function useGameSession() {
   const [joinRetryOpen, setJoinRetryOpen] = useState(false);
   const [joinRetryMessage, setJoinRetryMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [authSuccessMessage, setAuthSuccessMessage] = useState<string | null>(
+    null,
+  );
   const wsUrl = defaults.wsUrl;
   const agentId = defaults.agentId;
   const [accessToken, setAccessToken] = useState("");
@@ -604,6 +607,7 @@ export function useGameSession() {
       }
 
       setError(null);
+      setAuthSuccessMessage(null);
       setPhase("logging-in");
 
       try {
@@ -631,6 +635,47 @@ export function useGameSession() {
       }
     },
     [connectToGame, defaults.gameId, setPhase],
+  );
+
+  const registerAccount = useCallback(
+    async (
+      username: string,
+      password: string,
+      displayName: string,
+    ): Promise<boolean> => {
+      const trimmedUsername = username.trim();
+      const trimmedDisplayName = displayName.trim();
+      if (!trimmedUsername || !password || !trimmedDisplayName) {
+        setError("Username, password, and display name are required");
+        return false;
+      }
+
+      setError(null);
+      setAuthSuccessMessage(null);
+      setPhase("registering");
+
+      try {
+        await register({
+          username: trimmedUsername,
+          password,
+          displayName: trimmedDisplayName,
+        });
+        setAuthSuccessMessage(
+          "Account created successfully. Sign in to play.",
+        );
+        setPhase("disconnected");
+        return true;
+      } catch (e) {
+        if (e instanceof StompTokenBannedError) {
+          return false;
+        }
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message);
+        setPhase("disconnected");
+        return false;
+      }
+    },
+    [setPhase],
   );
 
   const resumeFromRefreshToken = useCallback(async () => {
@@ -940,6 +985,7 @@ export function useGameSession() {
     betLevels.length > 0 &&
     betLevels.includes(activeBet);
   const canCheat = phase === "joined" && sessionReady;
+  const busyRegister = phase === "registering";
   const busySession =
     phase === "logging-in" ||
     phase === "launching" ||
@@ -994,6 +1040,10 @@ export function useGameSession() {
     balance,
     cheatGrid,
     loginAndEnterGame,
+    registerAccount,
+    authSuccessMessage,
+    setAuthSuccessMessage,
+    busyRegister,
     logout,
     disconnect,
     spin,

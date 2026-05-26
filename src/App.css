@@ -46,6 +46,31 @@
   font-size: 0.85rem;
 }
 
+.auth-switch {
+  margin: 0.85rem 0 0;
+  font-size: 0.88rem;
+}
+
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:hover:not(:disabled) {
+  color: var(--text-h);
+}
+
+.link-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .game-screen-toolbar {
   align-items: center;
   justify-content: flex-end;
@@ -396,9 +421,19 @@ button.primary {
   font-size: 0.9rem;
 }
 
+.success.auth-notice {
+  color: #15803d;
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+}
+
 @media (prefers-color-scheme: dark) {
   .error {
     color: #fca5a5;
+  }
+
+  .success.auth-notice {
+    color: #86efac;
   }
 }
 

@@ -5,6 +5,12 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  displayName: string;
+}
+
 export interface LoginResponse {
   token: string;
 }
@@ -24,6 +30,11 @@ function requireNonEmptyString(value: unknown, field: string): string {
     throw new Error(`Invalid API response: missing ${field}`);
   }
   return value.trim();
+}
+
+/** Succeeds on 2xx; register may return 201 with an empty body. */
+export async function register(body: RegisterRequest): Promise<void> {
+  await postJson<void>("/user/register", body);
 }
 
 export async function login(body: LoginRequest): Promise<LoginResponse> {
