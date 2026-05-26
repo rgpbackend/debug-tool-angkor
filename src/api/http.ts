@@ -38,5 +38,14 @@ export async function postJson<T>(
     );
   }
 
-  return (await response.json()) as T;
+  const text = await response.text();
+  if (!text.trim()) {
+    return undefined as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error("Invalid API response: response body is not valid JSON");
+  }
 }

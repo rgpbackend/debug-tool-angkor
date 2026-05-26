@@ -3,8 +3,14 @@ import { useState } from "react";
 
 type LoginScreenProps = Pick<
   GameSession,
-  "loginAndEnterGame" | "error" | "busySession" | "phase"
->;
+  | "loginAndEnterGame"
+  | "error"
+  | "authSuccessMessage"
+  | "busySession"
+  | "phase"
+> & {
+  onShowRegister: () => void;
+};
 
 function loginButtonLabel(phase: GameSession["phase"], busy: boolean): string {
   if (!busy) {
@@ -28,8 +34,10 @@ function loginButtonLabel(phase: GameSession["phase"], busy: boolean): string {
 export default function LoginScreen({
   loginAndEnterGame,
   error,
+  authSuccessMessage,
   busySession,
   phase,
+  onShowRegister,
 }: Readonly<LoginScreenProps>) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -73,6 +81,12 @@ export default function LoginScreen({
           </label>
         </div>
 
+        {authSuccessMessage ? (
+          <p className="success auth-notice" role="status">
+            {authSuccessMessage}
+          </p>
+        ) : null}
+
         {error ? <p className="error">{error}</p> : null}
 
         <div className="row login-actions">
@@ -85,6 +99,18 @@ export default function LoginScreen({
             {loginButtonLabel(phase, busySession)}
           </button>
         </div>
+
+        <p className="auth-switch muted">
+          No account yet?{" "}
+          <button
+            type="button"
+            className="link-button"
+            onClick={onShowRegister}
+            disabled={busySession}
+          >
+            Register
+          </button>
+        </p>
 
         {busySession ? (
           <p className="muted login-phase">
