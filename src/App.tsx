@@ -1,4 +1,4 @@
-import TokenBannedModal from "./components/TokenBannedModal";
+import JoinRetryModal from "./components/JoinRetryModal";
 import { useGameSession } from "./hooks/useGameSession";
 import GameScreen from "./screens/GameScreen";
 import LoginScreen from "./screens/LoginScreen";
@@ -10,18 +10,18 @@ export default function App() {
 
   return (
     <div className="game-app">
-      {session.sessionReady ? (
+      {session.gameScreenActive ? (
         <GameScreen {...session} />
       ) : (
         <LoginScreen {...session} />
       )}
 
-      <TokenBannedModal
-        open={session.tokenBanPromptOpen}
-        tokenPreview={session.accessToken.trim() || "—"}
-        busy={session.tokenResetBusy}
-        onConfirm={() => void session.confirmTokenReset()}
-        onCancel={session.dismissTokenBanPrompt}
+      <JoinRetryModal
+        open={session.joinRetryOpen}
+        message={session.joinRetryMessage ?? ""}
+        busy={session.joinRetryBusy}
+        onRetry={session.retryJoinGame}
+        onLogout={session.dismissJoinRetry}
       />
     </div>
   );

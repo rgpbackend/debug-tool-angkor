@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSyncRef } from "../hooks/useSyncRef";
 import { useAutoSpin } from "../hooks/useAutoSpin";
 import { useRoundRunner } from "../hooks/useRoundRunner";
 import HistoryModal from "../components/HistoryModal";
@@ -14,9 +15,10 @@ import type { SpinResponsePayload } from "../ws/protocol";
 
 export default function GameScreen(session: Readonly<GameSession>) {
   const {
-    disconnect,
+    logout,
     phase,
     sessionReady,
+    joinGame,
     error,
     setBet,
     betLevels,
@@ -48,13 +50,17 @@ export default function GameScreen(session: Readonly<GameSession>) {
     featureBadges,
   } = session;
 
+  useEffect(() => {
+    void joinGame();
+  }, [joinGame]);
+
   const [historyOpen, setHistoryOpen] = useState(false);
   const [jackpotOpen, setJackpotOpen] = useState(false);
   const [reelsPresenting, setReelsPresenting] = useState(false);
   const [autoSpinActive, setAutoSpinActive] = useState(false);
   const spinUiActive = isSpinning || reelsPresenting;
   const spinUiActiveRef = useRef(spinUiActive);
-  spinUiActiveRef.current = spinUiActive;
+  useSyncRef(spinUiActiveRef, spinUiActive);
 
   const { roundRunning, executeRound, executeStep, cancelRound } =
     useRoundRunner({
@@ -79,11 +85,12 @@ export default function GameScreen(session: Readonly<GameSession>) {
     }
   }, [executeRound, controlsReady, roundIdle]);
 
-  useEffect(() => {
-    if (!sessionReady) {
-      setAutoSpinActive(false);
-    }
-  }, [sessionReady]);
+  useAutoSpin({
+    active: autoSpinActive && sessionReady,
+    roundIdle,
+    canStartRound: canSpin && !spinUiActive,
+    onRunRound: () => void executeRound(),
+  });
 
   const betDisabled =
     roundBusy ||
@@ -120,11 +127,18 @@ export default function GameScreen(session: Readonly<GameSession>) {
   }, [viewSpin, winWays.length]);
 
   const canQueryHistory = sessionReady && phase !== "spinning";
+  const joining = !sessionReady && phase === "joining";
 
   return (
     <>
+      {joining ? (
+        <p className="muted game-screen-joining" role="status">
+          Joining game…
+        </p>
+      ) : null}
+
       <div className="game-screen-toolbar row">
-        <button type="button" className="logout-btn" onClick={disconnect}>
+        <button type="button" className="logout-btn" onClick={logout}>
           Log out
         </button>
       </div>

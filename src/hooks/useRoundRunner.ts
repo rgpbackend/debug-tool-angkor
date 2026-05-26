@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useSyncRef } from "./useSyncRef";
 import { isRoundUnfinished } from "../lib/round-flow";
 import { waitAfterSpinStep } from "../lib/wait-for-spin-ui";
 import type { SpinResponsePayload } from "../ws/protocol";
@@ -21,9 +22,9 @@ export function useRoundRunner({
   const isSpinUiActiveRef = useRef(isSpinUiActive);
   const canStartRoundRef = useRef(canStartRound);
 
-  spinRef.current = spin;
-  isSpinUiActiveRef.current = isSpinUiActive;
-  canStartRoundRef.current = canStartRound;
+  useSyncRef(spinRef, spin);
+  useSyncRef(isSpinUiActiveRef, isSpinUiActive);
+  useSyncRef(canStartRoundRef, canStartRound);
 
   const cancelRound = useCallback(() => {
     cancelRef.current = true;

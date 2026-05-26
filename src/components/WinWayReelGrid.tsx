@@ -153,7 +153,7 @@ export default function WinWayReelGrid({
     if (cheatInputRejectTick === 0) {
       return;
     }
-    setCheatRejectActive(true);
+    queueMicrotask(() => setCheatRejectActive(true));
     const timer = window.setTimeout(() => setCheatRejectActive(false), 480);
     return () => window.clearTimeout(timer);
   }, [cheatInputRejectTick]);
@@ -200,14 +200,14 @@ export default function WinWayReelGrid({
   }, [clearStopTimers, onPresentationChange, reels]);
 
   useEffect(() => {
-    setSelectedIndex(0);
+    queueMicrotask(() => setSelectedIndex(0));
   }, [winWays]);
 
   useEffect(() => {
     if (!spinning || !cabinet) {
       return;
     }
-    beginPresentation();
+    queueMicrotask(() => beginPresentation());
   }, [spinning, cabinet, beginPresentation]);
 
   useEffect(() => {
@@ -301,7 +301,10 @@ export default function WinWayReelGrid({
   );
 
   const showWinPresentation = cabinet ? !presentationActive && !spinning : true;
-  const displayWinWays = showWinPresentation ? winWays : [];
+  const displayWinWays = useMemo(
+    () => (showWinPresentation ? winWays : []),
+    [showWinPresentation, winWays],
+  );
   const displayGoldenWild = showWinPresentation
     ? goldenWildHighlightKeys
     : undefined;

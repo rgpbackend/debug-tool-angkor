@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { useSyncRef } from "./useSyncRef";
 
 const AUTO_SPIN_BETWEEN_ROUNDS_MS = 0;
 
@@ -26,9 +27,9 @@ export function useAutoSpin({
   const onRunRoundRef = useRef(onRunRound);
   const canStartRoundRef = useRef(canStartRound);
 
-  activeRef.current = active;
-  onRunRoundRef.current = onRunRound;
-  canStartRoundRef.current = canStartRound;
+  useSyncRef(activeRef, active);
+  useSyncRef(onRunRoundRef, onRunRound);
+  useSyncRef(canStartRoundRef, canStartRound);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current != null) {
