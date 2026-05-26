@@ -25,12 +25,12 @@ npm run dev
 2. `POST {VITE_API_BASE_URL}/play-game` with Bearer user JWT and `{ gameId }` → WS access token (in memory) + `refreshToken` (stored in `localStorage` only)
 3. WebSocket connect to `VITE_WS_URL` with WS access token, then join `gameId`
 
-On reload, if a refresh token exists, the client calls `VITE_AUTH_REFRESH_URL` to obtain a new WS access token before connecting.
+On reload, if a refresh token exists in `localStorage`, the client calls `VITE_AUTH_REFRESH_URL` with that token to obtain `accessToken` + `refreshToken`, then connects the WebSocket. Login and `play-game` are not called again during this path.
 
 While the WebSocket is open:
 
 - Every **30 seconds** the client sends a STOMP heartbeat frame (`["7","MiniGame","1",2]`).
-- Every **115 seconds** the client refreshes the token pair via the auth API, persists the new refresh token, and sends a reconnect auth frame (`connect` with `reconnect: true`) on the existing socket.
+- Every **115 seconds** (configurable via `VITE_AUTH_REFRESH_INTERVAL_MS`) the client calls the same auth refresh endpoint, overwrites the stored refresh token, and sends a reconnect auth frame (`connect` with `reconnect: true` and the new `accessToken`) on the existing socket. Agency `play-game` is not called during this loop.
 
 ## Environment variables
 
@@ -41,7 +41,8 @@ While the WebSocket is open:
 | `VITE_GAME_ID`              | Game id for play-game and WS join (default `game-the-last-guardian-of-angkor`) |
 | `VITE_AGENT_ID`             | Agent id for connect frame (default `1`)                                    |
 | `VITE_WS_TIMEOUT_MS`        | Spin response timeout in ms (default `10000`)                                 |
-| `VITE_AUTH_REFRESH_URL`     | Optional refresh endpoint (not used in MVP login)                           |
+| `VITE_AUTH_REFRESH_URL`     | Auth refresh endpoint (`accessToken` + `refreshToken` in response)          |
+| `VITE_AUTH_REFRESH_INTERVAL_MS` | Auth refresh interval on open WS in ms (default `115000`)              |
 
 ## Scripts
 

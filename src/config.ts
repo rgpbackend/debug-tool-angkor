@@ -3,6 +3,8 @@ const DEFAULT_API_BASE_URL =
 const DEFAULT_WS_URL = "wss://gob02-ws.relaxwmestu.xyz/websocket";
 const DEFAULT_GAME_ID = "game-the-last-guardian-of-angkor";
 
+const DEFAULT_AUTH_REFRESH_INTERVAL_MS = 115_000;
+
 export interface GameGuiEnvDefaults {
   apiBaseUrl: string;
   wsUrl: string;
@@ -11,6 +13,7 @@ export interface GameGuiEnvDefaults {
   gameRoute: string;
   timeoutMs: number;
   authRefreshUrl: string;
+  authRefreshIntervalMs: number;
 }
 
 export function readEnvDefaults(): GameGuiEnvDefaults {
@@ -33,5 +36,12 @@ export function readEnvDefaults(): GameGuiEnvDefaults {
     authRefreshUrl:
       import.meta.env.VITE_AUTH_REFRESH_URL ??
       "https://authentication.relaxwmestu.xyz/api/auth/refresh",
+    authRefreshIntervalMs: (() => {
+      const raw = import.meta.env.VITE_AUTH_REFRESH_INTERVAL_MS;
+      const parsed = raw ? Number(raw) : Number.NaN;
+      return Number.isFinite(parsed) && parsed > 0
+        ? parsed
+        : DEFAULT_AUTH_REFRESH_INTERVAL_MS;
+    })(),
   };
 }

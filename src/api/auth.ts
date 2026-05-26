@@ -5,8 +5,8 @@ export interface RefreshSessionRequest {
 }
 
 export interface RefreshSessionResponse {
-  token: string;
-  refreshToken?: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 function requireNonEmptyString(value: unknown, field: string): string {
@@ -16,10 +16,10 @@ function requireNonEmptyString(value: unknown, field: string): string {
   return value.trim();
 }
 
-/** Exchange stored refresh token for a new WS access token (token2). */
+/** Exchange stored refresh token for a new WS access token + refresh token pair. */
 export async function refreshSessionToken(
   refreshToken: string,
-): Promise<{ token: string; refreshToken: string }> {
+): Promise<{ accessToken: string; refreshToken: string }> {
   const url = readEnvDefaults().authRefreshUrl.trim();
   if (!url) {
     throw new Error("Auth refresh URL is not configured");
@@ -39,11 +39,8 @@ export async function refreshSessionToken(
   }
 
   const data = (await response.json()) as RefreshSessionResponse;
-  const token = requireNonEmptyString(data.token, "token");
-  const nextRefresh =
-    typeof data.refreshToken === "string" && data.refreshToken.trim()
-      ? data.refreshToken.trim()
-      : refreshToken.trim();
-
-  return { token, refreshToken: nextRefresh };
+  return {
+    accessToken: requireNonEmptyString(data.accessToken, "accessToken"),
+    refreshToken: requireNonEmptyString(data.refreshToken, "refreshToken"),
+  };
 }

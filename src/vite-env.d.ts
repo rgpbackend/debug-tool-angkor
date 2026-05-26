@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_GAME_ROUTE?: string;
   readonly VITE_WS_TIMEOUT_MS?: string;
   readonly VITE_AUTH_REFRESH_URL?: string;
+  readonly VITE_AUTH_REFRESH_INTERVAL_MS?: string;
 }
 
 interface ImportMeta {

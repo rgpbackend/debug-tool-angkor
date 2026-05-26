@@ -28,7 +28,7 @@ import {
   saveAgencyUserToken,
   saveRefreshToken,
 } from "../lib/game-session-storage";
-import { WS_SESSION_REFRESH_INTERVAL_MS } from "../lib/ws-session-refresh";
+import { getWsSessionRefreshIntervalMs } from "../lib/ws-session-refresh";
 import {
   BrowserWsClient,
   StompTokenBannedError,
@@ -331,11 +331,11 @@ export function useGameSession() {
           connectionLostLogout("Session refresh token missing");
           return;
         }
-        const { token, refreshToken } =
+        const { accessToken, refreshToken } =
           await refreshSessionToken(storedRefresh);
         saveRefreshToken(refreshToken);
-        setAccessToken(token);
-        reauthWsWithToken(client, token);
+        setAccessToken(accessToken);
+        reauthWsWithToken(client, accessToken);
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
         connectionLostLogout(`Session refresh failed: ${detail}`);
@@ -351,7 +351,7 @@ export function useGameSession() {
       stopSessionRefresh();
       sessionRefreshTimerRef.current = window.setInterval(() => {
         void performWsSessionRefresh(client);
-      }, WS_SESSION_REFRESH_INTERVAL_MS);
+      }, getWsSessionRefreshIntervalMs());
     },
     [performWsSessionRefresh, stopSessionRefresh],
   );
@@ -709,11 +709,11 @@ export function useGameSession() {
     setError(null);
     setPhase("refreshing");
     try {
-      const { token, refreshToken: nextRefresh } =
+      const { accessToken, refreshToken: nextRefresh } =
         await refreshSessionToken(refreshToken);
       saveRefreshToken(nextRefresh);
       setGameRoute(defaults.gameId);
-      await connectToGame(token);
+      await connectToGame(accessToken);
     } catch (e) {
       if (e instanceof StompTokenBannedError) {
         return;
