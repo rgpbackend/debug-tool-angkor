@@ -16,6 +16,10 @@ export interface BrowserWsClientOptions {
 
 type PayloadMatcher = (payload: Record<string, unknown>) => boolean;
 type PayloadHandler = (payload: Record<string, unknown>) => void;
+
+export interface WaitForPayloadOptions {
+  rejectMatcher?: PayloadMatcher;
+}
 type StompErrorHandler = (code: number) => void;
 export type WsDisconnectInfo = { code: number; reason: string };
 type DisconnectHandler = (info: WsDisconnectInfo) => void;
@@ -127,6 +131,7 @@ export class BrowserWsClient {
   waitForPayload(
     matcher: PayloadMatcher,
     label = "response",
+    options?: WaitForPayloadOptions,
   ): Promise<Record<string, unknown>> {
     if (!this.socket) {
       return Promise.reject(new Error("WS is not connected"));
@@ -153,6 +158,11 @@ export class BrowserWsClient {
                 cleanup();
                 reject(new StompTokenBannedError());
               }
+              return;
+            }
+            if (options?.rejectMatcher?.(message.payload)) {
+              cleanup();
+              reject(new Error(formatCmdErrorMessage(message.payload)));
               return;
             }
             if (matcher(message.payload)) {
@@ -303,6 +313,32 @@ export function isSpinResponsePayload(
   }
   const spin = payload.spin as Record<string, unknown>;
   return isObject(spin.jackpot);
+}
+
+/** Spin cmd 1500 error envelope (`c: 1` or `errorCode`). */
+export function isSpinErrorPayload(
+  payload: Record<string, unknown>,
+): boolean {
+  if (!hasCmd(payload, "1500")) {
+    return false;
+  }
+  return payload.c === 1 || payload.errorCode != null;
+}
+
+function formatCmdErrorMessage(payload: Record<string, unknown>): string {
+  const msg = typeof payload.msg === "string" ? payload.msg.trim() : "";
+  const errorCode =
+    typeof payload.errorCode === "string" ? payload.errorCode.trim() : "";
+  if (errorCode && msg) {
+    return `${errorCode}: ${msg}`;
+  }
+  if (msg) {
+    return msg;
+  }
+  if (errorCode) {
+    return errorCode;
+  }
+  return "Command rejected";
 }
 
 function isObject(v: unknown): v is Record<string, unknown> {

@@ -40,6 +40,7 @@ import {
   isJackpotWinHistoryPayload,
   isJackpotWinnerPush,
   isJoinResponsePayload,
+  isSpinErrorPayload,
   isSpinResponsePayload,
   isWalletBalancePushPayload,
 } from "../ws/browser-ws-client";
@@ -848,6 +849,7 @@ export function useGameSession() {
       const payloadPromise = client.waitForPayload(
         isSpinResponsePayload,
         "spin response",
+        { rejectMatcher: isSpinErrorPayload },
       );
       const frame = spinFrame(gameRoute.trim(), String(activeBet));
       client.sendFrame(frame);
