@@ -774,6 +774,15 @@
   color: var(--muted);
 }
 
+.slot-console-balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .slot-console-balance-value {
   font-family: var(--mono);
   font-size: clamp(1rem, 3cqw, 1.35rem);
@@ -783,6 +792,31 @@
   font-variant-numeric: tabular-nums;
   word-break: break-all;
   text-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+}
+
+.slot-console-deposit-btn {
+  flex-shrink: 0;
+  width: clamp(1.65rem, 4cqw, 2rem);
+  height: clamp(1.65rem, 4cqw, 2rem);
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--slot-gold) 55%, var(--border));
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--slot-gold) 18%, var(--panel));
+  color: var(--text-h);
+  font-size: clamp(1rem, 2.5cqw, 1.2rem);
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.slot-console-deposit-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--slot-gold) 32%, var(--panel));
+  border-color: var(--slot-gold);
+}
+
+.slot-console-deposit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .slot-console-leading {

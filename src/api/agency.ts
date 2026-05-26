@@ -25,6 +25,10 @@ export interface PlayGameResponse {
   refreshToken?: string;
 }
 
+export interface DepositRequest {
+  amount: string;
+}
+
 function requireNonEmptyString(value: unknown, field: string): string {
   if (typeof value !== "string" || !value.trim()) {
     throw new Error(`Invalid API response: missing ${field}`);
@@ -40,6 +44,17 @@ export async function register(body: RegisterRequest): Promise<void> {
 export async function login(body: LoginRequest): Promise<LoginResponse> {
   const data = await postJson<LoginResponse>("/user/login", body);
   return { token: requireNonEmptyString(data.token, "token") };
+}
+
+/** Agency wallet deposit; uses login token, not play-game / WS token. */
+export async function deposit(
+  userToken: string,
+  body: DepositRequest,
+): Promise<void> {
+  const amount = requireNonEmptyString(body.amount, "amount");
+  await postJson<void>("/user/deposit", { amount } satisfies DepositRequest, {
+    bearer: userToken,
+  });
 }
 
 export async function playGame(

@@ -21,6 +21,9 @@ type SlotCabinetProps = {
   onAutoSpinStop: () => void;
   balance?: string | null;
   balanceConnected?: boolean;
+  canDeposit?: boolean;
+  depositBusy?: boolean;
+  onDeposit?: () => void;
   onOpenHistory?: () => void;
   onOpenJackpot?: () => void;
   jackpotPools?: ReactNode;
@@ -45,6 +48,9 @@ export default function SlotCabinet({
   onAutoSpinStop,
   balance = null,
   balanceConnected = false,
+  canDeposit = false,
+  depositBusy = false,
+  onDeposit,
   onOpenHistory,
   onOpenJackpot,
   jackpotPools,
@@ -116,6 +122,9 @@ export default function SlotCabinet({
             <SlotConsoleBalance
               balance={balance}
               connected={balanceConnected}
+              canDeposit={canDeposit}
+              depositBusy={depositBusy}
+              onDeposit={onDeposit}
             />
             <SlotControls
               betValue={betValue}

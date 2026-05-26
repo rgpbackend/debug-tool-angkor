@@ -23,6 +23,9 @@ export default function GameScreen(session: Readonly<GameSession>) {
     setBet,
     betLevels,
     balance,
+    canDeposit,
+    depositBusy,
+    depositFunds,
     selectBetValue,
     betLocked,
     spin,
@@ -222,6 +225,9 @@ export default function GameScreen(session: Readonly<GameSession>) {
               onAutoSpinStop={stopAutoSpin}
               balance={balance}
               balanceConnected={sessionReady}
+              canDeposit={canDeposit}
+              depositBusy={depositBusy}
+              onDeposit={() => void depositFunds()}
             />
           </SlotStageBlock>
         </div>

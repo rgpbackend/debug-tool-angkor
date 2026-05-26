@@ -20,10 +20,12 @@ import {
   resolveBetFromLevels,
 } from "../lib/session-utils";
 import { refreshSessionToken } from "../api/auth";
-import { login, playGame, register } from "../api/agency";
+import { deposit, login, playGame, register } from "../api/agency";
 import {
   clearGameSession,
+  loadAgencyUserToken,
   loadRefreshToken,
+  saveAgencyUserToken,
   saveRefreshToken,
 } from "../lib/game-session-storage";
 import { WS_SESSION_REFRESH_INTERVAL_MS } from "../lib/ws-session-refresh";
@@ -78,6 +80,16 @@ import { isTokenBannedStompError } from "../ws/stomp-errors";
 
 const POST_AUTH_BEFORE_JOIN_MS = 1000;
 const HEARTBEAT_INTERVAL_MS = 30_000;
+const DEPOSIT_AMOUNT = 10_000;
+const DEPOSIT_BALANCE_CAP = 50_000;
+
+function parseBalanceAmount(balance: string | null): number | null {
+  if (balance == null) {
+    return null;
+  }
+  const n = Number(balance);
+  return Number.isFinite(n) ? n : null;
+}
 
 const WS_CONNECTION_LOST_RE =
   /timeout|WS closed|WS connect error|not connected|Disconnected before|Disconnected after/i;
@@ -133,6 +145,10 @@ export function useGameSession() {
   const wsUrl = defaults.wsUrl;
   const agentId = defaults.agentId;
   const [accessToken, setAccessToken] = useState("");
+  const [agencyUserToken, setAgencyUserToken] = useState(
+    () => loadAgencyUserToken() ?? "",
+  );
+  const [depositBusy, setDepositBusy] = useState(false);
   const [gameRoute, setGameRoute] = useState(defaults.gameId);
   const [bet, setBet] = useState("1");
   const [betLevels, setBetLevels] = useState<string[]>([]);
@@ -246,6 +262,7 @@ export function useGameSession() {
   const handleTokenBan = useCallback(() => {
     clearGameSession();
     setAccessToken("");
+    setAgencyUserToken("");
     endSession({
       error: "Game session token has been banned. Log in again.",
     });
@@ -254,6 +271,7 @@ export function useGameSession() {
   const logout = useCallback(() => {
     clearGameSession();
     setAccessToken("");
+    setAgencyUserToken("");
     disconnect();
   }, [disconnect]);
 
@@ -264,6 +282,7 @@ export function useGameSession() {
       }
       clearGameSession();
       setAccessToken("");
+      setAgencyUserToken("");
       endSession({ error: message });
     },
     [endSession],
@@ -615,6 +634,8 @@ export function useGameSession() {
           username: trimmedUsername,
           password,
         });
+        saveAgencyUserToken(userToken);
+        setAgencyUserToken(userToken);
         setPhase("launching");
         const { token, refreshToken } = await playGame(
           userToken,
@@ -629,6 +650,7 @@ export function useGameSession() {
         }
         clearGameSession();
         setAccessToken("");
+        setAgencyUserToken("");
         const message = e instanceof Error ? e.message : String(e);
         setError(message);
         setPhase("disconnected");
@@ -698,11 +720,37 @@ export function useGameSession() {
       }
       clearGameSession();
       setAccessToken("");
+      setAgencyUserToken("");
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
       setPhase("disconnected");
     }
   }, [connectToGame, defaults.gameId, setPhase]);
+
+  const depositFunds = useCallback(async () => {
+    const userToken = agencyUserToken.trim();
+    const currentBalance = parseBalanceAmount(balance);
+    if (
+      !userToken ||
+      currentBalance == null ||
+      currentBalance >= DEPOSIT_BALANCE_CAP ||
+      depositBusy
+    ) {
+      return;
+    }
+
+    setDepositBusy(true);
+    setError(null);
+    try {
+      await deposit(userToken, { amount: String(DEPOSIT_AMOUNT) });
+      setBalance(String(currentBalance + DEPOSIT_AMOUNT));
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
+    } finally {
+      setDepositBusy(false);
+    }
+  }, [agencyUserToken, balance, depositBusy]);
 
   useEffect(() => {
     if (autoConnectStartedRef.current || gameScreenActive) {
@@ -986,6 +1034,13 @@ export function useGameSession() {
     betLevels.includes(activeBet);
   const canCheat = phase === "joined" && sessionReady;
   const busyRegister = phase === "registering";
+  const balanceAmount = parseBalanceAmount(balance);
+  const canDeposit =
+    sessionReady &&
+    agencyUserToken.trim() !== "" &&
+    !depositBusy &&
+    balanceAmount != null &&
+    balanceAmount < DEPOSIT_BALANCE_CAP;
   const busySession =
     phase === "logging-in" ||
     phase === "launching" ||
@@ -1038,6 +1093,9 @@ export function useGameSession() {
     betLevels,
     symbolCatalog,
     balance,
+    canDeposit,
+    depositBusy,
+    depositFunds,
     cheatGrid,
     loginAndEnterGame,
     registerAccount,
