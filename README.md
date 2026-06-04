@@ -4,7 +4,7 @@ Minimal web client for **The Last Guardian of Angkor**: login, launch game, conn
 
 ## Protocol
 
-See [frontend-backend-websocket-guide.md](docs/frontend-backend-websocket-guide.md) in this repo (wallet balance via server push `cmd 1530`), or the Confluence guide: [WebSocket Integration Guide of The Last Guardian of Angkor](https://ossworks.atlassian.net/wiki/spaces/YAM/pages/297435300/WebSocket+Integration+Guide+of+The+Last+Guardian+of+Angkor).
+See [frontend-backend-websocket-guide.md](docs/frontend-backend-websocket-guide.md) in this repo (wallet balance on join `1005` and spin `1500`; active refresh via client `cmd 1530` GET_BALANCE), or the Confluence guide: [WebSocket Integration Guide of The Last Guardian of Angkor](https://ossworks.atlassian.net/wiki/spaces/YAM/pages/297435300/WebSocket+Integration+Guide+of+The+Last+Guardian+of+Angkor).
 
 Agency REST endpoints are documented in [Luigi WS002.postman_collection.json](docs/Luigi%20WS002.postman_collection.json).
 

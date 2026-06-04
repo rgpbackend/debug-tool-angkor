@@ -35,7 +35,7 @@ Send this message right after the socket opens:
 
 Monetary fields in JSON payloads from this game service are **plain decimal strings** with **4 fractional digits** (same scale as internal `Money` / `MonetaryWireValues`), not JSON numbers. Examples: `"1000.0000"`, `"10.0000"`, `"0.0000"`.
 
-This applies to fields such as: `balance` (wallet balance events only), `bet`, `totalWin`, `win`, `profit`, `payout`, `jackpotWin`, and entries in `betLevels`, plus jackpot pool / history amounts where documented below.
+This applies to fields such as: `balance` (top-level on join `1005`, spin `1500`, and balance query `1530` replies), `bet`, `totalWin`, `win`, `profit`, `payout`, `jackpotWin`, and entries in `betLevels`, plus jackpot pool / history amounts where documented below.
 
 Parse them as decimals in the client; do not assume IEEE `double` from the wire.
 
@@ -69,42 +69,40 @@ After a successful join, the backend pushes a WebSocket message with `cmd: 1005`
   "symbols": [
     {
       "id": "A",
-      "displayName": "Garuda Blood Spirit",
       "kind": "LOW_PAY",
       "payouts": { "3": "0.1", "4": "0.2", "5": "0.3" }
     },
     {
       "id": "W",
-      "displayName": "God of Angkor",
       "kind": "WILD",
       "substitutes": true
     },
     {
       "id": "GW",
-      "displayName": "Golden Wild",
       "kind": "GOLDEN_WILD",
       "substitutes": true
     },
     {
       "id": "S",
-      "displayName": "Shiva Spirit",
       "kind": "SCATTER"
     }
   ],
   "betLevels": ["0.1000", "0.2000", "1.0000", "10.0000"],
+  "balance": "1000.0000",
   "lastRound": null
 }
 ```
 
 Top-level fields:
 
-| Field       | Type             | Description                                                                                                                                                                                  |
-| ----------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cmd`       | `int`            | Command code (`1005`).                                                                                                                                                                       |
-| `c`         | `int`            | Status code (`0` = success).                                                                                                                                                                 |
-| `symbols`   | `object[]`       | Symbol catalog for reel rendering and paytable UI (see **Symbol object** below). Order matches backend `Symbol` enum declaration order (`A` … `S`).                                          |
-| `betLevels` | `string[]`       | Allowed bet amounts as decimal strings (see §1.1).                                                                                                                                           |
-| `lastRound` | `object \| null` | Snapshot of the player's most recent round with at least one spin, or `null` if the player has never played. Use `lastRound.round.isFinished` to determine if the round needs to be resumed. |
+| Field       | Type             | Description                                                                                                                                                                                                                          |
+| ----------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cmd`       | `int`            | Command code (`1005`).                                                                                                                                                                                                               |
+| `c`         | `int`            | Status code (`0` = success).                                                                                                                                                                                                         |
+| `symbols`   | `object[]`       | Symbol catalog for reel rendering and paytable UI (see **Symbol object** below). Order matches backend `Symbol` enum declaration order (`A` … `S`).                                                                                  |
+| `betLevels` | `string[]`       | Allowed bet amounts as decimal strings (see §1.1).                                                                                                                                                                                   |
+| `balance`   | `string`         | Player's current wallet balance at join time, as a decimal string (§1.1). Top-level sibling of `symbols` / `betLevels` / `lastRound`; refresh it from each spin (`1500`) response, or on demand via the `1530` balance query (§3.2). |
+| `lastRound` | `object \| null` | Snapshot of the player's most recent round with at least one spin, or `null` if the player has never played. Use `lastRound.round.isFinished` to determine if the round needs to be resumed.                                         |
 
 #### Symbol object (`symbols[]`)
 
@@ -113,7 +111,6 @@ Each entry describes one symbol id used in `spin.reels` and cheat grids.
 | Field         | Type                 | Description                                                                                                                                                                                      |
 | ------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `id`          | `string`             | Symbol code (`A`–`I`, `W`, `GW`, `S`). Same values as reel cells and `winWays[].symbol` (paying symbols only use `A`–`I`).                                                                       |
-| `displayName` | `string`             | English display name (server-defined).                                                                                                                                                           |
 | `kind`        | `string`             | `LOW_PAY`, `MID_PAY`, `HIGH_PAY`, `WILD`, `GOLDEN_WILD`, or `SCATTER`.                                                                                                                           |
 | `payouts`     | `object` \| omitted  | Bet **multipliers** (Cx) for 3/4/5-of-a-kind on consecutive reels from reel 1. Keys `"3"`, `"4"`, `"5"`; values plain decimal strings (not 4-digit money scale). Omitted for `W`, `GW`, and `S`. |
 | `substitutes` | `boolean` \| omitted | Present and `true` only for `W` and `GW` (substitute for paying symbols in ways evaluation; no standalone ways win).                                                                             |
@@ -128,8 +125,15 @@ The backend **always** includes the last round snapshot (regardless of round sta
 {
   "cmd": 1005,
   "c": 0,
-  "symbols": [{ "id": "A", "displayName": "Garuda Blood Spirit", "kind": "LOW_PAY", "payouts": { "3": "0.1", "4": "0.2", "5": "0.3" } }],
+  "symbols": [
+    {
+      "id": "A",
+      "kind": "LOW_PAY",
+      "payouts": { "3": "0.1", "4": "0.2", "5": "0.3" }
+    }
+  ],
   "betLevels": ["0.1000", "1.0000"],
+  "balance": "1000.0000",
   "lastRound": {
     "spin": {
       "spinType": "FREE_SPIN",
@@ -143,21 +147,31 @@ The backend **always** includes the last round snapshot (regardless of round sta
       "win": "5.0000",
       "triggers": [],
       "winWays": [],
-      "guardianWild": { "triggered": false, "originalReels": [], "addedPositions": [] },
+      "guardianWild": {
+        "triggered": false,
+        "originalReels": [],
+        "addedPositions": []
+      },
       "jackpot": {
         "triggered": false,
         "tier": null,
         "jackpotWin": "0.0000",
         "goldenWildPositions": []
       },
-      "retrigger": { "triggered": false, "scatterCount": 0, "addedFreeSpins": 0, "scatterPositions": [] }
+      "retrigger": {
+        "triggered": false,
+        "scatterCount": 0,
+        "addedFreeSpins": 0,
+        "scatterPositions": []
+      }
     },
     "round": {
       "roundId": "round-abc-123",
       "state": "FREE_SPIN",
       "bet": "10.0000",
       "totalWin": "50.0000",
-      "isFinished": false
+      "isFinished": false,
+      "winCapReached": false
     },
     "state": {
       "freeSpin": {
@@ -166,6 +180,7 @@ The backend **always** includes the last round snapshot (regardless of round sta
         "preScatterCount": 3,
         "scatterCollected": 3,
         "triggeredScatterCount": 4,
+        "initialFreeSpinCount": 15,
         "currentStep": 4,
         "totalSteps": 9
       },
@@ -182,15 +197,15 @@ The backend **always** includes the last round snapshot (regardless of round sta
 }
 ```
 
-`lastRound` uses the **same** `spin` / `round` / `state` shape as a spin (1500) response. For field documentation see Section 3.
+`lastRound` uses the **same** `spin` / `round` / `state` shape as a spin (1500) response. For field documentation see Section 3. Note: the top-level `balance` (above) is a join-level sibling like `symbols` / `betLevels` — it is **not** part of the `lastRound` inner object (and the live `1500` response likewise carries its own top-level `balance` sibling).
 
 - `spin` contains the **last spin** the player performed (or `null` if the round has no spins yet). Live snapshots **do not** include a `spinId` field.
-- `round` contains round-level metadata (roundId, state, bet, totalWin, isFinished). **Use `isFinished` to decide whether the round needs to be resumed.**
+- `round` contains round-level metadata (roundId, state, bet, totalWin, isFinished, winCapReached). **Use `isFinished` to decide whether the round needs to be resumed.**
 - `state` contains feature state (freeSpin + respin) — identical to spin response.
 
 ### Frontend initialization flow
 
-1. **Listen for `cmd 1530` WALLET_BALANCE_UPDATED** (see §3.2) to display the player's wallet balance.
+1. **Read the top-level `balance`** from the join response to display the player's wallet balance immediately. Refresh it from each spin (`1500`) response's top-level `balance`; for an on-demand refresh (e.g. after reconnect) use the `1530` balance query (see §3.2). There is **no** unsolicited server-side balance push.
 2. **Parse `lastRound`** from the join response.
 3. **If `lastRound` is `null`**: player has never played — show normal idle UI, enable bet selection and spin button.
 4. **If `lastRound` is present and `lastRound.round.isFinished == true`**: previous round is complete — display the last reel grid from `lastRound.spin.reels` as a visual context, enable bet selection and spin button for a new round.
@@ -234,11 +249,12 @@ Send spin command:
 
 ### Spin response structure
 
-Spin response returns a **session snapshot** with the following top-level objects:
+Spin response returns a **session snapshot** with the following top-level fields:
 
 - `spin`: current spin result
 - `round`: round-level snapshot
 - `state`: feature snapshot + UI flags
+- `balance`: player's wallet balance **after** this spin's win/lose settlement (decimal string, §1.1)
 
 Example:
 
@@ -293,7 +309,8 @@ Example:
     "state": "FREE_SPIN",
     "bet": "1.0000",
     "totalWin": "10.0000",
-    "isFinished": false
+    "isFinished": false,
+    "winCapReached": false
   },
   "state": {
     "freeSpin": {
@@ -302,6 +319,7 @@ Example:
       "preScatterCount": 2,
       "scatterCollected": 3,
       "triggeredScatterCount": 3,
+      "initialFreeSpinCount": 10,
       "currentStep": 0,
       "totalSteps": 9
     },
@@ -313,15 +331,28 @@ Example:
       "spinsLeft": 0,
       "stickyWildAnchorRows": {}
     }
-  }
+  },
+  "balance": "1009.0000"
 }
 ```
 
-| Field   | Type     | Description                                                                 |
-| ------- | -------- | --------------------------------------------------------------------------- |
-| `spin`  | `object` | Current spin result (see fields below). No `spinId` in live spin snapshots. |
-| `round` | `object` | Round-level snapshot (roundId, state, bet, etc.).                           |
-| `state` | `object` | Feature state (freeSpin + respin).                                          |
+| Field     | Type     | Description                                                                                                                                                                                                                                                                     |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spin`    | `object` | Current spin result (see fields below). No `spinId` in live spin snapshots.                                                                                                                                                                                                     |
+| `round`   | `object` | Round-level snapshot. See **Round object fields** table below.                                                                                                                                                                                                                  |
+| `state`   | `object` | Feature state (freeSpin + respin).                                                                                                                                                                                                                                              |
+| `balance` | `string` | Player's wallet balance **after** this spin's win/lose settlement (decimal string, §1.1). Top-level sibling of `spin`/`round`/`state`. The intermediate post-`BET` balance during a base spin is **not** delivered as a separate event; only this post-settle snapshot is sent. |
+
+#### Round object fields (`round`)
+
+| Field           | Type      | Description                                                                                                     |
+| --------------- | --------- | --------------------------------------------------------------------------------------------------------------- |
+| `roundId`       | `string`  | Unique identifier for this round.                                                                               |
+| `state`         | `string`  | Current round state: `BASE` \| `RESPIN` \| `FREE_SPIN` \| `END`.                                                |
+| `bet`           | `string`  | Bet amount as a decimal string (§1.1).                                                                          |
+| `totalWin`      | `string`  | Accumulated total win for this round as a decimal string (§1.1).                                                |
+| `isFinished`    | `boolean` | `true` when the round is in `END` state — no further spins allowed.                                             |
+| `winCapReached` | `boolean` | `true` when the round win cap (`bet × 15000`) has been hit during this round. See **§3.3 Win Cap** for details. |
 
 Use `round.state` as the canonical progression enum value:
 `BASE`, `RESPIN`, `FREE_SPIN`, `END`.
@@ -361,6 +392,7 @@ Sent on every spin response (see `GameResponseBuilder.buildStateSnapshot`). Fiel
 | `preScatterCount`       | `scatterCollected` **before** the current spin applied scatter collection for this response. Use with `scatterCollected` to animate counter steps. |
 | `scatterCollected`      | Accumulated scatters collected during the session (used for Guardian Wild milestone logic).                                                        |
 | `triggeredScatterCount` | Scatter count that triggered the initial `BASE` → `FREE_SPIN` activation (unchanged by retriggers).                                                |
+| `initialFreeSpinCount`  | Free spin count granted at the initial `BASE` → `FREE_SPIN` activation, before any retriggers. Based on `triggeredScatterCount`: 3→10, 4→15, 5→20. |
 | `currentStep`           | Number of completed **FREE_SPIN** spins in this round since entering FREE_SPIN (counts `SpinType.FREE_SPIN` in `round.spins`). `0` right on entry. |
 | `totalSteps`            | Progress upper bound for this session: `currentStep + spinsLeft`. When `active == false`, backend sends `0`.                                       |
 
@@ -371,7 +403,7 @@ Sent on every spin response (see `GameResponseBuilder.buildStateSnapshot`). Fiel
 - Each win way must include at least one **native** cell of that symbol in the matched reel prefix; a prefix made only of `W`/`GW` substitutes does not pay for that symbol.
 - `positions` is reel-major and 0-based (`positions[i]` is list of winning row indexes on reel `i`).
 - `payout` is per-way-group payout after feature multiplier (for example free-spin x2), as a **decimal string** (§1.1).
-- `spin.win` is still the canonical credited amount. When win-cap is hit, `sum(winWays.payout)` parsed as decimals can be greater than `spin.win`.
+- `spin.win` is still the canonical credited amount. When win-cap is hit (see **§3.3**), `sum(winWays.payout)` parsed as decimals can be greater than `spin.win`.
 
 ### Guardian Wild payload
 
@@ -385,11 +417,39 @@ Sent on every spin response (see `GameResponseBuilder.buildStateSnapshot`). Fiel
 - Always present on every spin response.
 - `triggered`: `true` when this base spin awarded a jackpot (same-spin resolution).
 - `tier`: `NANO` | `CYBER` | `GUARDIAN` | `ETERNAL`, or `null` when not triggered.
-- `jackpotWin`: credited jackpot portion for this spin (not subject to the line win cap), as a **decimal string** (§1.1).
+- `jackpotWin`: credited jackpot portion for this spin (not subject to the round win cap — see **§3.3**), as a **decimal string** (§1.1).
 - `goldenWildPositions`: list of `[reelIndex, rowIndex]` cells painted as `GW` for this jackpot outcome; empty when not triggered.
 - `spin.triggers` no longer includes `JACKPOT`; use only `spin.jackpot.triggered` as jackpot signal.
 
 Payload shape reminder: at the **root** of the spin response object you have sibling keys `spin`, `round`, and `state`. Jackpot fields live only at **`spin.jackpot`** — not under `state.spin` (that path does not exist).
+
+### Spin errors
+
+When a command fails, the backend publishes an **error envelope** on the same per-session topic, reusing the request `cmd`:
+
+```json
+{
+  "cmd": 1500,
+  "c": 1,
+  "msg": "Wallet BET rejected for round round-001 (code=607)",
+  "errorCode": "BALANCE_NOT_ENOUGH"
+}
+```
+
+- `c` is `1` (non-zero) on error; success responses use `c: 0`.
+- `errorCode` is a stable enum string; `msg` is human-readable and may change.
+
+Error codes relevant to spin (`1500`):
+
+| `errorCode`                | Meaning / frontend handling                                                                                                                                                                                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `INVALID_BET_AMOUNT`       | `bet` is not in `betLevels`, or does not match the locked bet of an unfinished round. Fix the bet and resend.                                                                                                                                                                                       |
+| `BALANCE_NOT_ENOUGH`       | Wallet rejected the BET debit (insufficient balance). Show a top-up prompt; the round was not consumed.                                                                                                                                                                                             |
+| `BALANCE_OPERATION_FAILED` | Wallet rejected the operation (account/operation error). Surface an error; safe to retry later.                                                                                                                                                                                                     |
+| `WALLET_TRANSFER_ERROR`    | Wallet transfer failed (transport or unknown rejection). Safe to retry — wallet operations are idempotent per transaction id.                                                                                                                                                                       |
+| `ROUND_SETTLE_PENDING`     | A previous spin's win/lose settlement is still **pending** (wallet or process failure after the result was persisted). The spin result is durable server-side; the backend **replays** the settlement automatically on each new spin request. Show a transient error and let the player retry spin. |
+
+**Pending settle behavior (`ROUND_SETTLE_PENDING`):** the backend persists every spin result **before** calling the wallet. If the wallet settle fails (or the backend crashes mid-settle), the result is never lost or re-rolled: the next spin request first replays the pending settlement with the same transaction id and amount, then proceeds with the new spin. While the replay keeps failing, spin requests are rejected with `ROUND_SETTLE_PENDING` — the frontend just retries (no special recovery flow is needed client-side; the persisted result is visible via `lastRound` on re-join and in game history once the round finishes).
 
 ## 3.1) Jackpot broadcast (server push)
 
@@ -475,50 +535,60 @@ For the **closed** pool that was won, use **GET_JACKPOT_WIN_HISTORY** (`1511`) o
 
 Delivery is server-side (plugin-topic or per-session fan-out in zone); subscribed clients on the game route receive these pushes the same way as other game messages.
 
-## 3.2) Wallet balance event (server push)
+## 3.2) Wallet balance query (`1530`) — client → server
 
-The backend pushes wallet balance updates to the **current session only** when the player's balance changes after a successful wallet operation. **Clients do not send this command** — only listen and update the wallet UI.
+Wire code `1530` (**GET_BALANCE**) is a **client-callable query only**. There is **no** unsolicited server-side balance push: balance changes from gameplay are carried by the top-level `balance` field on join (`1005`) and spin (`1500`) responses.
 
-Topic: per-session (`urn:ws:z:<zone>:s:<sessionId>`).
+The frontend can request the current balance at any time (e.g. after reconnect, tab refocus, or to reconcile the wallet UI) by sending the standard game envelope with `cmd 1530` and no other fields:
 
-### WALLET_BALANCE_UPDATED (`1530`)
+```json
+[
+  6,
+  "MiniGame",
+  "game-the-last-guardian-of-angkor",
+  {
+    "cmd": "1530"
+  }
+]
+```
 
-Example (inner object after `[5, ...]`):
+The backend resolves the player from the active session and replies on the per-session topic (`urn:ws:z:<zone>:s:<sessionId>`):
 
 ```json
 {
   "cmd": 1530,
   "c": 0,
-  "balance": "990.0000",
-  "reason": "BET",
-  "roundId": "round-001",
+  "balance": "1000.0000",
+  "reason": "QUERY",
+  "roundId": null,
   "timestampMillis": 1715760000000
 }
 ```
 
-| Field             | Type             | Description                                                                 |
-| ----------------- | ---------------- | --------------------------------------------------------------------------- |
-| `balance`         | `string`         | Player's current wallet balance after the operation (decimal string, §1.1). |
-| `reason`          | `string`         | `JOIN` \| `BET` \| `WIN`.                                                   |
-| `roundId`         | `string \| null` | Round id when `reason` is `BET` or `WIN`; `null` when `reason` is `JOIN`.   |
-| `timestampMillis` | `number`         | Epoch milliseconds when the event was emitted.                              |
+| Field             | Type     | Description                                             |
+| ----------------- | -------- | ------------------------------------------------------- |
+| `balance`         | `string` | Player's current wallet balance (decimal string, §1.1). |
+| `reason`          | `string` | Always `QUERY`.                                         |
+| `roundId`         | `null`   | Always `null` (the query is not tied to a round).       |
+| `timestampMillis` | `number` | Epoch milliseconds when the reply was built.            |
 
-### When events fire
-
-| `reason` | Trigger                                                                                        |
-| -------- | ---------------------------------------------------------------------------------------------- |
-| `JOIN`   | After successful join (`1005`), immediately following the join response. `roundId` is `null`.  |
-| `BET`    | After a successful BET debit on each **BASE** spin. Includes the active `roundId`.             |
-| `WIN`    | After a successful WIN credit when the round finishes with `totalWin > 0`. Includes `roundId`. |
-
-Not sent on free-spin or respin spins (no BET debit). A round that ends with `totalWin == 0` does not emit `WIN`.
+If the wallet lookup fails, the backend replies with the error envelope (see **Spin errors** in §3) using `errorCode: "BALANCE_OPERATION_FAILED"`.
 
 ### Frontend handling
 
-1. Register a handler for `cmd === 1530` alongside join/spin handlers.
-2. On `1530`, update the wallet display from `balance`.
-3. Use `reason` and `roundId` for optional UI animation or audit (e.g. animate debit on `BET`, credit on `WIN`).
-4. Do **not** read balance from join (`1005`) or spin (`1500`) responses — those payloads no longer include balance fields.
+1. Initialize the wallet display from the join (`1005`) top-level `balance`.
+2. Refresh it from each spin (`1500`) top-level `balance` — the post-settle snapshot for that spin.
+3. To **actively refresh** (e.g. after reconnect or tab refocus), send `{cmd:"1530"}` and update the display from the reply. Treat it as a silent refresh (no debit/credit animation).
+4. There is no separate intermediate post-`BET` balance event during a base spin; only the final post-settle balance arrives on the `1500` response.
+
+## 3.3) Win Cap
+
+Total win per round (BASE + RESPIN + FREE_SPIN accumulated) is capped at **`bet × 15000`** (`winCapMultiplier`, backend-configurable).
+
+- **Jackpot wins are exempt**: `spin.jackpot.jackpotWin` is paid from the jackpot pool, outside game-math RTP, and is never reduced by the cap.
+- When a spin's win would push the round total past the cap, `spin.win` is **reduced** to the remaining room (it can be `"0.0000"` when the cap was already reached) and `round.winCapReached` becomes `true`.
+- Reaching the cap **force-ends** the round only in `FREE_SPIN` (`round.state` → `END`); `BASE` and `RESPIN` flows continue with the capped win.
+- Because the cap reduces `spin.win` but not the per-way breakdown, `sum(winWays[].payout)` can exceed `spin.win` on the capped spin — `spin.win` is the canonical credited amount.
 
 ## 4) Config, jackpot queries, and force jackpot (QA)
 
@@ -526,16 +596,16 @@ Same WebSocket envelope as other game commands: channel `MiniGame`, route `game-
 
 ### Command codes
 
-| `cmd`    | Purpose                                                                |
-| -------- | ---------------------------------------------------------------------- |
-| `"1501"` | **GET_CONFIG** — `symbols` and `betLevels` only (same as join config). |
-| `"1510"` | **GET_JACKPOT_POOLS** — active pool amounts per tier (client pull).    |
-| `"1511"` | **GET_JACKPOT_WIN_HISTORY** — recent jackpot wins.                     |
-| `"1512"` | **GET_JACKPOT_CONTRIBUTION_HISTORY** — recent contributions.           |
-| `1520`   | **JACKPOT_POOLS_UPDATED** — server push only; see §3.1.                |
-| `1521`   | **JACKPOT_WINNER** — server push only; see §3.1.                       |
-| `1530`   | **WALLET_BALANCE_UPDATED** — server push only; see §3.2.               |
-| `"2002"` | **FORCE_JACKPOT_NEXT_SPIN** — QA only; requires cheat feature enabled. |
+| `cmd`    | Purpose                                                                      |
+| -------- | ---------------------------------------------------------------------------- |
+| `"1501"` | **GET_CONFIG** — `symbols` and `betLevels` only (same as join config).       |
+| `"1510"` | **GET_JACKPOT_POOLS** — active pool amounts per tier (client pull).          |
+| `"1511"` | **GET_JACKPOT_WIN_HISTORY** — recent jackpot wins.                           |
+| `"1512"` | **GET_JACKPOT_CONTRIBUTION_HISTORY** — recent contributions.                 |
+| `1520`   | **JACKPOT_POOLS_UPDATED** — server push only; see §3.1.                      |
+| `1521`   | **JACKPOT_WINNER** — server push only; see §3.1.                             |
+| `"1530"` | **GET_BALANCE** — client-callable balance query (no server push) — see §3.2. |
+| `"2002"` | **FORCE_JACKPOT_NEXT_SPIN** — QA only; requires cheat feature enabled.       |
 
 ### 4.1) GET_CONFIG (`1501`)
 
@@ -768,8 +838,10 @@ With explicit pagination:
   - `transactionId` (currently **same as** `roundId`; may change when shared transaction id for free-spin chains is implemented),
   - `spinType` — `BASE` | `FREE_SPIN` | `RESPIN`,
   - `stepIndex` — 0-based index of this spin within its parent round (aligned with `spinIndex` for list rows),
+  - `totalStepsInRound` — total number of spin steps in the parent round (`spins.length`); use with `stepIndex` for progress display, e.g. `(stepIndex + 1) / totalStepsInRound`,
   - `timestampMillis` — parent round `finishedAt` (epoch ms), not a per-spin instant; within the same round, list order follows spin order (newer rounds first; tie-break by spin index).
   - `bet`, `win`, `profit` — **per spin step** as **decimal strings** (§1.1): only the **BASE** step carries the round stake; free spin and respin steps use `"0.0000"` bet; `profit` is win minus step bet for that row.
+  - `jackpot` — `{ triggered, tier, jackpotWin, goldenWildPositions }`, same contract as live spin (`1500`). When jackpot is triggered, reconcile with `sum(winWays[].payout) + jackpot.jackpotWin == win`.
 - `page`, `size`, `totalPage`, `totalItems` — echo `page` (1-based, same as request) / `size`; `totalItems` is the total spin count in the 30-day window; `totalPage` is `ceil(totalItems / size)` (or `0` when `totalItems` is `0`). Requesting a `page` greater than `totalPage` returns `items: []` without error.
 
 There is **no** `spinId` field in Level 1 list rows.
@@ -794,12 +866,12 @@ There is **no** `spinId` field in Level 1 list rows.
 **Response body:** fields for a **single** spin step plus parent context at the root:
 
 - `roundId`, `transactionId` (same as `roundId` until shared transaction ids exist), `finishedAtMillis` (parent round `finishedAt`, same as list `timestampMillis`). Detail is only returned when that round lies in the same 30-day window as Level 1; otherwise the server responds as spin not found.
-- **`spinIndex`**, `stepIndex` (both 0-based, same value for this response), `round` (1-based step display index, i.e. `stepIndex + 1`),
+- **`spinIndex`**, `stepIndex` (both 0-based, same value for this response), `totalStepsInRound` (total spin steps in the parent round; display progress as `(stepIndex + 1) / totalStepsInRound`),
 - `spinType` — `BASE` | `FREE_SPIN` | `RESPIN`,
-- `title` — `Normal spin` | `Free spin` | `Respin`,
 - `bet` — only the **BASE** step carries the round stake; free spin and respin use `"0.0000"`,
 - `win`, `profit` — decimal strings (§1.1),
 - `reels` — array of **columns** (each column is an array of symbol name strings); same column-major idea as live spin payloads,
 - `winWays` — array of `{ wayIndex, symbol, matchCount, ways, payout, positions }`; `payout` is a decimal string; `positions` is reel-major like live spin `winWays`.
+- `jackpot` — `{ triggered, tier, jackpotWin, goldenWildPositions }`, same contract as live spin (`1500`). When jackpot is triggered, reconcile with `sum(winWays[].payout) + jackpot.jackpotWin == win`.
 
-There is **no** `spins` array and **no** `spinId` in this response.
+There is **no** `spins` array and **no** `spinId` in this response. There is **no** `round` integer step field here (unlike the removed legacy field); do not confuse with the **`round` object** on live spin (1500) responses in Section 3.

@@ -40,15 +40,17 @@ import {
   isJackpotWinHistoryPayload,
   isJackpotWinnerPush,
   isJoinResponsePayload,
+  isGetBalanceErrorPayload,
+  isGetBalanceResponsePayload,
   isSpinErrorPayload,
   isSpinResponsePayload,
-  isWalletBalancePushPayload,
 } from "../ws/browser-ws-client";
 import {
   cheatFrame,
   connectFrame,
   heartbeatFrame,
   forceJackpotNextSpinFrame,
+  getBalanceFrame,
   historyDetailFrame,
   HISTORY_LIST_DEFAULT_SIZE,
   historyListFrame,
@@ -63,8 +65,9 @@ import {
   parseHistoryDetailPayload,
   parseHistoryListPayload,
   parseJackpotPoolsFromPayload,
+  parseGetBalancePayload,
   parseJoinResponsePayload,
-  parseWalletBalancePayload,
+  readTopLevelBalance,
   type GameSymbol,
   type HistoryDetailPayload,
   type HistoryListPayload,
@@ -99,6 +102,16 @@ function isWsConnectionLostMessage(message: string): boolean {
   return WS_CONNECTION_LOST_RE.test(message);
 }
 
+function formatSpinErrorForUi(message: string): string {
+  if (message.includes("BALANCE_NOT_ENOUGH")) {
+    return "Insufficient balance. Use + to deposit, then spin again.";
+  }
+  if (message.includes("ROUND_SETTLE_PENDING")) {
+    return "Settlement pending. Retry spin in a moment.";
+  }
+  return message;
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -116,7 +129,7 @@ export function useGameSession() {
   const spinBusyRef = useRef(false);
   const stompListenerCleanupRef = useRef<(() => void) | null>(null);
   const disconnectListenerCleanupRef = useRef<(() => void) | null>(null);
-  const walletListenerCleanupRef = useRef<(() => void) | null>(null);
+  const sessionReadyRef = useRef(false);
   const sessionEndingRef = useRef(false);
   const phaseRef = useRef<GamePhase>("disconnected");
   const cheatBaselineRef = useRef<string[][]>(emptyCheatGrid());
@@ -204,11 +217,6 @@ export function useGameSession() {
     disconnectListenerCleanupRef.current = null;
   }, []);
 
-  const detachWalletListener = useCallback(() => {
-    walletListenerCleanupRef.current?.();
-    walletListenerCleanupRef.current = null;
-  }, []);
-
   const endSession = useCallback(
     (options?: { error?: string | null }) => {
       if (sessionEndingRef.current) {
@@ -217,7 +225,6 @@ export function useGameSession() {
       sessionEndingRef.current = true;
       detachDisconnectListener();
       detachStompListener();
-      detachWalletListener();
       stopHeartbeat();
       stopSessionRefresh();
       clientRef.current?.close();
@@ -249,7 +256,6 @@ export function useGameSession() {
     [
       detachDisconnectListener,
       detachStompListener,
-      detachWalletListener,
       stopHeartbeat,
       stopSessionRefresh,
       setPhase,
@@ -313,6 +319,28 @@ export function useGameSession() {
     [agentId],
   );
 
+  const refreshBalance = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client?.isConnected() || !sessionReadyRef.current) {
+      return;
+    }
+    try {
+      const payloadPromise = client.waitForPayload(
+        isGetBalanceResponsePayload,
+        "balance query",
+        { rejectMatcher: isGetBalanceErrorPayload },
+      );
+      client.sendFrame(getBalanceFrame(gameRoute.trim()));
+      const payload = await payloadPromise;
+      const parsed = parseGetBalancePayload(payload);
+      if (parsed) {
+        setBalance(parsed.balance);
+      }
+    } catch {
+      // Silent refresh; last join/spin balance remains on screen.
+    }
+  }, [gameRoute]);
+
   const performWsSessionRefresh = useCallback(
     async (client: BrowserWsClient) => {
       if (sessionRefreshInFlightRef.current) {
@@ -337,6 +365,9 @@ export function useGameSession() {
         saveRefreshToken(refreshToken);
         setAccessToken(accessToken);
         reauthWsWithToken(client, accessToken);
+        if (sessionReadyRef.current) {
+          void refreshBalance();
+        }
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
         connectionLostLogout(`Session refresh failed: ${detail}`);
@@ -344,7 +375,7 @@ export function useGameSession() {
         sessionRefreshInFlightRef.current = false;
       }
     },
-    [connectionLostLogout, reauthWsWithToken],
+    [connectionLostLogout, reauthWsWithToken, refreshBalance],
   );
 
   const startSessionRefresh = useCallback(
@@ -460,7 +491,6 @@ export function useGameSession() {
 
       detachStompListener();
       detachDisconnectListener();
-      detachWalletListener();
       stompListenerCleanupRef.current = client.addStompErrorListener((code) => {
         if (isTokenBannedStompError(code)) {
           handleTokenBan();
@@ -496,7 +526,6 @@ export function useGameSession() {
     defaults.timeoutMs,
     detachDisconnectListener,
     detachStompListener,
-    detachWalletListener,
     disconnect,
     connectionLostLogout,
     handleTokenBan,
@@ -530,17 +559,6 @@ export function useGameSession() {
         throw new Error(`Disconnected before join (${detail})`);
       }
 
-      detachWalletListener();
-      walletListenerCleanupRef.current = client.addPayloadListener(
-        isWalletBalancePushPayload,
-        (payload) => {
-          const wallet = parseWalletBalancePayload(payload);
-          if (wallet) {
-            setBalance(wallet.balance);
-          }
-        },
-      );
-
       const joinPayloadPromise = client.waitForPayload(
         isJoinResponsePayload,
         "join response",
@@ -562,6 +580,12 @@ export function useGameSession() {
       }
 
       setSymbolCatalog(joinPayload.symbols);
+
+      const joinBalance =
+        joinPayload.balance ?? readTopLevelBalance(rawJoinPayload);
+      if (joinBalance) {
+        setBalance(joinBalance);
+      }
 
       if (joinPayload.lastRound) {
         setLastRound(joinPayload.lastRound);
@@ -602,7 +626,6 @@ export function useGameSession() {
     }
   }, [
     sessionReady,
-    detachWalletListener,
     gameRoute,
     applyJackpotPoolsFromPayload,
     applyCheatGridFromReels,
@@ -744,14 +767,28 @@ export function useGameSession() {
     setError(null);
     try {
       await deposit(userToken, { amount: String(DEPOSIT_AMOUNT) });
-      setBalance(String(currentBalance + DEPOSIT_AMOUNT));
+      await refreshBalance();
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
     } finally {
       setDepositBusy(false);
     }
-  }, [agencyUserToken, balance, depositBusy]);
+  }, [agencyUserToken, balance, depositBusy, refreshBalance]);
+
+  useEffect(() => {
+    sessionReadyRef.current = sessionReady;
+  }, [sessionReady]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void refreshBalance();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [refreshBalance]);
 
   useEffect(() => {
     if (autoConnectStartedRef.current || gameScreenActive) {
@@ -855,6 +892,10 @@ export function useGameSession() {
       client.sendFrame(frame);
       const payload = await payloadPromise;
       const spinPayload = payload as unknown as SpinResponsePayload;
+      const spinBalance = readTopLevelBalance(payload);
+      if (spinBalance) {
+        setBalance(spinBalance);
+      }
       setLastSpin(spinPayload);
       setLastRound(null);
       applyCheatGridFromReels(spinPayload.spin.reels);
@@ -878,7 +919,7 @@ export function useGameSession() {
       if (!client.isConnected() || isWsConnectionLostMessage(message)) {
         connectionLostLogout(message);
       } else {
-        setError(message);
+        setError(formatSpinErrorForUi(message));
         setPhase("joined");
       }
       return null;

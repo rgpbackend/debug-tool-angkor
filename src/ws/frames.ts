@@ -67,6 +67,11 @@ export function jackpotWinHistoryFrame(
   return [6, "MiniGame", gameRoute, { cmd: "1511", limit }];
 }
 
+/** cmd 1530 — GET_BALANCE (client query; reply on session topic). */
+export function getBalanceFrame(gameRoute: string): WsFrame {
+  return [6, "MiniGame", gameRoute, { cmd: "1530" }];
+}
+
 /** cmd 1503 — Level 2: detail for one spin in a finished round. */
 export function historyDetailFrame(
   gameRoute: string,

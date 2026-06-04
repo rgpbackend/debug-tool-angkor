@@ -11,6 +11,7 @@ import type {
   HistoryDetailPayload,
   HistoryItem,
   HistoryListPayload,
+  HistorySpinType,
   HistoryWinWay,
 } from "../ws/protocol";
 
@@ -70,6 +71,28 @@ function formatHistoryProfit(value: number): string {
   return formatted;
 }
 
+function historySpinTitle(spinType: HistorySpinType): string {
+  switch (spinType) {
+    case "FREE_SPIN":
+      return "Free spin";
+    case "RESPIN":
+      return "Respin";
+    default:
+      return "Normal spin";
+  }
+}
+
+function formatHistoryStepProgress(
+  stepIndex: number,
+  totalStepsInRound: number,
+): string {
+  const step = stepIndex + 1;
+  if (totalStepsInRound > 0) {
+    return `${step} / ${totalStepsInRound} (0-idx: ${stepIndex})`;
+  }
+  return `${step} (0-idx: ${stepIndex})`;
+}
+
 // ---------------------------------------------------------------------------
 // Sub-component: Level 2 — spin detail
 // ---------------------------------------------------------------------------
@@ -100,7 +123,9 @@ function DetailPanel({ detail, onBack }: Readonly<DetailPanelProps>) {
         <button type="button" onClick={onBack}>
           ← Back
         </button>
-        <span className="hist-detail-title">{detail.title}</span>
+        <span className="hist-detail-title">
+          {historySpinTitle(detail.spinType)}
+        </span>
         <span className={`hist-type-badge hist-type-${detail.spinType}`}>
           {detail.spinType}
         </span>
@@ -118,7 +143,10 @@ function DetailPanel({ detail, onBack }: Readonly<DetailPanelProps>) {
           </p>
           <p className="hist-meta-row">
             <span className="hist-meta-label">Step</span>
-            {detail.round} (0-idx: {detail.stepIndex})
+            {formatHistoryStepProgress(
+              detail.stepIndex,
+              detail.totalStepsInRound,
+            )}
           </p>
           <p className="hist-meta-row">
             <span className="hist-meta-label">Time</span>
@@ -142,6 +170,15 @@ function DetailPanel({ detail, onBack }: Readonly<DetailPanelProps>) {
               {formatHistoryProfit(detail.profit)}
             </span>
           </p>
+          {detail.jackpot?.triggered ? (
+            <p className="hist-meta-row">
+              <span className="hist-meta-label">Jackpot</span>
+              <span className="hist-amount">
+                {detail.jackpot.tier ?? "—"} ·{" "}
+                {formatCreditAmount(detail.jackpot.jackpotWin)}
+              </span>
+            </p>
+          ) : null}
         </div>
       </div>
 

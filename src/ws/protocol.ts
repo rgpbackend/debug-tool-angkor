@@ -42,7 +42,6 @@ const SYMBOL_KINDS: readonly SymbolKind[] = [
 
 export interface GameSymbol {
   id: string;
-  displayName: string;
   kind: SymbolKind;
   payouts?: Record<string, string>;
   substitutes?: boolean;
@@ -55,13 +54,13 @@ export interface GuardianWildPayload {
 }
 
 export interface SpinResponsePayload {
+  /** Wallet balance after this spin's settlement (decimal string, §1.1). */
+  balance?: string;
   spin: {
     spinType: string;
     reels: string[][];
     /** Credited line/feature win for this spin (decimal string on wire). */
     win: string | number;
-    balanceBefore?: string;
-    balanceAfter?: string;
     triggers: string[];
     winWays?: WinWay[];
     guardianWild: GuardianWildPayload;
@@ -85,6 +84,7 @@ export interface SpinResponsePayload {
     bet: string | number;
     totalWin: string | number;
     isFinished: boolean;
+    winCapReached: boolean;
   };
   state: {
     freeSpin: {
@@ -93,6 +93,7 @@ export interface SpinResponsePayload {
       preScatterCount?: number;
       scatterCollected: number;
       triggeredScatterCount: number;
+      initialFreeSpinCount?: number;
       currentStep: number;
       totalSteps: number;
     };
@@ -121,58 +122,41 @@ export interface JoinResponsePayload {
   symbols: GameSymbol[];
   /** Allowed stake amounts as decimal strings (§1.1). */
   betLevels?: string[];
+  /** Wallet balance at join time (decimal string, §1.1). */
+  balance?: string;
   lastRound: LastRound | null;
 }
 
-// --- Wallet balance push (cmd 1530) ---
+// --- GET_BALANCE response (cmd 1530, client query) ---
 
-export type WalletBalanceReason = "JOIN" | "BET" | "WIN";
-
-const WALLET_BALANCE_REASONS: readonly WalletBalanceReason[] = [
-  "JOIN",
-  "BET",
-  "WIN",
-];
-
-export interface WalletBalanceUpdatedPayload {
+export interface GetBalanceResponsePayload {
   cmd: string | number;
   c: number;
   balance: string;
-  reason: WalletBalanceReason;
-  roundId: string | null;
+  reason: "QUERY";
+  roundId: null;
   timestampMillis: number;
 }
 
-function readWalletBalanceReason(value: unknown): WalletBalanceReason | null {
-  if (
-    typeof value === "string" &&
-    (WALLET_BALANCE_REASONS as readonly string[]).includes(value)
-  ) {
-    return value as WalletBalanceReason;
-  }
-  return null;
-}
-
-export function parseWalletBalancePayload(
+export function parseGetBalancePayload(
   payload: Record<string, unknown>,
-): WalletBalanceUpdatedPayload | null {
-  const balance = readWireDecimalString(payload.balance);
-  const reason = readWalletBalanceReason(payload.reason);
-  if (!balance || !reason) {
+): GetBalanceResponsePayload | null {
+  if (payload.reason !== "QUERY") {
     return null;
   }
-  const roundId =
-    payload.roundId === null || payload.roundId === undefined
-      ? null
-      : typeof payload.roundId === "string"
-        ? payload.roundId
-        : null;
+  const balance = readWireDecimalString(payload.balance);
+  if (!balance) {
+    return null;
+  }
+  if (payload.roundId !== null && payload.roundId !== undefined) {
+    return null;
+  }
   return {
     cmd: payload.cmd as string | number,
     c: Number(payload.c ?? 0),
     balance,
-    reason,
-    roundId,
+    reason: "QUERY",
+    roundId: null,
     timestampMillis: Number(payload.timestampMillis ?? 0),
   };
 }
@@ -189,6 +173,14 @@ export interface WinWay {
 
 export type HistorySpinType = "BASE" | "FREE_SPIN" | "RESPIN";
 
+/** Same contract as live spin `jackpot` (1500) and history wire payloads. */
+export interface HistoryJackpotSnapshot {
+  triggered: boolean;
+  tier: string | null;
+  jackpotWin: string;
+  goldenWildPositions: [number, number][];
+}
+
 export interface HistoryItem {
   roundId: string;
   /** 0-based index within the parent round (Level 2 `spinIndex`). */
@@ -203,6 +195,8 @@ export interface HistoryItem {
   bet: number;
   win: number;
   profit: number;
+  totalStepsInRound?: number;
+  jackpot?: HistoryJackpotSnapshot;
 }
 
 export interface HistoryListPayload {
@@ -392,6 +386,23 @@ function readHistorySpinType(value: unknown): HistorySpinType {
 }
 
 /** Monetary fields on history wire payloads (§1.1 decimal strings). */
+function parseHistoryJackpot(raw: unknown): HistoryJackpotSnapshot | undefined {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return undefined;
+  }
+  const j = raw as Record<string, unknown>;
+  const jackpotWin = readWireDecimalString(j.jackpotWin);
+  if (!jackpotWin) {
+    return undefined;
+  }
+  return {
+    triggered: Boolean(j.triggered),
+    tier: typeof j.tier === "string" ? j.tier : null,
+    jackpotWin,
+    goldenWildPositions: parseJackpotGoldenWildPositions(j.goldenWildPositions),
+  };
+}
+
 function readHistoryAmount(value: unknown): number {
   if (typeof value === "string" && value.trim()) {
     const n = Number(value.trim());
@@ -436,6 +447,8 @@ export function parseHistoryListItem(row: unknown): HistoryItem | null {
     return null;
   }
   const spinIndex = Number(r.spinIndex ?? r.stepIndex ?? 0);
+  const totalStepsInRound = Number(r.totalStepsInRound ?? 0);
+  const jackpot = parseHistoryJackpot(r.jackpot);
   return {
     roundId: r.roundId,
     spinIndex,
@@ -447,6 +460,8 @@ export function parseHistoryListItem(row: unknown): HistoryItem | null {
     bet: readHistoryAmount(r.bet),
     win: readHistoryAmount(r.win),
     profit: readHistoryAmount(r.profit),
+    ...(totalStepsInRound > 0 ? { totalStepsInRound } : {}),
+    ...(jackpot ? { jackpot } : {}),
   };
 }
 
@@ -484,6 +499,8 @@ export function parseHistoryDetailPayload(
         Array.isArray(col) ? col.map((sym) => String(sym)) : [],
       )
     : [];
+  const totalStepsInRound = Number(payload.totalStepsInRound ?? 0);
+  const jackpot = parseHistoryJackpot(payload.jackpot);
 
   return {
     cmd: payload.cmd as string | number,
@@ -494,14 +511,14 @@ export function parseHistoryDetailPayload(
     finishedAtMillis: Number(payload.finishedAtMillis ?? 0),
     spinIndex,
     stepIndex: Number(payload.stepIndex ?? spinIndex),
-    round: Number(payload.round ?? spinIndex + 1),
+    totalStepsInRound,
     spinType: readHistorySpinType(payload.spinType),
-    title: String(payload.title ?? ""),
     bet: readHistoryAmount(payload.bet),
     win: readHistoryAmount(payload.win),
     profit: readHistoryAmount(payload.profit),
     reels,
     winWays,
+    ...(jackpot ? { jackpot } : {}),
   };
 }
 
@@ -514,11 +531,9 @@ export interface HistoryDetailPayload {
   /** 0-based index of this spin within its parent round. */
   spinIndex: number;
   stepIndex: number;
-  /** 1-based step display number. */
-  round: number;
+  /** Total spin steps in the parent round (`spins.length`). */
+  totalStepsInRound: number;
   spinType: HistorySpinType;
-  /** Human label: "Normal spin" | "Free spin" | "Respin" */
-  title: string;
   /** Only BASE step carries round stake; FREE_SPIN / RESPIN use 0. */
   bet: number;
   win: number;
@@ -526,6 +541,7 @@ export interface HistoryDetailPayload {
   /** Column-major grid, same layout as live spin reels. */
   reels: string[][];
   winWays: HistoryWinWay[];
+  jackpot?: HistoryJackpotSnapshot;
 }
 
 function isSymbolKind(value: unknown): value is SymbolKind {
@@ -545,6 +561,13 @@ function readWireDecimalString(value: unknown): string | undefined {
   return undefined;
 }
 
+/** Top-level `balance` on join (1005) or spin (1500) payloads. */
+export function readTopLevelBalance(
+  payload: Record<string, unknown>,
+): string | null {
+  return readWireDecimalString(payload.balance) ?? null;
+}
+
 export function parseGameSymbols(raw: unknown): GameSymbol[] {
   if (!Array.isArray(raw)) {
     return [];
@@ -555,7 +578,7 @@ export function parseGameSymbols(raw: unknown): GameSymbol[] {
       continue;
     }
     const row = entry as Record<string, unknown>;
-    if (typeof row.id !== "string" || typeof row.displayName !== "string") {
+    if (typeof row.id !== "string") {
       continue;
     }
     if (!isSymbolKind(row.kind)) {
@@ -583,7 +606,6 @@ export function parseGameSymbols(raw: unknown): GameSymbol[] {
     }
     symbols.push({
       id: row.id,
-      displayName: row.displayName,
       kind: row.kind,
       ...(payouts ? { payouts } : {}),
       ...(row.substitutes === true ? { substitutes: true } : {}),
@@ -604,11 +626,13 @@ export function parseJoinResponsePayload(
     payload.lastRound === null || payload.lastRound === undefined
       ? null
       : (payload.lastRound as LastRound);
+  const balance = readTopLevelBalance(payload);
   return {
     cmd: payload.cmd as string | number,
     c: Number(payload.c ?? 0),
     symbols: parseGameSymbols(payload.symbols),
     ...(betLevels?.length ? { betLevels } : {}),
+    ...(balance ? { balance } : {}),
     lastRound,
   };
 }
