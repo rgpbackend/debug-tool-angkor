@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import JoinRetryModal from "./components/JoinRetryModal";
 import { useGameSession } from "./hooks/useGameSession";
 import { type GameDef } from "./games";
+import { loadAgencyUserToken } from "./lib/game-session-storage";
 import GameScreen from "./screens/GameScreen";
 import LobbyScreen from "./screens/LobbyScreen";
 import LoginScreen from "./screens/LoginScreen";
@@ -13,7 +14,15 @@ type AppView = "login" | "register" | "lobby" | "game";
 
 export default function App() {
   const session = useGameSession();
-  const [view, setView] = useState<AppView>("login");
+  const [view, setView] = useState<AppView>(() => {
+    if (loadAgencyUserToken()) return "lobby";
+    return "login";
+  });
+
+  // Watch for auto-resume on page refresh (session restores WS → gameScreenActive).
+  useEffect(() => {
+    if (session.gameScreenActive) setView("game");
+  }, [session.gameScreenActive]);
 
   const handleLoginSuccess = () => setView("lobby");
 
