@@ -63,7 +63,6 @@ import {
   spinFrame,
 } from "../ws/frames";
 import {
-  emptyJackpotPoolsByTier,
   mergeJackpotPools,
   parseHistoryDetailPayload,
   parseHistoryListPayload,
@@ -78,6 +77,7 @@ import {
   type JackpotTier,
   type JackpotPoolsByTier,
   type JackpotPoolsPayload,
+  type JackpotTierInfo,
   type JackpotWinHistoryPayload,
   type LastRound,
   type SpinResponsePayload,
@@ -128,6 +128,7 @@ export function useGameSession() {
   const gameIdRef = useRef("");
   const agentIdRef = useRef("");
   const wsUrlRef = useRef(defaults.wsUrl);
+  const jackpotTierInfoRef = useRef<JackpotTierInfo[]>([]);
   const heartbeatTimerRef = useRef<number | null>(null);
   const heartbeatCounterRef = useRef(1);
   const sessionRefreshTimerRef = useRef<number | null>(null);
@@ -143,7 +144,7 @@ export function useGameSession() {
   const autoConnectStartedRef = useRef(false);
 
   const [jackpotPoolsByTier, setJackpotPoolsByTier] =
-    useState<JackpotPoolsByTier>(emptyJackpotPoolsByTier);
+    useState<JackpotPoolsByTier>({});
   const [jackpotPoolsLoading, setJackpotPoolsLoading] = useState(false);
   const [jackpotWinnersRefreshToken, setJackpotWinnersRefreshToken] =
     useState(0);
@@ -244,7 +245,7 @@ export function useGameSession() {
       cheatBaselineRef.current = emptyCheatGrid();
       setCheatGridDirty(false);
       setLastRound(null);
-      setJackpotPoolsByTier(emptyJackpotPoolsByTier());
+      setJackpotPoolsByTier({});
       setJackpotPoolsLoading(false);
       setJackpotWinnersRefreshToken(0);
       setBetLevels([]);
@@ -513,6 +514,12 @@ export function useGameSession() {
 
       const connect = connectFrame(agentId, gameToken, false);
       client.sendFrame(connect);
+      // Give the server a moment to reject the CONNECT frame
+      // before showing the game screen.
+      await delay(300);
+      if (!client.isConnected()) {
+        throw new Error("Connection rejected by server");
+      }
       setPhase("connected");
       startHeartbeat(client);
       startSessionRefresh(client);
@@ -693,6 +700,7 @@ export function useGameSession() {
     // Set game config refs before connecting.
     gameIdRef.current = game.id;
     agentIdRef.current = game.agentId;
+    jackpotTierInfoRef.current = game.jackpotTiers;
 
     setError(null);
     setPhase("launching");
@@ -773,6 +781,7 @@ export function useGameSession() {
     // Set game config refs.
     gameIdRef.current = game.id;
     agentIdRef.current = game.agentId;
+    jackpotTierInfoRef.current = game.jackpotTiers;
 
     setError(null);
     setPhase("refreshing");
@@ -1161,6 +1170,7 @@ export function useGameSession() {
 
   return {
     jackpotPoolsByTier,
+    jackpotTierInfo: jackpotTierInfoRef.current,
     jackpotPoolsLoading,
     jackpotWinnersRefreshToken,
     phase,

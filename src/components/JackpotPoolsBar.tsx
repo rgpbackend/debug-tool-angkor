@@ -1,20 +1,12 @@
+import { useMemo } from "react";
 import {
   formatStaticJackpotPoolAmount,
   isStaticJackpotTier,
-  JACKPOT_TIERS,
-  PROGRESSIVE_JACKPOT_TIERS,
-  STATIC_JACKPOT_TIERS,
   type JackpotPool,
   type JackpotPoolsByTier,
   type JackpotTier,
+  type JackpotTierInfo,
 } from "../ws/protocol";
-
-const TIER_LABELS: Record<JackpotTier, string> = {
-  NANO: "Nano",
-  CYBER: "Cyber",
-  GUARDIAN: "Guardian",
-  ETERNAL: "Eternal",
-};
 
 export interface JackpotPoolsBarProps {
   poolsByTier: JackpotPoolsByTier;
@@ -24,14 +16,21 @@ export interface JackpotPoolsBarProps {
   canCheat?: boolean;
   forceJackpotBusy?: boolean;
   onForceJackpot?: (tier: JackpotTier) => void | Promise<void>;
-  /** Compact strip below reel grid (no title, single row of 4). */
+  /** Per-game tier metadata. */
+  jackpotTiers: readonly JackpotTierInfo[];
+  /** Compact strip below reel grid (single row). */
   embedded?: boolean;
+}
+
+function tierLabel(tier: string): string {
+  return tier.charAt(0) + tier.slice(1).toLowerCase();
 }
 
 function PoolCard({
   pool,
   tier,
   betAmount,
+  jackpotTiers,
   canCheat = false,
   forceJackpotBusy = false,
   onForceJackpot,
@@ -39,12 +38,17 @@ function PoolCard({
   pool: JackpotPool | null;
   tier: JackpotTier;
   betAmount: string;
+  jackpotTiers: readonly JackpotTierInfo[];
   canCheat?: boolean;
   forceJackpotBusy?: boolean;
   onForceJackpot?: (tier: JackpotTier) => void | Promise<void>;
 }>) {
-  const isStatic = isStaticJackpotTier(tier);
-  const staticAmount = formatStaticJackpotPoolAmount(betAmount, tier);
+  const isStatic = isStaticJackpotTier(jackpotTiers, tier);
+  const staticAmount = formatStaticJackpotPoolAmount(
+    jackpotTiers,
+    betAmount,
+    tier,
+  );
   const displayAmount = isStatic
     ? (staticAmount ?? "—")
     : (pool?.currentAmount ?? "—");
@@ -62,15 +66,15 @@ function PoolCard({
       className={`jackpot-pool-card jackpot-pool-${tier.toLowerCase()}${isStatic ? " jackpot-pool-static" : " jackpot-pool-progressive"}`}
     >
       <div className="jackpot-pool-card-top">
-        <span className="jackpot-pool-tier">{TIER_LABELS[tier]}</span>
+        <span className="jackpot-pool-tier">{tierLabel(tier)}</span>
         {showCheatButton ? (
           <button
             type="button"
             className="jackpot-pool-cheat-btn"
             onClick={handleForceJackpot}
             disabled={!canCheat || forceJackpotBusy}
-            title={`Force ${TIER_LABELS[tier]} jackpot on next base spin (2002)`}
-            aria-label={`Cheat ${TIER_LABELS[tier]} jackpot`}
+            title={`Force ${tierLabel(tier)} jackpot on next base spin (2002)`}
+            aria-label={`Cheat ${tierLabel(tier)} jackpot`}
           >
             <span className="jackpot-pool-cheat-btn-icon" aria-hidden>
               ⚡
@@ -87,6 +91,7 @@ function PoolGroup({
   tiers,
   poolsByTier,
   betAmount,
+  jackpotTiers,
   canCheat,
   forceJackpotBusy,
   onForceJackpot,
@@ -94,6 +99,7 @@ function PoolGroup({
   tiers: readonly JackpotTier[];
   poolsByTier: JackpotPoolsByTier;
   betAmount: string;
+  jackpotTiers: readonly JackpotTierInfo[];
   canCheat?: boolean;
   forceJackpotBusy?: boolean;
   onForceJackpot?: (tier: JackpotTier) => void | Promise<void>;
@@ -107,6 +113,7 @@ function PoolGroup({
             tier={tier}
             pool={poolsByTier[tier]}
             betAmount={betAmount}
+            jackpotTiers={jackpotTiers}
             canCheat={canCheat}
             forceJackpotBusy={forceJackpotBusy}
             onForceJackpot={onForceJackpot}
@@ -150,9 +157,22 @@ export default function JackpotPoolsBar({
   canCheat = false,
   forceJackpotBusy = false,
   onForceJackpot,
+  jackpotTiers,
   embedded = false,
 }: Readonly<JackpotPoolsBarProps>) {
-  const hasAnyPool = JACKPOT_TIERS.some((tier) => poolsByTier[tier] !== null);
+  const tierKeys = useMemo(
+    () => jackpotTiers.map((t) => t.key),
+    [jackpotTiers],
+  );
+  const staticTierKeys = useMemo(
+    () => jackpotTiers.filter((t) => t.isStatic).map((t) => t.key),
+    [jackpotTiers],
+  );
+  const progressiveTierKeys = useMemo(
+    () => jackpotTiers.filter((t) => !t.isStatic).map((t) => t.key),
+    [jackpotTiers],
+  );
+  const hasAnyPool = tierKeys.some((tier) => poolsByTier[tier] !== null);
 
   if (embedded) {
     return (
@@ -166,12 +186,13 @@ export default function JackpotPoolsBar({
           hasAnyPool={hasAnyPool}
         />
         <div className="jackpot-pools-embedded-grid">
-          {JACKPOT_TIERS.map((tier) => (
+          {tierKeys.map((tier) => (
             <PoolCard
               key={tier}
               tier={tier}
               pool={poolsByTier[tier]}
               betAmount={betAmount}
+              jackpotTiers={jackpotTiers}
               canCheat={canCheat}
               forceJackpotBusy={forceJackpotBusy}
               onForceJackpot={onForceJackpot}
@@ -185,10 +206,10 @@ export default function JackpotPoolsBar({
   return (
     <div
       className="jackpot-pools slot-stage-surface"
-      aria-label="The Guardian's Eye jackpots"
+      aria-label="Jackpot pools"
     >
       <div className="jackpot-pools-header">
-        <h3 className="jackpot-pools-title">The Guardian&apos;s Eye</h3>
+        <h3 className="jackpot-pools-title">Jackpots</h3>
         <PoolStatus
           connected={connected}
           loading={loading}
@@ -196,22 +217,28 @@ export default function JackpotPoolsBar({
         />
       </div>
       <div className="jackpot-pools-groups">
-        <PoolGroup
-          tiers={STATIC_JACKPOT_TIERS}
-          poolsByTier={poolsByTier}
-          betAmount={betAmount}
-          canCheat={canCheat}
-          forceJackpotBusy={forceJackpotBusy}
-          onForceJackpot={onForceJackpot}
-        />
-        <PoolGroup
-          tiers={PROGRESSIVE_JACKPOT_TIERS}
-          poolsByTier={poolsByTier}
-          betAmount={betAmount}
-          canCheat={canCheat}
-          forceJackpotBusy={forceJackpotBusy}
-          onForceJackpot={onForceJackpot}
-        />
+        {staticTierKeys.length > 0 ? (
+          <PoolGroup
+            tiers={staticTierKeys}
+            poolsByTier={poolsByTier}
+            betAmount={betAmount}
+            jackpotTiers={jackpotTiers}
+            canCheat={canCheat}
+            forceJackpotBusy={forceJackpotBusy}
+            onForceJackpot={onForceJackpot}
+          />
+        ) : null}
+        {progressiveTierKeys.length > 0 ? (
+          <PoolGroup
+            tiers={progressiveTierKeys}
+            poolsByTier={poolsByTier}
+            betAmount={betAmount}
+            jackpotTiers={jackpotTiers}
+            canCheat={canCheat}
+            forceJackpotBusy={forceJackpotBusy}
+            onForceJackpot={onForceJackpot}
+          />
+        ) : null}
       </div>
     </div>
   );

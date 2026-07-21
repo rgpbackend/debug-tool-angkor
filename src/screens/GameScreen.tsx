@@ -171,6 +171,7 @@ export default function GameScreen(
                   canCheat={canCheat}
                   forceJackpotBusy={forceJackpotBusy}
                   onForceJackpot={sendForceJackpot}
+                  jackpotTiers={session.jackpotTierInfo}
                 />
               }
               celebrations={

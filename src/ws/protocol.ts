@@ -221,45 +221,51 @@ export interface HistoryWinWay {
 
 // --- Jackpot pools (cmd 1510 / 1520) & win history (1511) ---
 
-export type JackpotTier = "NANO" | "CYBER" | "GUARDIAN" | "ETERNAL";
+export type JackpotTier = string;
 
-export const JACKPOT_TIERS: readonly JackpotTier[] = [
-  "NANO",
-  "CYBER",
-  "GUARDIAN",
-  "ETERNAL",
-] as const;
+/** Per-game tier metadata — kept minimal to avoid coupling protocol to game registry. */
+export interface JackpotTierInfo {
+  key: string;
+  isStatic: boolean;
+  betMultiplier?: number;
+}
 
-/** Fixed-prize tiers (prize = bet × tier multiplier). */
-export const STATIC_JACKPOT_TIERS = ["NANO", "CYBER"] as const satisfies readonly JackpotTier[];
+export function getJackpotTierKeys(
+  tiers: readonly JackpotTierInfo[],
+): JackpotTier[] {
+  return tiers.map((t) => t.key);
+}
 
-export type StaticJackpotTier = (typeof STATIC_JACKPOT_TIERS)[number];
+export function findJackpotTierInfo(
+  tiers: readonly JackpotTierInfo[],
+  tier: string,
+): JackpotTierInfo | undefined {
+  return tiers.find((t) => t.key === tier);
+}
 
-export const STATIC_JACKPOT_BET_MULTIPLIERS: Record<StaticJackpotTier, number> = {
-  NANO: 20,
-  CYBER: 50,
-};
-
-/** Progressive pool tiers (current amount grows until won). */
-export const PROGRESSIVE_JACKPOT_TIERS = ["GUARDIAN", "ETERNAL"] as const satisfies readonly JackpotTier[];
-
-export function isStaticJackpotTier(tier: JackpotTier): tier is StaticJackpotTier {
-  return (STATIC_JACKPOT_TIERS as readonly string[]).includes(tier);
+export function isStaticJackpotTier(
+  tiers: readonly JackpotTierInfo[],
+  tier: string,
+): boolean {
+  const info = findJackpotTierInfo(tiers, tier);
+  return info?.isStatic === true;
 }
 
 /** Static tier display amount: bet × multiplier (4 dp). */
 export function formatStaticJackpotPoolAmount(
+  tiers: readonly JackpotTierInfo[],
   bet: string,
-  tier: JackpotTier,
+  tier: string,
 ): string | null {
-  if (!isStaticJackpotTier(tier)) {
+  const info = findJackpotTierInfo(tiers, tier);
+  if (!info?.isStatic || !info.betMultiplier) {
     return null;
   }
   const betNum = Number(bet);
   if (!Number.isFinite(betNum)) {
     return null;
   }
-  return (betNum * STATIC_JACKPOT_BET_MULTIPLIERS[tier]).toFixed(4);
+  return (betNum * info.betMultiplier).toFixed(4);
 }
 
 export interface JackpotPool {
@@ -312,15 +318,16 @@ export interface JackpotWinHistoryPayload {
   count: number;
 }
 
-export type JackpotPoolsByTier = Record<JackpotTier, JackpotPool | null>;
+export type JackpotPoolsByTier = Record<string, JackpotPool | null>;
 
-export function emptyJackpotPoolsByTier(): JackpotPoolsByTier {
-  return {
-    NANO: null,
-    CYBER: null,
-    GUARDIAN: null,
-    ETERNAL: null,
-  };
+export function emptyJackpotPoolsByTier(
+  tiers: readonly JackpotTierInfo[],
+): JackpotPoolsByTier {
+  const record: JackpotPoolsByTier = {};
+  for (const t of tiers) {
+    record[t.key] = null;
+  }
+  return record;
 }
 
 export function mergeJackpotPools(
@@ -329,18 +336,13 @@ export function mergeJackpotPools(
 ): JackpotPoolsByTier {
   const next = { ...prev };
   for (const pool of pools) {
-    if (JACKPOT_TIERS.includes(pool.tier)) {
-      next[pool.tier] = pool;
-    }
+    next[pool.tier] = pool;
   }
   return next;
 }
 
-function isJackpotTier(value: unknown): value is JackpotTier {
-  return (
-    typeof value === "string" &&
-    (JACKPOT_TIERS as readonly string[]).includes(value)
-  );
+function isJackpotTier(value: unknown): value is string {
+  return typeof value === "string" && value.trim() !== "";
 }
 
 /** Parse `pools` array from spin (1500), join, or jackpot cmd payloads. */
