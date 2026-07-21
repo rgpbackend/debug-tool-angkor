@@ -514,9 +514,8 @@ export function useGameSession() {
 
       const connect = connectFrame(agentId, gameToken, false);
       client.sendFrame(connect);
-      // Give the server a moment to reject the CONNECT frame
-      // before showing the game screen.
-      await delay(300);
+      // Allow server time to reject the CONNECT frame before showing UI.
+      await delay(500);
       if (!client.isConnected()) {
         throw new Error("Connection rejected by server");
       }
@@ -552,6 +551,15 @@ export function useGameSession() {
       return;
     }
     const client = clientRef.current;
+    // Retry a few times — WS may still be stabilizing after CONNECT.
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (client?.isConnected()) {
+        break;
+      }
+      if (attempt < 4) {
+        await delay(200);
+      }
+    }
     if (!client?.isConnected()) {
       setError("WebSocket is not connected");
       return;
