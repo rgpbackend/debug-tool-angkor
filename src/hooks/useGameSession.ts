@@ -716,9 +716,6 @@ export function useGameSession() {
       if (e instanceof StompTokenBannedError) {
         return false;
       }
-      clearGameSession();
-      setAccessToken("");
-      setAgencyUserToken("");
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
       setPhase("disconnected");
