@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { readEnvDefaults } from "../config";
+import { getGames, type GameDef } from "../games";
 import {
   CHEAT_SYMBOL_OPTIONS,
   isAllowedCheatSymbolInput,
@@ -20,12 +21,14 @@ import {
   resolveBetFromLevels,
 } from "../lib/session-utils";
 import { refreshSessionToken } from "../api/auth";
-import { deposit, login, playGame, register } from "../api/agency";
+import { deposit, login as loginAgency, playGame, register } from "../api/agency";
 import {
   clearGameSession,
   loadAgencyUserToken,
+  loadLaunchedGameId,
   loadRefreshToken,
   saveAgencyUserToken,
+  saveLaunchedGameId,
   saveRefreshToken,
 } from "../lib/game-session-storage";
 import { getWsSessionRefreshIntervalMs } from "../lib/ws-session-refresh";
@@ -121,6 +124,10 @@ function delay(ms: number): Promise<void> {
 export function useGameSession() {
   const defaults = useMemo(() => readEnvDefaults(), []);
   const clientRef = useRef<BrowserWsClient | null>(null);
+  /** Game config set by launchGame / resumeFromRefreshToken. */
+  const gameIdRef = useRef("");
+  const agentIdRef = useRef("");
+  const wsUrlRef = useRef(defaults.wsUrl);
   const heartbeatTimerRef = useRef<number | null>(null);
   const heartbeatCounterRef = useRef(1);
   const sessionRefreshTimerRef = useRef<number | null>(null);
@@ -156,14 +163,12 @@ export function useGameSession() {
   const [authSuccessMessage, setAuthSuccessMessage] = useState<string | null>(
     null,
   );
-  const wsUrl = defaults.wsUrl;
-  const agentId = defaults.agentId;
   const [accessToken, setAccessToken] = useState("");
   const [agencyUserToken, setAgencyUserToken] = useState(
     () => loadAgencyUserToken() ?? "",
   );
   const [depositBusy, setDepositBusy] = useState(false);
-  const [gameRoute, setGameRoute] = useState(defaults.gameId);
+  const [gameRoute, setGameRoute] = useState("");
   const [bet, setBet] = useState("1");
   const [betLevels, setBetLevels] = useState<string[]>([]);
   const [symbolCatalog, setSymbolCatalog] = useState<GameSymbol[]>([]);
@@ -313,10 +318,10 @@ export function useGameSession() {
   const reauthWsWithToken = useCallback(
     (client: BrowserWsClient, wsAccessToken: string) => {
       client.sendFrame(
-        connectFrame(agentId.trim(), wsAccessToken.trim(), true),
+        connectFrame(agentIdRef.current.trim(), wsAccessToken.trim(), true),
       );
     },
-    [agentId],
+    [],
   );
 
   const refreshBalance = useCallback(async () => {
@@ -465,7 +470,9 @@ export function useGameSession() {
     setCheatGrid(emptyCheatGrid());
     setCheatArmed(false);
     setForceJackpotArmed(false);
-    if (!wsUrl.trim()) {
+    const wsUrl = wsUrlRef.current.trim();
+    const agentId = agentIdRef.current.trim();
+    if (!wsUrl) {
       setError("WebSocket URL is required");
       return;
     }
@@ -480,7 +487,7 @@ export function useGameSession() {
     setPhase("connecting");
 
     const timeoutMs = defaults.timeoutMs;
-    const client = new BrowserWsClient(wsUrl.trim(), { timeoutMs });
+    const client = new BrowserWsClient(wsUrl, { timeoutMs });
     clientRef.current = client;
 
     try {
@@ -504,7 +511,7 @@ export function useGameSession() {
         },
       );
 
-      const connect = connectFrame(agentId.trim(), gameToken, false);
+      const connect = connectFrame(agentId, gameToken, false);
       client.sendFrame(connect);
       setPhase("connected");
       startHeartbeat(client);
@@ -522,7 +529,6 @@ export function useGameSession() {
       connectionLostLogout(message);
     }
   }, [
-    agentId,
     defaults.timeoutMs,
     detachDisconnectListener,
     detachStompListener,
@@ -531,7 +537,6 @@ export function useGameSession() {
     handleTokenBan,
     startHeartbeat,
     startSessionRefresh,
-    wsUrl,
     setPhase,
   ]);
 
@@ -641,12 +646,12 @@ export function useGameSession() {
     void joinGame();
   }, [joinGame]);
 
-  const loginAndEnterGame = useCallback(
-    async (username: string, password: string) => {
+  const login = useCallback(
+    async (username: string, password: string): Promise<boolean> => {
       const trimmedUsername = username.trim();
       if (!trimmedUsername || !password) {
         setError("Username and password are required");
-        return;
+        return false;
       }
 
       setError(null);
@@ -654,23 +659,17 @@ export function useGameSession() {
       setPhase("logging-in");
 
       try {
-        const { token: userToken } = await login({
+        const { token: userToken } = await loginAgency({
           username: trimmedUsername,
           password,
         });
         saveAgencyUserToken(userToken);
         setAgencyUserToken(userToken);
-        setPhase("launching");
-        const { token, refreshToken } = await playGame(
-          userToken,
-          defaults.gameId,
-        );
-        saveRefreshToken(refreshToken);
-        setGameRoute(defaults.gameId);
-        await connectToGame(token);
+        setPhase("disconnected");
+        return true;
       } catch (e) {
         if (e instanceof StompTokenBannedError) {
-          return;
+          return false;
         }
         clearGameSession();
         setAccessToken("");
@@ -678,10 +677,46 @@ export function useGameSession() {
         const message = e instanceof Error ? e.message : String(e);
         setError(message);
         setPhase("disconnected");
+        return false;
       }
     },
-    [connectToGame, defaults.gameId, setPhase],
+    [setPhase],
   );
+
+  const launchGame = useCallback(async (game: GameDef): Promise<boolean> => {
+    const userToken = agencyUserToken.trim();
+    if (!userToken) {
+      setError("Not logged in. Please sign in first.");
+      return false;
+    }
+
+    // Set game config refs before connecting.
+    gameIdRef.current = game.id;
+    agentIdRef.current = game.agentId;
+
+    setError(null);
+    setPhase("launching");
+
+    try {
+      const { token, refreshToken } = await playGame(userToken, game.id);
+      saveRefreshToken(refreshToken);
+      saveLaunchedGameId(game.id);
+      setGameRoute(game.id);
+      await connectToGame(token);
+      return true;
+    } catch (e) {
+      if (e instanceof StompTokenBannedError) {
+        return false;
+      }
+      clearGameSession();
+      setAccessToken("");
+      setAgencyUserToken("");
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
+      setPhase("disconnected");
+      return false;
+    }
+  }, [agencyUserToken, connectToGame, setPhase]);
 
   const registerAccount = useCallback(
     async (
@@ -726,9 +761,18 @@ export function useGameSession() {
 
   const resumeFromRefreshToken = useCallback(async () => {
     const refreshToken = loadRefreshToken();
-    if (!refreshToken) {
+    const savedGameId = loadLaunchedGameId();
+    if (!refreshToken || !savedGameId) {
       return;
     }
+    const game = getGames().find((g) => g.id === savedGameId);
+    if (!game) {
+      return;
+    }
+
+    // Set game config refs.
+    gameIdRef.current = game.id;
+    agentIdRef.current = game.agentId;
 
     setError(null);
     setPhase("refreshing");
@@ -736,7 +780,7 @@ export function useGameSession() {
       const { accessToken, refreshToken: nextRefresh } =
         await refreshSessionToken(refreshToken);
       saveRefreshToken(nextRefresh);
-      setGameRoute(defaults.gameId);
+      setGameRoute(game.id);
       await connectToGame(accessToken);
     } catch (e) {
       if (e instanceof StompTokenBannedError) {
@@ -749,7 +793,7 @@ export function useGameSession() {
       setError(message);
       setPhase("disconnected");
     }
-  }, [connectToGame, defaults.gameId, setPhase]);
+  }, [connectToGame, setPhase]);
 
   const depositFunds = useCallback(async () => {
     const userToken = agencyUserToken.trim();
@@ -794,7 +838,7 @@ export function useGameSession() {
     if (autoConnectStartedRef.current || gameScreenActive) {
       return;
     }
-    if (!loadRefreshToken()) {
+    if (!loadRefreshToken() || !loadLaunchedGameId()) {
       return;
     }
     autoConnectStartedRef.current = true;
@@ -1131,6 +1175,7 @@ export function useGameSession() {
     error,
     setError,
     accessToken,
+    agencyUserToken,
     bet,
     setBet,
     betLevels,
@@ -1140,7 +1185,8 @@ export function useGameSession() {
     depositBusy,
     depositFunds,
     cheatGrid,
-    loginAndEnterGame,
+    login,
+    launchGame,
     registerAccount,
     authSuccessMessage,
     setAuthSuccessMessage,

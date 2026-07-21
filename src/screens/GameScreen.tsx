@@ -13,9 +13,14 @@ import { buildSpinCelebrations } from "../lib/spin-celebrations";
 import type { GameSession } from "../hooks/useGameSession";
 import type { SpinResponsePayload } from "../ws/protocol";
 
-export default function GameScreen(session: Readonly<GameSession>) {
+export default function GameScreen(
+  session: Readonly<
+    GameSession & { onBackToLobby: () => void; onLogout: () => void }
+  >,
+) {
   const {
-    logout,
+    onBackToLobby,
+    onLogout,
     phase,
     sessionReady,
     joinGame,
@@ -141,7 +146,10 @@ export default function GameScreen(session: Readonly<GameSession>) {
       ) : null}
 
       <div className="game-screen-toolbar row">
-        <button type="button" className="logout-btn" onClick={logout}>
+        <button type="button" onClick={onBackToLobby}>
+          ← Lobby
+        </button>
+        <button type="button" className="logout-btn" onClick={onLogout}>
           Log out
         </button>
       </div>

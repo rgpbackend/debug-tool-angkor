@@ -3,13 +3,14 @@ import { useState } from "react";
 
 type LoginScreenProps = Pick<
   GameSession,
-  | "loginAndEnterGame"
+  | "login"
   | "error"
   | "authSuccessMessage"
   | "busySession"
   | "phase"
 > & {
   onShowRegister: () => void;
+  onLoginSuccess: () => void;
 };
 
 function loginButtonLabel(phase: GameSession["phase"], busy: boolean): string {
@@ -32,18 +33,21 @@ function loginButtonLabel(phase: GameSession["phase"], busy: boolean): string {
 }
 
 export default function LoginScreen({
-  loginAndEnterGame,
+  login,
   error,
   authSuccessMessage,
   busySession,
   phase,
   onShowRegister,
+  onLoginSuccess,
 }: Readonly<LoginScreenProps>) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = () => {
-    void loginAndEnterGame(username, password);
+    login(username, password).then((ok) => {
+      if (ok) onLoginSuccess();
+    });
   };
 
   return (
