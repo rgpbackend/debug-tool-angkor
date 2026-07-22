@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useAuth } from "./hooks/useAuth";
-import { getGames, type GameDef } from "./games";
-import { loadAgencyUserToken, loadLaunchedGameId, loadRefreshToken } from "./lib/game-session-storage";
+import { type GameDef } from "./games";
+import { loadAgencyUserToken } from "./lib/game-session-storage";
 import LobbyScreen from "./screens/LobbyScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
@@ -17,26 +17,6 @@ export default function App() {
   });
   const [selectedGame, setSelectedGame] = useState<GameDef | null>(null);
   const [wsAccessToken, setWsAccessToken] = useState("");
-
-  // Auto-resume from refresh token on page load
-  useEffect(() => {
-    const rt = loadRefreshToken();
-    const gid = loadLaunchedGameId();
-    if (!rt || !gid) return;
-    if (view === "game") return;
-
-    auth.refreshAndGetToken().then((result) => {
-      if (result) {
-        const game = getGames().find((g) => g.id === result.gameId);
-        if (game) {
-          setSelectedGame(game);
-          setWsAccessToken(result.accessToken);
-          setView("game");
-        }
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleLoginSuccess = useCallback(() => setView("lobby"), []);
   const handleRegisterSuccess = useCallback(() => setView("login"), []);
