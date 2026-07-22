@@ -76,7 +76,6 @@ export default function PaylineReelGrid({ reels, matches, spinning = false }: Pa
               key={`reel-${ci}`}
               reelIndex={ci}
               column={col}
-              spinning={spinning}
               reelState={reelStates[ci]}
               bouncing={bouncingReel === ci}
               matchCells={cellSet}

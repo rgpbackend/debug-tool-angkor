@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { GRID_ROWS } from "../lib/paylines";
 import type { ReelVisualState } from "../lib/reel-spin";
 
@@ -8,12 +7,11 @@ type TitanReelColumnProps = {
   stripSymbols?: string[];
   reelState?: ReelVisualState;
   bouncing?: boolean;
-  spinning?: boolean;
   matchCells?: Set<number>;
 };
 
 export default function TitanReelColumn({
-  reelIndex, column, stripSymbols, reelState = "idle", bouncing, spinning, matchCells,
+  reelIndex, column, stripSymbols, reelState = "idle", bouncing, matchCells,
 }: TitanReelColumnProps) {
   const showStrip = stripSymbols && stripSymbols.length > 0 && reelState !== "idle";
 
