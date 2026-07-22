@@ -554,7 +554,7 @@ export function useWsSession(
     void joinGame();
   }, [joinGame]);
 
-  // --- auto-connect on mount ---
+  // --- auto-connect when token is available ---
 
   useEffect(() => {
     if (!wsAccessToken.trim() || autoConnectStartedRef.current) {
@@ -564,7 +564,7 @@ export function useWsSession(
     queueMicrotask(() => {
       void connectToGame(wsAccessToken);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [wsAccessToken, connectToGame]);
 
   // --- cleanup on unmount ---
 
