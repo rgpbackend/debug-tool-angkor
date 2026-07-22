@@ -671,7 +671,8 @@ export function parseJoinResponsePayload(
   payload: Record<string, unknown>,
 ): JoinResponsePayload {
   // Accept both string and numeric bet levels from server.
-  const rawBetLevels = Array.isArray(payload.betAmounts) ? payload.betAmounts : undefined;
+  const rawBetLevels = Array.isArray(payload.betAmounts) ? payload.betAmounts
+    : Array.isArray(payload.betLevels) ? payload.betLevels : undefined;
   const betLevels = rawBetLevels
     ?.filter(
       (level): level is string | number =>
