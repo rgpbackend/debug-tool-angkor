@@ -153,8 +153,11 @@ export function useGameSession(
   // --- spin ---
   const spin = useCallback(async (): Promise<SpinResponsePayload | null> => {
     const client = ws.clientRef.current;
-    if (!client?.isConnected() || ws.phase !== "joined" || !ws.sessionReady || spinBusyRef.current)
+    console.log("[Angkor] spin called", { connected: client?.isConnected(), phase: ws.phase, ready: ws.sessionReady, busy: spinBusyRef.current });
+    if (!client?.isConnected() || ws.phase !== "joined" || !ws.sessionReady || spinBusyRef.current) {
+      console.log("[Angkor] spin blocked", { connected: client?.isConnected(), phase: ws.phase, ready: ws.sessionReady });
       return null;
+    }
     setGameError(null);
     spinBusyRef.current = true;
     setSpinFreeze(lastSpin ?? ws.lastRound);
@@ -162,6 +165,7 @@ export function useGameSession(
       const payloadPromise = client.waitForPayload(isSpinResponsePayload, "spin response", {
         rejectMatcher: isSpinErrorPayload,
       });
+      console.log("[Angkor] sending spin frame", spinFrame(ws.gameRoute, String(activeBet)));
       client.sendFrame(spinFrame(ws.gameRoute, String(activeBet)));
       const payload = await payloadPromise;
       const spinPayload = payload as unknown as SpinResponsePayload;
@@ -182,6 +186,7 @@ export function useGameSession(
       setSpinFreeze(null);
       return spinPayload;
     } catch (e) {
+      console.log("[Angkor] spin error:", e);
       const message = e instanceof Error ? e.message : String(e);
       if (!client.isConnected() || isWsConnectionLostMessage(message)) {
         callbacks.onConnectionLost(message);
