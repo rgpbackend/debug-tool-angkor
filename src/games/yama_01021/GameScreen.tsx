@@ -3,7 +3,6 @@ import { useGameSession } from "./useGameSession";
 import TitanCabinet from "./components/TitanCabinet";
 import PaylineReelGrid from "./components/PaylineReelGrid";
 import TitanControls from "./components/TitanControls";
-import ComboOverlay from "./components/ComboOverlay";
 import { readEnvDefaults } from "../../config";
 import type { GameScreenProps } from "../../games";
 import type { JackpotTierInfo } from "../../ws/protocol";
@@ -48,11 +47,10 @@ export default function GameScreen({ wsAccessToken, onBackToLobby, onLogout }: G
         reels={
           <PaylineReelGrid
             reels={session.reelGrid}
-            matches={session.comboResult.matches}
+            matches={session.paylineMatches}
             spinning={session.isSpinning}
           />
         }
-        combo={<ComboOverlay level={session.comboResult.comboLevel} visible={!spinUiActive && session.comboResult.comboLevel !== "none"} />}
         controls={
           <TitanControls
             betValue={session.bet}

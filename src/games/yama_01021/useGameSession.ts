@@ -5,7 +5,7 @@ import {
   type JackpotTierInfo, type TitanSpinResponsePayload, type TitanPaylineWin,
 } from "../../ws/protocol";
 import { spinFrame } from "../../ws/frames";
-import type { ComboLevel, PaylineMatch } from "./lib/paylines";
+import type { PaylineMatch } from "./lib/paylines";
 
 function isTitanSpinPayload(payload: Record<string, unknown>): boolean {
   if (!hasCmd(payload, "1500") || payload.c !== 0) return false;
@@ -16,11 +16,6 @@ function isTitanSpinPayload(payload: Record<string, unknown>): boolean {
 
 function isTitanSpinError(payload: Record<string, unknown>): boolean {
   return hasCmd(payload, "1500") && (payload.c === 1 || payload.errorCode != null);
-}
-
-/** Derive combo level from number of winning paylines. */
-function comboLevelFromCount(n: number): ComboLevel {
-  return n >= 6 ? "mega" : n >= 4 ? "super" : n >= 2 ? "combo" : "none";
 }
 
 /** Convert server payline wins to UI match format. */
@@ -97,11 +92,10 @@ export function useGameSession(
   }, [lastSpin]);
 
   // Build matches from server paylineWins
-  const comboResult = useMemo(() => {
+  const paylineMatches = useMemo(() => {
     const wins = lastSpin?.spin?.paylineWins;
-    if (!wins || wins.length === 0) return { matches: [], comboLevel: "none" as ComboLevel };
-    const matches = paylineWinsToMatches(wins, ws.serverPaylines);
-    return { matches, comboLevel: comboLevelFromCount(wins.length) };
+    if (!wins || wins.length === 0) return [];
+    return paylineWinsToMatches(wins, ws.serverPaylines);
   }, [lastSpin, ws.serverPaylines]);
 
   // Round ongoing → auto-spin next step
@@ -122,7 +116,7 @@ export function useGameSession(
     fastSpin, setFastSpin,
     autoSpinCount, setAutoSpinCount,
     lastSpin, spin, canSpin,
-    reelGrid, comboResult, isSpinning, roundOngoing,
+    reelGrid, paylineMatches, isSpinning, roundOngoing,
   };
 }
 

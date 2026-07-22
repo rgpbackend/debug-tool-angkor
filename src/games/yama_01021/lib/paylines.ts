@@ -8,5 +8,3 @@ export type PaylineMatch = {
   positions: [number, number][];
   direction: "ltr" | "rtl";
 };
-
-export type ComboLevel = "none" | "combo" | "super" | "mega";
