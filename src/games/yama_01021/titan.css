@@ -344,15 +344,32 @@
   to { stroke-dashoffset: -28; }
 }
 
-/* Electric dash flowing right→left */
+/* Electric dash flowing right→left (offset increases = dashes move left) */
 .titan-payline-flow-rtl {
-  stroke-dashoffset: 28;
+  stroke-dashoffset: 0;
   animation: dash-flow-rtl 0.5s linear infinite;
 }
 @keyframes dash-flow-rtl {
-  from { stroke-dashoffset: 28; }
-  to { stroke-dashoffset: 0; }
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 28; }
 }
+
+/* Staggered line entrance */
+.titan-paylines-svg g {
+  opacity: 0;
+  animation: payline-enter 0.3s ease-out forwards;
+}
+.titan-paylines-svg g:nth-child(1) { animation-delay: 0s; }
+.titan-paylines-svg g:nth-child(2) { animation-delay: 0.15s; }
+.titan-paylines-svg g:nth-child(3) { animation-delay: 0.3s; }
+.titan-paylines-svg g:nth-child(4) { animation-delay: 0.45s; }
+.titan-paylines-svg g:nth-child(5) { animation-delay: 0.6s; }
+.titan-paylines-svg g:nth-child(6) { animation-delay: 0.75s; }
+.titan-paylines-svg g:nth-child(7) { animation-delay: 0.9s; }
+.titan-paylines-svg g:nth-child(8) { animation-delay: 1.05s; }
+.titan-paylines-svg g:nth-child(9) { animation-delay: 1.2s; }
+.titan-paylines-svg g:nth-child(10) { animation-delay: 1.35s; }
+@keyframes payline-enter { to { opacity: 1; } }
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {

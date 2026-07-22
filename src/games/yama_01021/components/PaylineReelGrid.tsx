@@ -88,17 +88,17 @@ export default function PaylineReelGrid({ reels, matches, spinning }: PaylineRee
                     d={l.d}
                     fill="none"
                     stroke={l.color}
-                    strokeWidth={5}
+                    strokeWidth={8}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    opacity={0.2}
+                    opacity={0.15}
                   />
                   {/* Main line */}
                   <path
                     d={l.d}
                     fill="none"
                     stroke={l.color}
-                    strokeWidth={2.5}
+                    strokeWidth={4}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
@@ -107,7 +107,7 @@ export default function PaylineReelGrid({ reels, matches, spinning }: PaylineRee
                     d={l.d}
                     fill="none"
                     stroke="#fff"
-                    strokeWidth={3}
+                    strokeWidth={4}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeDasharray="8 20"
