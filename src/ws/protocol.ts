@@ -128,12 +128,13 @@ export interface TitanSpinResponsePayload {
   };
 }
 
-/** Decode flat patternGrid string into column-major reels grid (5×3). */
+/** Decode flat patternGrid (row-major) into column-major reels grid (5×3).
+ *  Row-major layout: first 5 chars = top row, next 5 = middle, last 5 = bottom. */
 export function decodePatternGrid(flat: string): string[][] {
   const reels: string[][] = [[], [], [], [], []];
   for (let reel = 0; reel < 5; reel++) {
     for (let row = 0; row < 3; row++) {
-      const idx = reel * 3 + row;
+      const idx = row * 5 + reel;
       reels[reel].push(flat[idx] ?? "?");
     }
   }
