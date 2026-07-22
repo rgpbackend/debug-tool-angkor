@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { GRID_REELS, GRID_ROWS, type PaylineMatch } from "../lib/paylines";
-import { useReelSpin } from "../hooks/useReelSpin";
 import TitanReelColumn from "./TitanReelColumn";
 
 type PaylineReelGridProps = {
@@ -19,31 +18,13 @@ function cellCenter(reel: number, row: number) {
   return { x: reel * STEP + CELL / 2, y: row * STEP + CELL / 2 };
 }
 
-export default function PaylineReelGrid({ reels, matches, spinning = false }: PaylineReelGridProps) {
-  const { reelStates, bouncingReel, stripSymbols, beginSpin, stopReels } = useReelSpin();
-  const prevSpinningRef = useRef(false);
-  const spinStartedRef = useRef(false);
-
-  // Trigger spin animation on spinning=true edge
-  useEffect(() => {
-    if (spinning && !prevSpinningRef.current) {
-      spinStartedRef.current = true;
-      beginSpin(reels);
-    }
-    if (!spinning && prevSpinningRef.current && spinStartedRef.current) {
-      stopReels(reels);
-      spinStartedRef.current = false;
-    }
-    prevSpinningRef.current = spinning;
-  }, [spinning, reels, beginSpin, stopReels]);
-
+export default function PaylineReelGrid({ reels, matches, spinning }: PaylineReelGridProps) {
   const matchCellSet = useMemo(() => {
     const s = new Set<string>();
     for (const m of matches) for (const [r, row] of m.positions) s.add(`${r},${row}`);
     return s;
   }, [matches]);
 
-  // Payline SVG lines
   const lines = useMemo(() => {
     return matches.map((m, i) => {
       const pts = m.positions.map(([r, row]) => cellCenter(r, row));
@@ -76,15 +57,12 @@ export default function PaylineReelGrid({ reels, matches, spinning = false }: Pa
               key={`reel-${ci}`}
               reelIndex={ci}
               column={col}
-              reelState={reelStates[ci]}
-              bouncing={bouncingReel === ci}
-              stripSymbols={stripSymbols[ci] ?? undefined}
+              spinning={spinning}
               matchCells={cellSet}
             />
           );
         })}
 
-        {/* Payline SVG overlay */}
         {lines.length > 0 && !spinning && (
           <svg
             className="titan-paylines-svg"
