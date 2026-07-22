@@ -336,18 +336,22 @@
 
 /* Electric dash flowing left→right */
 .titan-payline-flow-ltr {
-  animation: dash-flow-ltr 0.6s linear infinite;
+  stroke-dashoffset: 0;
+  animation: dash-flow-ltr 0.5s linear infinite;
 }
 @keyframes dash-flow-ltr {
+  from { stroke-dashoffset: 0; }
   to { stroke-dashoffset: -28; }
 }
 
 /* Electric dash flowing right→left */
 .titan-payline-flow-rtl {
-  animation: dash-flow-rtl 0.6s linear infinite;
+  stroke-dashoffset: 28;
+  animation: dash-flow-rtl 0.5s linear infinite;
 }
 @keyframes dash-flow-rtl {
-  to { stroke-dashoffset: 28; }
+  from { stroke-dashoffset: 28; }
+  to { stroke-dashoffset: 0; }
 }
 
 /* ── Reduced motion ── */

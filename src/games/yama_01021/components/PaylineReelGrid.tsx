@@ -119,8 +119,7 @@ export default function PaylineReelGrid({ reels, matches, spinning }: PaylineRee
                     strokeWidth={3}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeDasharray="10 18"
-                    strokeDashoffset={l.ltr ? 0 : 28}
+                    strokeDasharray="8 20"
                     opacity={0.7}
                     className={l.ltr ? "titan-payline-flow-ltr" : "titan-payline-flow-rtl"}
                   />
