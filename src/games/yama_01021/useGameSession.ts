@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWsSession, type WsSessionCallbacks } from "../../ws/useWsSession";
+import { parseTitanMessage } from "./lib/message-parser";
 import {
   hasCmd, decodePatternGrid, readTopLevelBalance,
   type JackpotTierInfo, type TitanSpinResponsePayload, type TitanPaylineWin,
@@ -42,7 +43,7 @@ export function useGameSession(
   jackpotTierInfo: JackpotTierInfo[],
   wsAccessToken: string, callbacks: WsSessionCallbacks,
 ) {
-  const ws = useWsSession(wsUrl, gameId, agentId, jackpotTierInfo, wsAccessToken, callbacks);
+  const ws = useWsSession(wsUrl, gameId, agentId, jackpotTierInfo, wsAccessToken, callbacks, parseTitanMessage);
 
   const [bet, setBet] = useState("0.10");
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWsSession, type WsSessionCallbacks } from "../../ws/useWsSession";
+import { parseAngkorMessage } from "./lib/message-parser";
 import {
   CHEAT_SYMBOL_OPTIONS,
   isAllowedCheatSymbolInput,
@@ -83,7 +84,7 @@ export function useGameSession(
   balance: string | null,
   depositBusy: boolean,
 ) {
-  const ws = useWsSession(wsUrl, gameId, agentId, jackpotTierInfo, wsAccessToken, callbacks);
+  const ws = useWsSession(wsUrl, gameId, agentId, jackpotTierInfo, wsAccessToken, callbacks, parseAngkorMessage);
 
   // --- game-specific state ---
   const [bet, setBet] = useState("1");

@@ -14,6 +14,7 @@ import {
   isJackpotPoolsPayload,
   isGetBalanceResponsePayload,
   isGetBalanceErrorPayload,
+  type ParseMessageFn,
 } from "./browser-ws-client";
 import {
   connectFrame,
@@ -61,6 +62,7 @@ export function useWsSession(
   jackpotTierInfo: readonly JackpotTierInfo[],
   wsAccessToken: string,
   callbacks: WsSessionCallbacks,
+  parseMessage: ParseMessageFn,
 ) {
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
@@ -382,7 +384,7 @@ export function useWsSession(
       disconnect();
       setPhase("connecting");
 
-      const client = new BrowserWsClient(url, { timeoutMs });
+      const client = new BrowserWsClient(url, { timeoutMs, parseMessage });
       clientRef.current = client;
 
       try {

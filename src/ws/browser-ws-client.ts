@@ -4,12 +4,19 @@ import {
 } from "./protocol";
 import {
   isTokenBannedStompError,
-  parseStompErrorCode,
   StompTokenBannedError,
 } from "./stomp-errors";
 
+type WsInboundMessage =
+  | { type: "payload"; payload: Record<string, unknown> }
+  | { type: "stomp-error"; code: number };
+
+export type ParseMessageFn = (raw: string | Blob) => Promise<WsInboundMessage | null>;
+
 export interface BrowserWsClientOptions {
   timeoutMs: number;
+  /** Game-specific inbound message parser. */
+  parseMessage: ParseMessageFn;
 }
 
 type PayloadMatcher = (payload: Record<string, unknown>) => boolean;
@@ -26,10 +33,6 @@ interface PayloadListenerRegistration {
   matcher: PayloadMatcher;
   handler: PayloadHandler;
 }
-
-type WsInboundMessage =
-  | { type: "payload"; payload: Record<string, unknown> }
-  | { type: "stomp-error"; code: number };
 
 export class BrowserWsClient {
   private socket: WebSocket | null = null;
@@ -146,7 +149,7 @@ export class BrowserWsClient {
       const onMessage = (ev: MessageEvent<string | Blob>) => {
         void (async () => {
           try {
-            const message = await parseInboundMessage(ev.data);
+            const message = await this.options.parseMessage(ev.data);
             if (!message) {
               return;
             }
@@ -224,7 +227,7 @@ export class BrowserWsClient {
     this.persistentMessageHandler = (ev) => {
       void (async () => {
         try {
-          const message = await parseInboundMessage(ev.data);
+          const message = await this.options.parseMessage(ev.data);
           if (!message) {
             return;
           }
@@ -470,29 +473,3 @@ export function isGetBalanceErrorPayload(
   return payload.c === 1 || payload.errorCode != null;
 }
 
-async function parseInboundMessage(
-  raw: string | Blob,
-): Promise<WsInboundMessage | null> {
-  try {
-    const text = typeof raw === "string" ? raw : await raw.text();
-    const parsed: unknown = JSON.parse(text);
-    const stompCode = parseStompErrorCode(parsed);
-    if (stompCode !== null) {
-      return { type: "stomp-error", code: stompCode };
-    }
-    // Raw JSON payload (Titan).
-    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-      return { type: "payload", payload: parsed as Record<string, unknown> };
-    }
-    // STOMP frame array [type, ...strings, payload] (Angkor).
-    if (Array.isArray(parsed) && parsed.length >= 2 && typeof parsed[0] === "number") {
-      const payload = parsed.at(-1);
-      if (payload && typeof payload === "object" && !Array.isArray(payload)) {
-        return { type: "payload", payload: payload as Record<string, unknown> };
-      }
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
