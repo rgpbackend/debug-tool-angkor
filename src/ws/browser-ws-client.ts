@@ -480,8 +480,16 @@ async function parseInboundMessage(
     if (stompCode !== null) {
       return { type: "stomp-error", code: stompCode };
     }
+    // Raw JSON payload (Titan).
     if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
       return { type: "payload", payload: parsed as Record<string, unknown> };
+    }
+    // STOMP frame array [type, ...strings, payload] (Angkor).
+    if (Array.isArray(parsed) && parsed.length >= 2 && typeof parsed[0] === "number") {
+      const payload = parsed.at(-1);
+      if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+        return { type: "payload", payload: payload as Record<string, unknown> };
+      }
     }
     return null;
   } catch {
