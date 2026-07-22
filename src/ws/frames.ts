@@ -22,8 +22,8 @@ export function joinFrame(gameRoute: string): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1005" }];
 }
 
-export function spinFrame(gameRoute: string, bet: string): WsOutboundFrame {
-  return [6, "MiniGame", gameRoute, { cmd: "1500", bet }];
+export function spinFrame(gameRoute: string, betAmount: string): WsOutboundFrame {
+  return [6, "MiniGame", gameRoute, { cmd: "1500", betAmount }];
 }
 
 export function cheatFrame(gameRoute: string, reels: string[][]): WsOutboundFrame {
