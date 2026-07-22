@@ -483,14 +483,18 @@ async function parseInboundMessage(
       return { type: "stomp-error", code: stompCode };
     }
     const frame = tryParseFrameFromParsed(parsed);
-    if (!frame) {
+    if (frame) {
+      const payload = getFramePayload(frame);
+      if (payload && !Array.isArray(payload) && typeof payload === "object") {
+        return { type: "payload", payload };
+      }
       return null;
     }
-    const payload = getFramePayload(frame);
-    if (!payload || Array.isArray(payload) || typeof payload !== "object") {
-      return null;
+    // Fallback: server may send a raw payload object without a STOMP frame wrapper.
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      return { type: "payload", payload: parsed as Record<string, unknown> };
     }
-    return { type: "payload", payload };
+    return null;
   } catch {
     return null;
   }
