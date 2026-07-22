@@ -99,14 +99,23 @@ export interface SpinResponsePayload {
 
 // --- Titan spin response (cmd 1500) ---
 
+export interface TitanPaylineWin {
+  paylineId: string;
+  symbol: string;
+  count: number;
+  winAmount: number;
+  direction: "LTR" | "RTL";
+}
+
 export interface TitanSpinResponsePayload {
   cmd: number;
   c: number;
   spin: {
     spinIndex: number;
-    /** Column-major grid (5 reels × N rows). */
-    grid: string[][];
+    /** Flat 15-char grid string (column-major: reel0[0..2], reel1[0..2], ...). */
+    patternGrid: string;
     winAmount: number;
+    paylineWins: TitanPaylineWin[];
     superBet?: boolean;
   };
   round: {
@@ -117,6 +126,18 @@ export interface TitanSpinResponsePayload {
   state: {
     isLastSpin: boolean;
   };
+}
+
+/** Decode flat patternGrid string into column-major reels grid (5×3). */
+export function decodePatternGrid(flat: string): string[][] {
+  const reels: string[][] = [[], [], [], [], []];
+  for (let reel = 0; reel < 5; reel++) {
+    for (let row = 0; row < 3; row++) {
+      const idx = reel * 3 + row;
+      reels[reel].push(flat[idx] ?? "?");
+    }
+  }
+  return reels;
 }
 
 // --- Join response (cmd 1005) ---

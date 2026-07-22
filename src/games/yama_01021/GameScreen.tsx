@@ -47,7 +47,7 @@ export default function GameScreen({ wsAccessToken, onBackToLobby, onLogout }: G
         error={session.error}
         reels={
           <PaylineReelGrid
-            reels={session.lastSpin?.spin?.grid ?? Array.from({ length: 5 }, () => ["?", "?", "?"])}
+            reels={session.reelGrid}
             matches={session.comboResult.matches}
             spinning={session.isSpinning}
           />

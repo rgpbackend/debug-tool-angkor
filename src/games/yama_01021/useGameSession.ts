@@ -1,20 +1,45 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWsSession, type WsSessionCallbacks } from "../../ws/useWsSession";
-import { hasCmd, readTopLevelBalance, type JackpotTierInfo, type TitanSpinResponsePayload } from "../../ws/protocol";
+import {
+  hasCmd, decodePatternGrid, readTopLevelBalance,
+  type JackpotTierInfo, type TitanSpinResponsePayload, type TitanPaylineWin,
+} from "../../ws/protocol";
 import { spinFrame } from "../../ws/frames";
-import { evaluateAllPaylines, type ComboLevel } from "./lib/paylines";
+import type { ComboLevel, PaylineMatch } from "./lib/paylines";
 
-/** Titan spin response: cmd 1500 with grid, roundState, isLastSpin. */
 function isTitanSpinPayload(payload: Record<string, unknown>): boolean {
-  if (!hasCmd(payload, "1500")) return false;
+  if (!hasCmd(payload, "1500") || payload.c !== 0) return false;
   const spin = payload.spin;
   if (typeof spin !== "object" || spin === null || Array.isArray(spin)) return false;
-  const s = spin as Record<string, unknown>;
-  return Array.isArray(s.grid);
+  return typeof (spin as Record<string, unknown>).patternGrid === "string";
 }
 
 function isTitanSpinError(payload: Record<string, unknown>): boolean {
   return hasCmd(payload, "1500") && (payload.c === 1 || payload.errorCode != null);
+}
+
+/** Derive combo level from number of winning paylines. */
+function comboLevelFromCount(n: number): ComboLevel {
+  return n >= 6 ? "mega" : n >= 4 ? "super" : n >= 2 ? "combo" : "none";
+}
+
+/** Convert server payline wins to UI match format. */
+function paylineWinsToMatches(
+  wins: TitanPaylineWin[],
+  serverPaylines: { rows: number[] }[],
+): PaylineMatch[] {
+  return wins.map((w) => {
+    const plIndex = parseInt(w.paylineId.replace("P", ""), 10) - 1;
+    const rows = serverPaylines[plIndex]?.rows ?? [];
+    const positions: [number, number][] = rows.map((row, reel) => [reel, row] as [number, number]);
+    return {
+      paylineIndex: plIndex,
+      symbol: w.symbol,
+      count: w.count,
+      positions,
+      direction: w.direction === "RTL" ? "rtl" : "ltr",
+    };
+  });
 }
 
 export function useGameSession(
@@ -54,6 +79,7 @@ export function useGameSession(
       client.sendFrame(spinFrame(ws.gameRoute, totalBet));
       const raw = await pp;
       const sp = raw as unknown as TitanSpinResponsePayload;
+      if (sp.c !== 0) throw new Error(`Spin rejected (c=${sp.c})`);
       const bal = readTopLevelBalance(raw);
       if (bal) ws.setBalance(bal);
       setLastSpin(sp);
@@ -64,23 +90,25 @@ export function useGameSession(
     } finally { spinBusyRef.current = false; }
   }, [totalBet, ws]);
 
-  // Combo from spin grid
+  // Decode grid from patternGrid
+  const reelGrid = useMemo(() => {
+    if (!lastSpin?.spin?.patternGrid) return Array.from({ length: 5 }, () => ["?", "?", "?"]);
+    return decodePatternGrid(lastSpin.spin.patternGrid);
+  }, [lastSpin]);
+
+  // Build matches from server paylineWins
   const comboResult = useMemo(() => {
-    if (!lastSpin?.spin?.grid || ws.serverPaylines.length === 0) {
-      return { matches: [], comboLevel: "none" as ComboLevel };
-    }
-    return evaluateAllPaylines(lastSpin.spin.grid, ws.serverPaylines);
+    const wins = lastSpin?.spin?.paylineWins;
+    if (!wins || wins.length === 0) return { matches: [], comboLevel: "none" as ComboLevel };
+    const matches = paylineWinsToMatches(wins, ws.serverPaylines);
+    return { matches, comboLevel: comboLevelFromCount(wins.length) };
   }, [lastSpin, ws.serverPaylines]);
 
-  // Round ongoing → auto-spin next step (respin chain)
+  // Round ongoing → auto-spin next step
   const roundOngoing = lastSpin?.round?.roundState === "ONGOING";
   useEffect(() => {
-    if (!roundOngoing || !canSpin) return;
-    if (fastSpin) {
-      void spin();
-      return;
-    }
-    const t = window.setTimeout(() => { void spin(); }, 800);
+    if (!roundOngoing || !canSpin || spinBusyRef.current) return;
+    const t = window.setTimeout(() => { void spin(); }, fastSpin ? 100 : 800);
     return () => window.clearTimeout(t);
   }, [roundOngoing, canSpin, fastSpin, spin]);
 
@@ -94,7 +122,7 @@ export function useGameSession(
     fastSpin, setFastSpin,
     autoSpinCount, setAutoSpinCount,
     lastSpin, spin, canSpin,
-    comboResult, isSpinning, roundOngoing,
+    reelGrid, comboResult, isSpinning, roundOngoing,
   };
 }
 
