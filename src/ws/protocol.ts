@@ -627,16 +627,20 @@ export function parseJoinResponsePayload(
   payload: Record<string, unknown>,
 ): JoinResponsePayload {
   // Accept both string and numeric bet levels (server may send either).
-  const betLevels = Array.isArray(payload.betLevels)
-    ? payload.betLevels
-        .filter(
-          (level): level is string | number =>
-            typeof level === "string" || typeof level === "number",
-        )
-        .map((level) =>
-          typeof level === "number" ? String(level) : (level as string),
-        )
-    : undefined;
+  // Server may use "betLevels" or "betAmounts" field name.
+  const rawBetLevels = Array.isArray(payload.betAmounts)
+    ? payload.betAmounts
+    : Array.isArray(payload.betLevels)
+      ? payload.betLevels
+      : undefined;
+  const betLevels = rawBetLevels
+    ?.filter(
+      (level): level is string | number =>
+        typeof level === "string" || typeof level === "number",
+    )
+    .map((level) =>
+      typeof level === "number" ? String(level) : (level as string),
+    );
 
   // Parse paylines from server response (e.g. Titan's Wrath).
   const paylines = parseServerPaylines(payload.paylines);
