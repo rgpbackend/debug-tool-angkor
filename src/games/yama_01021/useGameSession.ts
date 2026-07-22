@@ -119,6 +119,5 @@ export function useGameSession(
     reelGrid, paylineMatches, isSpinning,
   };
 }
-}
 
 export type TitanGameSession = ReturnType<typeof useGameSession>;
