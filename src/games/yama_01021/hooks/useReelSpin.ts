@@ -1,153 +1,140 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  REEL_SPIN, createSpinLoopSegment, smoothstep01, easeInOutSine,
-  type ReelVisualState,
-} from "../lib/reel-spin";
+import { REEL_SPIN, createSpinLoopSegment } from "../lib/reel-spin";
 import { GRID_REELS } from "../lib/paylines";
 
 const CELL_H = 68;
 const GAP = 6;
-const CELL_STEP = CELL_H + GAP; // 74px
+const STEP = CELL_H + GAP;
 
-export interface ReelStripData {
-  /** All symbols in the strip (top to bottom in DOM). */
+export type ReelVisualState = "idle" | "spinning" | "stopping" | "stopped";
+
+export function randomPlaceholderGrid(): string[][] {
+  return Array.from({ length: GRID_REELS }, () =>
+    Array.from({ length: 3 }, () => {
+      const syms = ["A", "B", "C", "D", "E", "F", "G"];
+      return syms[Math.floor(Math.random() * syms.length)]!;
+    }),
+  );
+}
+
+interface StripEntry {
   symbols: string[];
-  /** Strip index where the new result starts. Always 0. */
-  newResultStart: number;
-  /** Strip index where the previous result starts. */
-  prevResultStart: number;
-  /** Strip index where the loop band starts. */
-  loopStart: number;
-  /** Length of one loop segment in cells. */
   loopLen: number;
 }
 
-export function buildReelStrip(prevResult: string[], newResult: string[]): ReelStripData {
+function buildStrip(prevCol: string[], resultCol: string[]): StripEntry {
   const loop = createSpinLoopSegment();
-  const tailLen = REEL_SPIN.tailLength;
-  const tail: string[] = [];
-  for (let i = 0; i < tailLen; i++) tail.push(loop[i % loop.length]!);
-
+  const tail = [loop[0]!, loop[1]!, loop[2]!];
   return {
-    symbols: [...newResult, ...loop, ...loop, ...prevResult, ...tail],
-    newResultStart: 0,
-    prevResultStart: newResult.length + loop.length * 2,
-    loopStart: newResult.length,
+    symbols: [...resultCol, ...loop, ...loop, ...prevCol, ...tail],
     loopLen: loop.length,
   };
 }
 
 export function useReelSpin() {
-  const [reelStates, setReelStates] = useState<ReelVisualState[]>(() =>
+  const [state, setState] = useState<ReelVisualState[]>(() =>
     Array.from({ length: GRID_REELS }, () => "idle"),
   );
-  const [bouncingReel, setBouncingReel] = useState<number | null>(null);
-  const [stripSymbols, setStripSymbols] = useState<(string[] | null)[]>(Array.from({ length: GRID_REELS }, () => null));
+  const [bouncing, setBouncing] = useState<number | null>(null);
+  const [stripSymbols, setStripSymbols] = useState<(string[] | null)[]>(() =>
+    Array.from({ length: GRID_REELS }, () => null),
+  );
 
-  const stripsRef = useRef<(ReelStripData | null)[]>(Array.from({ length: GRID_REELS }, () => null));
+  const stripsRef = useRef<(StripEntry | null)[]>(Array.from({ length: GRID_REELS }, () => null));
   const offsetsRef = useRef<number[]>(Array.from({ length: GRID_REELS }, () => 0));
-  const rafRef = useRef(0);
-  const spinStartRef = useRef(0);
-  const stoppedRef = useRef(new Set<number>());
-  const bounceTimerRef = useRef<number | null>(null);
+  const spinRafRef = useRef(0);
+  const stopTimersRef = useRef<number[]>([]);
 
-  const applyOffset = useCallback((reelIndex: number, px: number) => {
-    const el = document.querySelector(`[data-reel="${reelIndex}"] .titan-reel-strip`) as HTMLElement | null;
-    if (el) el.style.transform = `translate3d(0, ${-px}px, 0)`;
-    offsetsRef.current[reelIndex] = px;
+  const applyOffset = useCallback((ri: number, px: number) => {
+    offsetsRef.current[ri] = px;
+    const el = document.querySelector(`[data-reel="${ri}"] .titan-reel-strip`) as HTMLElement | null;
+    if (el) el.style.transform = `translate3d(0, ${-Math.round(px)}px, 0)`;
+  }, []);
+
+  const clearTimers = useCallback(() => {
+    stopTimersRef.current.forEach(window.clearTimeout);
+    stopTimersRef.current = [];
   }, []);
 
   const beginSpin = useCallback((prevGrid: string[][]) => {
-    stoppedRef.current.clear();
-    spinStartRef.current = performance.now();
-    setBouncingReel(null);
+    cancelAnimationFrame(spinRafRef.current);
+    clearTimers();
+    setBouncing(null);
 
-    const newStrips: (ReelStripData | null)[] = [];
+    // Build strips: prevCol from current grid, placeholder result for spin phase
+    const newStrips: (StripEntry | null)[] = [];
     for (let r = 0; r < GRID_REELS; r++) {
-      const prev = [prevGrid[r]?.[0] ?? "?", prevGrid[r]?.[1] ?? "?", prevGrid[r]?.[2] ?? "?"];
-      const strip = buildReelStrip(prev, prev); // placeholder result = same as prev for spin phase
+      const prev = [prevGrid[r]?.[0] ?? "A", prevGrid[r]?.[1] ?? "B", prevGrid[r]?.[2] ?? "C"];
+      const strip = buildStrip(prev, prev); // result = prev during spin (will be replaced on stop)
       newStrips.push(strip);
       stripsRef.current[r] = strip;
-      offsetsRef.current[r] = strip.prevResultStart * CELL_STEP;
+      offsetsRef.current[r] = strip.symbols.indexOf(prev[0]!, 2 * strip.loopLen + 3) * STEP;
+      // Find prevCol[0] position in the prevCol section of the strip
+      const prevStart = 3 + strip.loopLen * 2;
+      offsetsRef.current[r] = prevStart * STEP;
       applyOffset(r, offsetsRef.current[r]);
     }
 
-    setReelStates(Array.from({ length: GRID_REELS }, () => "spinning"));
     setStripSymbols(newStrips.map(s => s?.symbols ?? null));
+    setState(Array.from({ length: GRID_REELS }, () => "spinning"));
 
-    let last = spinStartRef.current;
+    // Spin loop
+    const startTime = performance.now();
+    let last = startTime;
     const tick = (now: number) => {
       const dt = Math.min(0.032, (now - last) / 1000);
       last = now;
-
-      const rampT = (now - spinStartRef.current) / Math.max(1, REEL_SPIN.spinRampUpMs);
-      const speed = REEL_SPIN.spinCruiseSpeedPxPerSec * smoothstep01(rampT);
+      const ramp = Math.min(1, (now - startTime) / REEL_SPIN.spinRampUpMs);
+      const speed = REEL_SPIN.spinCruiseSpeedPxPerSec * (ramp * ramp * (3 - 2 * ramp));
 
       for (let r = 0; r < GRID_REELS; r++) {
         const strip = stripsRef.current[r];
         if (!strip) continue;
-
-        let offset = offsetsRef.current[r] - speed * dt;
-        // Wrap within loop band
-        const loopLow = strip.loopStart * CELL_STEP;
-        const loopSpan = strip.loopLen * CELL_STEP;
-        if (offset < loopLow) {
-          const below = loopLow - offset;
-          offset = loopLow + loopSpan - (below % loopSpan);
-        }
-        offsetsRef.current[r] = offset;
-        applyOffset(r, offset);
+        let off = offsetsRef.current[r] - speed * dt;
+        const loopLow = (3 + strip.loopLen) * STEP;
+        const loopHigh = loopLow + strip.loopLen * STEP;
+        if (off < loopLow) off += strip.loopLen * STEP;
+        offsetsRef.current[r] = off;
+        applyOffset(r, off);
       }
-
-      rafRef.current = requestAnimationFrame(tick);
+      spinRafRef.current = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(tick);
-  }, [applyOffset]);
+    spinRafRef.current = requestAnimationFrame(tick);
+  }, [applyOffset, clearTimers]);
 
   const stopReels = useCallback((resultGrid: string[][]) => {
-    cancelAnimationFrame(rafRef.current);
+    cancelAnimationFrame(spinRafRef.current);
+    clearTimers();
 
-    // Rebuild strips with actual result
-    const updatedStrips: (ReelStripData | null)[] = [];
+    // Rebuild strips with real result
     for (let r = 0; r < GRID_REELS; r++) {
-      const oldStrip = stripsRef.current[r];
-      const prev = oldStrip
-        ? [oldStrip.symbols[oldStrip.prevResultStart] ?? "?", oldStrip.symbols[oldStrip.prevResultStart + 1] ?? "?", oldStrip.symbols[oldStrip.prevResultStart + 2] ?? "?"]
-        : ["?", "?", "?"];
-      const result = [resultGrid[r]?.[0] ?? "?", resultGrid[r]?.[1] ?? "?", resultGrid[r]?.[2] ?? "?"];
-      const newStrip = buildReelStrip(prev, result);
-      stripsRef.current[r] = newStrip;
-      updatedStrips.push(newStrip);
+      const old = stripsRef.current[r];
+      const prev = old
+        ? [old.symbols[old.symbols.length - 6] ?? "A", old.symbols[old.symbols.length - 5] ?? "B", old.symbols[old.symbols.length - 4] ?? "C"]
+        : ["A", "B", "C"];
+      const result = [resultGrid[r]?.[0] ?? "A", resultGrid[r]?.[1] ?? "B", resultGrid[r]?.[2] ?? "C"];
+      stripsRef.current[r] = buildStrip(prev, result);
     }
-    setStripSymbols(updatedStrips.map(s => s?.symbols ?? null));
+    setStripSymbols(Array.from({ length: GRID_REELS }, (_, r) => stripsRef.current[r]?.symbols ?? null));
 
-    // Schedule stop per reel with staggered delay
+    // Staggered stop per reel
     for (let r = 0; r < GRID_REELS; r++) {
-      const strip = stripsRef.current[r];
-      if (!strip) continue;
-      const targetPx = strip.newResultStart * CELL_STEP;
-      const startPx = offsetsRef.current[r];
-      const cellStep = CELL_STEP;
+      const timer = window.setTimeout(() => {
+        const strip = stripsRef.current[r];
+        if (!strip) return;
+        const targetPx = 0; // result is at index 0 of the strip
+        const startPx = offsetsRef.current[r];
+        let dist = startPx - targetPx;
+        // ensure at least one full loop of travel
+        if (dist < strip.loopLen * STEP * 0.5) dist += strip.loopLen * STEP;
 
-      // Calculate distance to travel via deceleration
-      let dist = startPx - targetPx;
-      if (dist < cellStep) dist += strip.loopLen * cellStep; // ensure minimum travel
-
-      const delay = r * REEL_SPIN.stopIntervalMs;
-      const duration = REEL_SPIN.stopDurationMs;
-
-      window.setTimeout(() => {
-        setReelStates(prev => {
-          if (prev[r] !== "spinning") return prev;
-          const next = [...prev];
-          next[r] = "stopping";
-          return next;
-        });
+        setState(prev => { const n = [...prev]; n[r] = "stopping"; return n; });
 
         const decelStart = performance.now();
+        const duration = REEL_SPIN.stopDurationMs;
         const tickDecel = (now: number) => {
           const t = Math.min(1, (now - decelStart) / duration);
-          const eased = easeInOutSine(t);
+          const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
           const current = startPx - dist * eased;
           applyOffset(r, current);
           offsetsRef.current[r] = current;
@@ -157,27 +144,21 @@ export function useReelSpin() {
           } else {
             applyOffset(r, targetPx);
             offsetsRef.current[r] = targetPx;
-            stoppedRef.current.add(r);
-            setReelStates(prev => {
-              const next = [...prev];
-              next[r] = "stopped";
-              return next;
-            });
-            // Bounce
-            setBouncingReel(r);
-            if (bounceTimerRef.current != null) window.clearTimeout(bounceTimerRef.current);
-            bounceTimerRef.current = window.setTimeout(() => setBouncingReel(null), REEL_SPIN.bounceMs);
+            setState(prev => { const n = [...prev]; n[r] = "stopped"; return n; });
+            setBouncing(r);
+            setTimeout(() => setBouncing(null), REEL_SPIN.bounceMs);
           }
         };
         requestAnimationFrame(tickDecel);
-      }, delay);
+      }, r * REEL_SPIN.stopIntervalMs);
+      stopTimersRef.current.push(timer);
     }
-  }, [applyOffset]);
+  }, [applyOffset, clearTimers]);
 
   useEffect(() => () => {
-    cancelAnimationFrame(rafRef.current);
-    if (bounceTimerRef.current != null) window.clearTimeout(bounceTimerRef.current);
-  }, []);
+    cancelAnimationFrame(spinRafRef.current);
+    clearTimers();
+  }, [clearTimers]);
 
-  return { reelStates, bouncingReel, stripSymbols, stripsRef, beginSpin, stopReels, applyOffset };
+  return { reelStates: state, bouncingReel: bouncing, stripSymbols, beginSpin, stopReels };
 }

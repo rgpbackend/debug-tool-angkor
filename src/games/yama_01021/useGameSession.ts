@@ -85,9 +85,13 @@ export function useGameSession(
     } finally { spinBusyRef.current = false; }
   }, [totalBet, ws]);
 
-  // Decode grid from patternGrid
+  // Decode grid from patternGrid, or random placeholder before first spin
   const reelGrid = useMemo(() => {
-    if (!lastSpin?.spin?.patternGrid) return Array.from({ length: 5 }, () => ["?", "?", "?"]);
+    if (!lastSpin?.spin?.patternGrid) {
+      const syms = ["A", "B", "C", "D", "E", "F", "G"];
+      const r = () => syms[Math.floor(Math.random() * syms.length)]!;
+      return Array.from({ length: 5 }, () => [r(), r(), r()]);
+    }
     return decodePatternGrid(lastSpin.spin.patternGrid);
   }, [lastSpin]);
 
