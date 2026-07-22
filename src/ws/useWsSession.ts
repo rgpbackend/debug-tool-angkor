@@ -12,8 +12,6 @@ import {
   StompTokenBannedError,
   isJoinResponsePayload,
   isJackpotPoolsPayload,
-  isJackpotPoolsPushPayload,
-  isJackpotWinnerPush,
   isGetBalanceResponsePayload,
   isGetBalanceErrorPayload,
 } from "./browser-ws-client";
@@ -45,15 +43,15 @@ import type { GamePhase } from "./game-phase";
 const POST_AUTH_BEFORE_JOIN_MS = 1000;
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
-export interface WsSessionCallbacks {
-  onTokenBan: () => void;
-  onConnectionLost: (message: string) => void;
-}
-
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
+}
+
+export interface WsSessionCallbacks {
+  onTokenBan: () => void;
+  onConnectionLost: (message: string) => void;
 }
 
 export function useWsSession(
@@ -530,7 +528,6 @@ export function useWsSession(
       setJoinRetryMessage(null);
       setSessionReady(true);
       setPhase("joined");
-      void fetchJackpotPools();
     } catch (e) {
       if (e instanceof StompTokenBannedError) {
         callbacksRef.current.onTokenBan();
@@ -568,46 +565,6 @@ export function useWsSession(
       void connectToGame(wsAccessToken);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // --- jackpot push listeners ---
-
-  useEffect(() => {
-    const client = clientRef.current;
-    if (!sessionReady || !client?.isConnected()) {
-      return;
-    }
-
-    const removePoolsPush = client.addPayloadListener(
-      isJackpotPoolsPushPayload,
-      (payload) => {
-        applyJackpotPoolsFromPayload(payload);
-      },
-    );
-
-    const removeWinnerPush = client.addPayloadListener(
-      isJackpotWinnerPush,
-      () => {
-        setJackpotWinnersRefreshToken((t) => t + 1);
-      },
-    );
-
-    return () => {
-      removePoolsPush();
-      removeWinnerPush();
-    };
-  }, [applyJackpotPoolsFromPayload, sessionReady]);
-
-  // --- visibility change → refresh balance ---
-
-  useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") {
-        void refreshBalance();
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [refreshBalance]);
 
   // --- cleanup on unmount ---
 
