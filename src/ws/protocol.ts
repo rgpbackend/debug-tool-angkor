@@ -1,19 +1,8 @@
-export type WsFrame2 = [number, Record<string, unknown>];
-export type WsFrame4 = [number, string, string, Record<string, unknown>];
-export type WsFrame5 = [
-  number,
-  string,
-  string,
-  string,
-  Record<string, unknown>,
-];
-export type WsFrame = WsFrame2 | WsFrame4 | WsFrame5;
-export type HeartbeatFrame = [string, string, string, number];
-export type WsOutboundFrame = WsFrame | HeartbeatFrame;
-
-export function getFramePayload(frame: WsFrame): Record<string, unknown> {
-  return frame.at(-1) as Record<string, unknown>;
-}
+export type WsOutboundFrame =
+  | [number, Record<string, unknown>]
+  | [number, string, string, Record<string, unknown>]
+  | [number, string, string, string, Record<string, unknown>]
+  | [string, string, string, number];
 
 export function hasCmd(
   payload: Record<string, unknown>,

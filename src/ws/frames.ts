@@ -1,10 +1,10 @@
-import type { HeartbeatFrame, JackpotTier, WsFrame, WsFrame5 } from "./protocol";
+import type { WsOutboundFrame, JackpotTier } from "./protocol";
 
 export function connectFrame(
   agentId: string,
   accessToken: string,
   reconnect: boolean,
-): WsFrame5 {
+): WsOutboundFrame {
   return [
     1,
     "MiniGame",
@@ -18,26 +18,26 @@ export function connectFrame(
   ];
 }
 
-export function joinFrame(gameRoute: string): WsFrame {
+export function joinFrame(gameRoute: string): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1005" }];
 }
 
-export function spinFrame(gameRoute: string, bet: string): WsFrame {
+export function spinFrame(gameRoute: string, bet: string): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1500", bet }];
 }
 
-export function cheatFrame(gameRoute: string, reels: string[][]): WsFrame {
+export function cheatFrame(gameRoute: string, reels: string[][]): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "2001", reels }];
 }
 
 export function forceJackpotNextSpinFrame(
   gameRoute: string,
   tier: JackpotTier,
-): WsFrame {
+): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "2002", tier }];
 }
 
-export function heartbeatFrame(counter: number): HeartbeatFrame {
+export function heartbeatFrame(counter: number): WsOutboundFrame {
   return ["7", "MiniGame", "1", counter];
 }
 
@@ -50,12 +50,12 @@ export function historyListFrame(
   /** 1-based page index (guide §8.1). */
   page: number,
   size: number = HISTORY_LIST_DEFAULT_SIZE,
-): WsFrame {
+): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1502", page, size }];
 }
 
 /** cmd 1510 — active jackpot pool amounts per tier. */
-export function jackpotPoolsFrame(gameRoute: string): WsFrame {
+export function jackpotPoolsFrame(gameRoute: string): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1510" }];
 }
 
@@ -63,12 +63,12 @@ export function jackpotPoolsFrame(gameRoute: string): WsFrame {
 export function jackpotWinHistoryFrame(
   gameRoute: string,
   limit: number,
-): WsFrame {
+): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1511", limit }];
 }
 
 /** cmd 1530 — GET_BALANCE (client query; reply on session topic). */
-export function getBalanceFrame(gameRoute: string): WsFrame {
+export function getBalanceFrame(gameRoute: string): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1530" }];
 }
 
@@ -77,6 +77,6 @@ export function historyDetailFrame(
   gameRoute: string,
   roundId: string,
   spinIndex: number,
-): WsFrame {
+): WsOutboundFrame {
   return [6, "MiniGame", gameRoute, { cmd: "1503", roundId, spinIndex }];
 }

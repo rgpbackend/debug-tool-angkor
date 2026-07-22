@@ -1,7 +1,5 @@
 import {
-  getFramePayload,
   hasCmd,
-  type WsFrame,
   type WsOutboundFrame,
 } from "./protocol";
 import {
@@ -482,15 +480,6 @@ async function parseInboundMessage(
     if (stompCode !== null) {
       return { type: "stomp-error", code: stompCode };
     }
-    const frame = tryParseFrameFromParsed(parsed);
-    if (frame) {
-      const payload = getFramePayload(frame);
-      if (payload && !Array.isArray(payload) && typeof payload === "object") {
-        return { type: "payload", payload };
-      }
-      return null;
-    }
-    // Fallback: server may send a raw payload object without a STOMP frame wrapper.
     if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
       return { type: "payload", payload: parsed as Record<string, unknown> };
     }
@@ -498,32 +487,4 @@ async function parseInboundMessage(
   } catch {
     return null;
   }
-}
-
-function tryParseFrameFromParsed(parsed: unknown): WsFrame | null {
-  if (!Array.isArray(parsed) || parsed.length < 2) {
-    return null;
-  }
-  if (typeof parsed[0] !== "number") {
-    return null;
-  }
-  const payload = parsed.at(-1);
-  if (
-    Array.isArray(payload) ||
-    typeof payload !== "object" ||
-    payload === null
-  ) {
-    return null;
-  }
-  if (parsed.length === 2) {
-    return parsed as WsFrame;
-  }
-  if (
-    typeof parsed[1] === "string" &&
-    typeof parsed[2] === "string" &&
-    (parsed.length === 4 || parsed.length === 5)
-  ) {
-    return parsed as WsFrame;
-  }
-  return null;
 }
