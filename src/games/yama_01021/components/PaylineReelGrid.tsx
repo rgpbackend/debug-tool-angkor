@@ -78,14 +78,6 @@ export default function PaylineReelGrid({ reels, matches, spinning }: PaylineRee
             viewBox={`0 0 ${svgW} ${svgH}`}
             style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 3 }}
           >
-            <defs>
-              <marker id="arrow-ltr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                <polygon points="0 0, 8 3, 0 6" fill="currentColor" />
-              </marker>
-              <marker id="arrow-rtl" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
-                <polygon points="8 0, 0 3, 8 6" fill="currentColor" />
-              </marker>
-            </defs>
             {lines.map((l, i) => {
               const pathId = `pl-${i}`;
               return (
@@ -109,7 +101,6 @@ export default function PaylineReelGrid({ reels, matches, spinning }: PaylineRee
                     strokeWidth={2.5}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    markerEnd={`url(#arrow-${l.ltr ? "ltr" : "rtl"})`}
                   />
                   {/* Electric dash flowing in win direction */}
                   <path
