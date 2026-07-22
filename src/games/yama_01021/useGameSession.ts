@@ -4,7 +4,7 @@ import {
   hasCmd, decodePatternGrid, readTopLevelBalance,
   type JackpotTierInfo, type TitanSpinResponsePayload, type TitanPaylineWin,
 } from "../../ws/protocol";
-import { spinFrame } from "../../ws/frames";
+import { titanSpinFrame } from "../../ws/frames";
 import type { PaylineMatch } from "./lib/paylines";
 
 function isTitanSpinPayload(payload: Record<string, unknown>): boolean {
@@ -71,7 +71,7 @@ export function useGameSession(
     spinBusyRef.current = true;
     try {
       const pp = client.waitForPayload(isTitanSpinPayload, "spin", { rejectMatcher: isTitanSpinError });
-      client.sendFrame(spinFrame(ws.gameRoute, totalBet));
+      client.sendFrame(titanSpinFrame(ws.gameRoute, totalBet));
       const raw = await pp;
       const sp = raw as unknown as TitanSpinResponsePayload;
       if (sp.c !== 0) throw new Error(`Spin rejected (c=${sp.c})`);
