@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { JackpotWinHistoryItem, JackpotWinHistoryPayload } from "../ws/protocol";
+import type { JackpotWinHistoryItem, JackpotWinHistoryPayload } from "../../../ws/protocol";
 
 function formatTs(ms: number): string {
   if (!ms) {

@@ -1,0 +1,131 @@
+/* Titan's Wrath — Dark Greek Mythology Theme */
+.titan-game-screen {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0a0e1a 0%, #1a1040 50%, #0d0d1a 100%);
+  color: #e8e0d0;
+  padding: 0.5rem;
+}
+
+.titan-toolbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+}
+.titan-toolbar button {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #ffd700;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.titan-toolbar button:hover { background: rgba(255, 215, 0, 0.2); }
+.titan-logout-btn { color: #ff6b6b !important; border-color: rgba(255, 107, 107, 0.3) !important; }
+
+.titan-joining { text-align: center; color: #ffd700; padding: 2rem; font-size: 1.2rem; }
+
+/* Cabinet */
+.titan-cabinet { max-width: 520px; margin: 0 auto; }
+.titan-cabinet-frame {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 3px solid #ffd700;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.15), inset 0 0 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.titan-error-bar { background: rgba(255, 0, 0, 0.2); padding: 0.5rem 1rem; text-align: center; }
+.titan-error { color: #ff6b6b; font-size: 0.9rem; }
+
+.titan-reel-window { position: relative; padding: 0.75rem; }
+.titan-reel-window-inner { position: relative; }
+
+/* Reels Grid */
+.titan-reels-layout { display: flex; justify-content: center; }
+.titan-reels-grid { display: flex; gap: 4px; }
+.titan-reel-col { display: flex; flex-direction: column; gap: 4px; }
+.titan-reel-col--spinning { animation: titanReelBlur 0.1s linear infinite; }
+@keyframes titanReelBlur { 50% { filter: blur(1px); } }
+
+.titan-cell {
+  width: 72px; height: 72px;
+  background: linear-gradient(180deg, #2a1a3e 0%, #1a1030 100%);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+.titan-cell--win {
+  background: linear-gradient(180deg, #4a2a0e 0%, #3a1a00 100%);
+  border-color: #ffd700;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+}
+.titan-cell-symbol { font-size: 1.4rem; font-weight: 700; color: #ffd700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.5); }
+
+/* Console */
+.titan-console { background: rgba(0, 0, 0, 0.6); border-top: 1px solid rgba(255, 215, 0, 0.2); padding: 0.6rem; }
+
+/* Controls */
+.titan-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.titan-balance { display: flex; flex-direction: column; align-items: center; }
+.titan-balance-label { font-size: 0.65rem; color: #a09080; text-transform: uppercase; }
+.titan-balance-value { font-family: monospace; font-size: 1rem; color: #ffd700; font-weight: 700; }
+
+.titan-bet-cluster { display: flex; align-items: center; gap: 4px; }
+.titan-bet-cluster button { background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-weight: 700; }
+.titan-bet-cluster button:disabled { opacity: 0.3; cursor: default; }
+.titan-bet-value { color: #ffd700; font-weight: 700; min-width: 70px; text-align: center; }
+
+.titan-superbet-btn {
+  background: rgba(128, 0, 128, 0.2); border: 1px solid rgba(128, 0, 128, 0.4);
+  color: #a090c0; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;
+  cursor: pointer; font-weight: 600; white-space: nowrap;
+}
+.titan-superbet-btn--on { background: rgba(255, 50, 50, 0.25); border-color: #ff3232; color: #ff6464; box-shadow: 0 0 8px rgba(255, 50, 50, 0.3); }
+.titan-superbet-btn:disabled { opacity: 0.3; }
+
+.titan-fast-btn { background: rgba(100, 150, 255, 0.15); border: 1px solid rgba(100, 150, 255, 0.3); color: #88aaff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1rem; }
+.titan-fast-btn--on { background: rgba(100, 150, 255, 0.3); box-shadow: 0 0 10px rgba(100, 150, 255, 0.4); }
+.titan-fast-btn:disabled { opacity: 0.3; }
+
+.titan-auto-btn { background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; padding: 0.25rem 0.6rem; border-radius: 4px; cursor: pointer; font-weight: 600; }
+.titan-auto-btn:disabled { opacity: 0.3; }
+
+.titan-spin-btn {
+  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+  border: none; color: #1a0a00; padding: 0.5rem 1.5rem; border-radius: 50%;
+  font-size: 1.1rem; font-weight: 800; cursor: pointer;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+  min-width: 80px; min-height: 80px;
+}
+.titan-spin-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+
+/* Auto-spin picker */
+.titan-autospin-picker { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; padding: 0.5rem; }
+.titan-autospin-option { background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.3); color: #ffd700; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-weight: 600; }
+.titan-autospin-option:hover { background: rgba(255, 215, 0, 0.25); }
+.titan-autospin-cancel { background: rgba(255, 0, 0, 0.15); border: 1px solid rgba(255, 0, 0, 0.3); color: #ff6b6b; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; }
+
+/* Celebrations */
+.titan-celebration-layer { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: center; align-items: center; z-index: 10; pointer-events: none; }
+.titan-celebration-stack { display: flex; flex-direction: column; gap: 4px; }
+.titan-celebration { background: rgba(0, 0, 0, 0.85); border: 2px solid #ffd700; border-radius: 8px; padding: 0.5rem 1rem; text-align: center; animation: titanCelebIn 0.3s ease-out; }
+@keyframes titanCelebIn { from { transform: scale(0.8); opacity: 0; } }
+.titan-celebration--jackpot { border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+.titan-celebration--titan_wrath { border-color: #ff4500; box-shadow: 0 0 20px rgba(255, 69, 0, 0.6); }
+.titan-celebration--mega_combo { border-color: #ff00ff; }
+.titan-celebration--super_combo { border-color: #ff8c00; }
+.titan-celebration-kicker { font-size: 0.6rem; text-transform: uppercase; color: #a09080; }
+.titan-celebration-title { font-size: 1rem; color: #ffd700; margin: 0; }
+.titan-celebration-detail { font-size: 0.8rem; color: #c0b090; margin: 0; }
+.titan-celebration-layer--out { animation: titanCelebOut 0.3s ease-in forwards; }
+@keyframes titanCelebOut { to { opacity: 0; transform: scale(1.1); } }
+
+/* Combo overlay */
+.titan-combo-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; pointer-events: none; }
+.titan-combo-text { font-size: 1.5rem; font-weight: 900; text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); animation: titanComboIn 0.4s ease-out; }
+.titan-combo--combo .titan-combo-text { color: #ffd700; }
+.titan-combo--super .titan-combo-text { color: #ff8c00; }
+.titan-combo--mega .titan-combo-text { color: #ff00ff; font-size: 2rem; }
+@keyframes titanComboIn { from { transform: scale(0); opacity: 0; } }

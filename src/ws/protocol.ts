@@ -116,12 +116,19 @@ export type LastRound = Omit<SpinResponsePayload, 'spin'> & {
   spin?: SpinResponsePayload['spin'] | null;
 };
 
+export interface ServerPayline {
+  id: string;
+  rows: number[];
+}
+
 export interface JoinResponsePayload {
   cmd: string | number;
   c: number;
   symbols: GameSymbol[];
   /** Allowed stake amounts as decimal strings (§1.1). */
   betLevels?: string[];
+  /** Paylines from server (e.g. Titan's Wrath 10 paylines). */
+  paylines?: ServerPayline[];
   /** Wallet balance at join time (decimal string, §1.1). */
   balance?: string;
   lastRound: LastRound | null;
@@ -619,11 +626,21 @@ export function parseGameSymbols(raw: unknown): GameSymbol[] {
 export function parseJoinResponsePayload(
   payload: Record<string, unknown>,
 ): JoinResponsePayload {
+  // Accept both string and numeric bet levels (server may send either).
   const betLevels = Array.isArray(payload.betLevels)
-    ? payload.betLevels.filter(
-        (level): level is string => typeof level === "string",
-      )
+    ? payload.betLevels
+        .filter(
+          (level): level is string | number =>
+            typeof level === "string" || typeof level === "number",
+        )
+        .map((level) =>
+          typeof level === "number" ? String(level) : (level as string),
+        )
     : undefined;
+
+  // Parse paylines from server response (e.g. Titan's Wrath).
+  const paylines = parseServerPaylines(payload.paylines);
+
   const lastRound =
     payload.lastRound === null || payload.lastRound === undefined
       ? null
@@ -634,9 +651,25 @@ export function parseJoinResponsePayload(
     c: Number(payload.c ?? 0),
     symbols: parseGameSymbols(payload.symbols),
     ...(betLevels?.length ? { betLevels } : {}),
+    ...(paylines?.length ? { paylines } : {}),
     ...(balance ? { balance } : {}),
     lastRound,
   };
+}
+
+function parseServerPaylines(raw: unknown): ServerPayline[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const result: ServerPayline[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) continue;
+    const p = item as Record<string, unknown>;
+    if (typeof p.id !== "string") continue;
+    if (!Array.isArray(p.rows)) continue;
+    const rows = p.rows.filter((r): r is number => typeof r === "number");
+    if (rows.length === 0) continue;
+    result.push({ id: p.id, rows });
+  }
+  return result.length > 0 ? result : undefined;
 }
 
 /** Tuple `[reel, row]` or object `{ reelIndex, rowIndex }` on wire. */

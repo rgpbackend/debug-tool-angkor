@@ -1,43 +1,19 @@
-import type { GameSession } from "../hooks/useGameSession";
 import { useState } from "react";
 
-type LoginScreenProps = Pick<
-  GameSession,
-  | "login"
-  | "error"
-  | "authSuccessMessage"
-  | "busySession"
-  | "phase"
-> & {
+type LoginScreenProps = {
+  login: (username: string, password: string) => Promise<boolean>;
+  error: string | null;
+  authSuccessMessage: string | null;
+  busySession: boolean;
   onShowRegister: () => void;
   onLoginSuccess: () => void;
 };
-
-function loginButtonLabel(phase: GameSession["phase"], busy: boolean): string {
-  if (!busy) {
-    return "Login";
-  }
-  switch (phase) {
-    case "logging-in":
-      return "Signing in…";
-    case "launching":
-      return "Launching game…";
-    case "refreshing":
-      return "Refreshing session…";
-    case "connecting":
-    case "connected":
-      return "Connecting…";
-    default:
-      return "Please wait…";
-  }
-}
 
 export default function LoginScreen({
   login,
   error,
   authSuccessMessage,
   busySession,
-  phase,
   onShowRegister,
   onLoginSuccess,
 }: Readonly<LoginScreenProps>) {
@@ -77,9 +53,7 @@ export default function LoginScreen({
               autoComplete="current-password"
               disabled={busySession}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !busySession) {
-                  handleSubmit();
-                }
+                if (e.key === "Enter" && !busySession) handleSubmit();
               }}
             />
           </label>
@@ -100,7 +74,7 @@ export default function LoginScreen({
             onClick={handleSubmit}
             disabled={busySession}
           >
-            {loginButtonLabel(phase, busySession)}
+            {busySession ? "Signing in…" : "Login"}
           </button>
         </div>
 
@@ -115,12 +89,6 @@ export default function LoginScreen({
             Register
           </button>
         </p>
-
-        {busySession ? (
-          <p className="muted login-phase">
-            Phase: <strong>{phase}</strong>
-          </p>
-        ) : null}
       </div>
     </main>
   );

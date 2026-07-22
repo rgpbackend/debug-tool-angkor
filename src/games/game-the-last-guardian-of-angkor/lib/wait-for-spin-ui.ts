@@ -2,8 +2,8 @@ import {
   CELEBRATION_SEQUENCE_MS,
   WIN_PRESENTATION_DWELL_MS,
 } from "./celebration-timing";
-import { buildSpinCelebrations } from "./spin-celebrations";
-import type { SpinResponsePayload } from "../ws/protocol";
+import { buildSpinCelebrations } from "./celebrations";
+import type { SpinResponsePayload } from "../../../ws/protocol";
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {

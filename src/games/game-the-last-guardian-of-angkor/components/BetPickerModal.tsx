@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { formatBet } from "../lib/format-bet";
+import { formatBet } from "../../../lib/format-bet";
 
 export type BetPickerModalProps = {
   open: boolean;

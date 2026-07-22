@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatBet } from "../lib/format-bet";
+import { formatBet } from "../../../lib/format-bet";
 import BetPickerModal from "./BetPickerModal";
 
 type SlotControlsProps = {

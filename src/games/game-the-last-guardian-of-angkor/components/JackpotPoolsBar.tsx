@@ -6,7 +6,7 @@ import {
   type JackpotPoolsByTier,
   type JackpotTier,
   type JackpotTierInfo,
-} from "../ws/protocol";
+} from "../../../ws/protocol";
 
 export interface JackpotPoolsBarProps {
   poolsByTier: JackpotPoolsByTier;

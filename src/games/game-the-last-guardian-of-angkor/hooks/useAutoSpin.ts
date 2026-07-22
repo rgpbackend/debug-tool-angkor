@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useSyncRef } from "./useSyncRef";
+import { useSyncRef } from "../../../hooks/useSyncRef";
 
 const AUTO_SPIN_BETWEEN_ROUNDS_MS = 0;
 

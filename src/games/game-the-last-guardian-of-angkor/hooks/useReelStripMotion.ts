@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
-import { useSyncRef } from "./useSyncRef";
+import { useSyncRef } from "../../../hooks/useSyncRef";
 import {
   REEL_SPIN,
   easeInOutSine,

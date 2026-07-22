@@ -1,26 +1,54 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSyncRef } from "../hooks/useSyncRef";
-import { useAutoSpin } from "../hooks/useAutoSpin";
-import { useRoundRunner } from "../hooks/useRoundRunner";
-import HistoryModal from "../components/HistoryModal";
-import JackpotPoolsBar from "../components/JackpotPoolsBar";
-import JackpotWinnersModal from "../components/JackpotWinnersModal";
-import SlotCabinet from "../components/SlotCabinet";
-import SlotCelebrationOverlay from "../components/SlotCelebrationOverlay";
-import SlotStageBlock from "../components/SlotStageBlock";
-import WinWayReelGrid from "../components/WinWayReelGrid";
-import { buildSpinCelebrations } from "../lib/spin-celebrations";
-import type { GameSession } from "../hooks/useGameSession";
-import type { SpinResponsePayload } from "../ws/protocol";
+import { useSyncRef } from "../../hooks/useSyncRef";
+import { useAutoSpin } from "./hooks/useAutoSpin";
+import { useRoundRunner } from "./hooks/useRoundRunner";
+import HistoryModal from "./components/HistoryModal";
+import JackpotPoolsBar from "./components/JackpotPoolsBar";
+import JackpotWinnersModal from "./components/JackpotWinnersModal";
+import SlotCabinet from "./components/SlotCabinet";
+import SlotCelebrationOverlay from "./components/SlotCelebrationOverlay";
+import SlotStageBlock from "./components/SlotStageBlock";
+import WinWayReelGrid from "./components/WinWayReelGrid";
+import { buildSpinCelebrations } from "./lib/celebrations";
+import { useGameSession } from "./useGameSession";
+import { readEnvDefaults } from "../../config";
+import type { GameScreenProps } from "../../games";
+import type { SpinResponsePayload } from "../../ws/protocol";
+import type { JackpotTierInfo } from "../../ws/protocol";
+import "./slot-cabinet.css";
 
-export default function GameScreen(
-  session: Readonly<
-    GameSession & { onBackToLobby: () => void; onLogout: () => void }
-  >,
-) {
+const ANGKOR_JACKPOT_TIERS: JackpotTierInfo[] = [
+  { key: "NANO", isStatic: true, betMultiplier: 20 },
+  { key: "CYBER", isStatic: true, betMultiplier: 50 },
+  { key: "GUARDIAN", isStatic: false },
+  { key: "ETERNAL", isStatic: false },
+];
+
+export default function GameScreen({
+  agencyUserToken,
+  wsAccessToken,
+  balance: parentBalance,
+  depositBusy,
+  depositFunds,
+  onBackToLobby,
+  onLogout,
+}: GameScreenProps) {
+  const defaults = useMemo(() => readEnvDefaults(), []);
+
+  const session = useGameSession(
+    defaults.wsUrl,
+    "game-the-last-guardian-of-angkor",
+    "AGENCY_001",
+    ANGKOR_JACKPOT_TIERS,
+    wsAccessToken,
+    { onTokenBan: onLogout, onConnectionLost: onLogout },
+    () => depositFunds?.() ?? Promise.resolve(),
+    agencyUserToken,
+    parentBalance ?? null,
+    depositBusy ?? false,
+  );
+
   const {
-    onBackToLobby,
-    onLogout,
     phase,
     sessionReady,
     joinGame,
@@ -29,8 +57,6 @@ export default function GameScreen(
     betLevels,
     balance,
     canDeposit,
-    depositBusy,
-    depositFunds,
     selectBetValue,
     betLocked,
     spin,
@@ -59,8 +85,10 @@ export default function GameScreen(
   } = session;
 
   useEffect(() => {
-    void joinGame();
-  }, [joinGame]);
+    if (session.gameScreenActive && !session.sessionReady) {
+      void joinGame();
+    }
+  }, [session.gameScreenActive, session.sessionReady, joinGame]);
 
   const [historyOpen, setHistoryOpen] = useState(false);
   const [jackpotOpen, setJackpotOpen] = useState(false);
@@ -101,17 +129,12 @@ export default function GameScreen(
   });
 
   const betDisabled =
-    roundBusy ||
-    !sessionReady ||
-    betLocked ||
-    betLevels.length === 0;
+    roundBusy || !sessionReady || betLocked || betLevels.length === 0;
 
   const hasSpinReels = Boolean(viewSpin?.spin?.reels);
 
   const celebrations = useMemo(() => {
-    if (spinUiActive || !viewSpin?.spin) {
-      return [];
-    }
+    if (spinUiActive || !viewSpin?.spin) return [];
     return buildSpinCelebrations(viewSpin as SpinResponsePayload, winWays);
   }, [spinUiActive, viewSpin, winWays]);
 
@@ -123,9 +146,7 @@ export default function GameScreen(
   });
 
   const celebrationKey = useMemo(() => {
-    if (!viewSpin?.spin?.reels) {
-      return "";
-    }
+    if (!viewSpin?.spin?.reels) return "";
     return [
       viewSpin.round?.roundId ?? "",
       viewSpin.spin.spinType ?? "",
@@ -171,7 +192,7 @@ export default function GameScreen(
                   canCheat={canCheat}
                   forceJackpotBusy={forceJackpotBusy}
                   onForceJackpot={sendForceJackpot}
-                  jackpotTiers={session.jackpotTierInfo}
+                  jackpotTiers={ANGKOR_JACKPOT_TIERS}
                 />
               }
               celebrations={
@@ -235,8 +256,8 @@ export default function GameScreen(
               balance={balance}
               balanceConnected={sessionReady}
               canDeposit={canDeposit}
-              depositBusy={depositBusy}
-              onDeposit={() => void depositFunds()}
+              depositBusy={session.depositBusy}
+              onDeposit={() => void session.depositFunds()}
             />
           </SlotStageBlock>
         </div>

@@ -1,10 +1,9 @@
-import type { GameSession } from "../hooks/useGameSession";
 import { useState } from "react";
 
-type RegisterScreenProps = Pick<
-  GameSession,
-  "registerAccount" | "error" | "busyRegister" | "phase"
-> & {
+type RegisterScreenProps = {
+  registerAccount: (username: string, password: string, displayName: string) => Promise<boolean>;
+  error: string | null;
+  busyRegister: boolean;
   onRegisterSuccess: () => void;
   onShowLogin: () => void;
 };
@@ -13,7 +12,6 @@ export default function RegisterScreen({
   registerAccount,
   error,
   busyRegister,
-  phase,
   onRegisterSuccess,
   onShowLogin,
 }: Readonly<RegisterScreenProps>) {
@@ -23,9 +21,7 @@ export default function RegisterScreen({
 
   const handleSubmit = async () => {
     const ok = await registerAccount(username, password, displayName);
-    if (ok) {
-      onRegisterSuccess();
-    }
+    if (ok) onRegisterSuccess();
   };
 
   return (
@@ -33,8 +29,7 @@ export default function RegisterScreen({
       <div className="login-card panel">
         <h2>Create account</h2>
         <p className="muted login-lead">
-          Register a new account. After success you can sign in on the login
-          page.
+          Register a new account. After success you can sign in on the login page.
         </p>
 
         <div className="field-grid login-fields">
@@ -65,9 +60,7 @@ export default function RegisterScreen({
               autoComplete="new-password"
               disabled={busyRegister}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !busyRegister) {
-                  void handleSubmit();
-                }
+                if (e.key === "Enter" && !busyRegister) void handleSubmit();
               }}
             />
           </label>
@@ -97,12 +90,6 @@ export default function RegisterScreen({
             Sign in
           </button>
         </p>
-
-        {busyRegister ? (
-          <p className="muted login-phase">
-            Phase: <strong>{phase}</strong>
-          </p>
-        ) : null}
       </div>
     </main>
   );

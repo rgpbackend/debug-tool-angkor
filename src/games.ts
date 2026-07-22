@@ -1,27 +1,32 @@
+import type { ComponentType } from "react";
+import { GameScreen as AngkorGameScreen } from "./games/game-the-last-guardian-of-angkor";
+import { GameScreen as TitanGameScreen } from "./games/yama_01021";
+
 export interface JackpotTierDef {
-  /** Identifies the tier in WS payloads (e.g. "NANO", "MINI"). */
   key: string;
-  /** Human-readable label. */
   label: string;
-  /** Static tiers have a fixed prize = bet × betMultiplier. */
   isStatic: boolean;
-  /** Multiplier for static tiers. Ignored for progressive tiers. */
   betMultiplier?: number;
 }
 
+export type GameScreenProps = {
+  agencyUserToken: string;
+  wsAccessToken: string;
+  balance?: string | null;
+  depositBusy?: boolean;
+  depositFunds?: () => Promise<void>;
+  onBackToLobby: () => void;
+  onLogout: () => void;
+};
+
 export interface GameDef {
-  /** gameId for POST /play-game and WS join route. */
   id: string;
-  /** Human-readable name shown in the lobby. */
   name: string;
-  /** Emoji icon shown in the lobby card. */
   icon: string;
-  /** Agent id sent in the WS connect frame. */
   agentId: string;
-  /** Jackpot tiers (ordered lowest → highest). */
   jackpotTiers: JackpotTierDef[];
-  /** Win evaluation system. */
   winSystem: "winways" | "paylines";
+  GameScreen: ComponentType<GameScreenProps>;
 }
 
 const GAMES: GameDef[] = [
@@ -37,6 +42,7 @@ const GAMES: GameDef[] = [
       { key: "GUARDIAN", label: "GUARDIAN", isStatic: false },
       { key: "ETERNAL", label: "ETERNAL", isStatic: false },
     ],
+    GameScreen: AngkorGameScreen,
   },
   {
     id: "yama_01021",
@@ -50,6 +56,7 @@ const GAMES: GameDef[] = [
       { key: "MAJOR", label: "MAJOR", isStatic: false },
       { key: "GRAND", label: "GRAND", isStatic: false },
     ],
+    GameScreen: TitanGameScreen,
   },
 ];
 

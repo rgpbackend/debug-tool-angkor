@@ -3,7 +3,7 @@ import {
   CELEBRATION_DISPLAY_MS,
   CELEBRATION_EXIT_MS,
 } from "../lib/celebration-timing";
-import type { CelebrationItem } from "../lib/spin-celebrations";
+import type { CelebrationItem } from "../lib/celebrations";
 
 export type SlotCelebrationOverlayProps = {
   items: CelebrationItem[];
