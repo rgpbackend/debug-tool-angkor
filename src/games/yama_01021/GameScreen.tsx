@@ -3,9 +3,7 @@ import { useGameSession } from "./useGameSession";
 import TitanCabinet from "./components/TitanCabinet";
 import PaylineReelGrid from "./components/PaylineReelGrid";
 import TitanControls from "./components/TitanControls";
-import TitanCelebrationOverlay from "./components/TitanCelebrationOverlay";
 import ComboOverlay from "./components/ComboOverlay";
-import { buildTitanCelebrations } from "./lib/celebrations";
 import { readEnvDefaults } from "../../config";
 import type { GameScreenProps } from "../../games";
 import type { JackpotTierInfo } from "../../ws/protocol";
@@ -19,10 +17,10 @@ const TITAN_JACKPOT_TIERS: JackpotTierInfo[] = [
 ];
 
 export default function GameScreen({ wsAccessToken, onBackToLobby, onLogout }: GameScreenProps) {
-  const defaults = useMemo(() => readEnvDefaults(), []);
+  const env = useMemo(() => readEnvDefaults(), []);
 
   const session = useGameSession(
-    defaults.wsUrl, "yama_01021", "AGENCY_001",
+    env.wsUrl, "yama_01021", "AGENCY_001",
     TITAN_JACKPOT_TIERS, wsAccessToken,
     { onTokenBan: onLogout, onConnectionLost: onLogout },
   );
@@ -34,17 +32,6 @@ export default function GameScreen({ wsAccessToken, onBackToLobby, onLogout }: G
   }, [session.gameScreenActive, session.sessionReady, session.joinGame]);
 
   const spinUiActive = session.isSpinning;
-
-  const celebrations = useMemo(() => {
-    if (spinUiActive || !session.lastSpin?.spin) return [];
-    return buildTitanCelebrations(session.lastSpin, session.comboResult.comboLevel);
-  }, [spinUiActive, session.lastSpin, session.comboResult.comboLevel]);
-
-  const celebrationKey = useMemo(() => {
-    if (!session.lastSpin?.spin?.reels) return "";
-    return [session.lastSpin.round?.roundId ?? "", session.lastSpin.spin.spinType ?? "", session.lastSpin.spin.reels.flat().join(",")].join("|");
-  }, [session.lastSpin]);
-
   const joining = !session.sessionReady && session.phase === "joining";
 
   return (
@@ -64,9 +51,6 @@ export default function GameScreen({ wsAccessToken, onBackToLobby, onLogout }: G
             matches={session.comboResult.matches}
             spinning={session.isSpinning}
           />
-        }
-        celebrations={
-          <TitanCelebrationOverlay items={celebrations} visible={!spinUiActive && celebrations.length > 0} resetKey={celebrationKey} />
         }
         combo={<ComboOverlay level={session.comboResult.comboLevel} visible={!spinUiActive && session.comboResult.comboLevel !== "none"} />}
         controls={

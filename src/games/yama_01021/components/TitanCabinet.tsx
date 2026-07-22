@@ -4,11 +4,10 @@ type TitanCabinetProps = {
   error?: string | null;
   reels: ReactNode;
   controls: ReactNode;
-  celebrations?: ReactNode;
   combo?: ReactNode;
 };
 
-export default function TitanCabinet({ error, reels, controls, celebrations, combo }: TitanCabinetProps) {
+export default function TitanCabinet({ error, reels, controls, combo }: TitanCabinetProps) {
   return (
     <section className="titan-cabinet">
       <div className="titan-cabinet-frame">
@@ -17,7 +16,6 @@ export default function TitanCabinet({ error, reels, controls, celebrations, com
         <div className="titan-reel-window">
           <div className="titan-reel-window-inner">
             {reels}
-            {celebrations}
             {combo}
           </div>
         </div>

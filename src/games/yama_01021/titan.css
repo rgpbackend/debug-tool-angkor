@@ -107,21 +107,6 @@
 .titan-autospin-option:hover { background: rgba(255, 215, 0, 0.25); }
 .titan-autospin-cancel { background: rgba(255, 0, 0, 0.15); border: 1px solid rgba(255, 0, 0, 0.3); color: #ff6b6b; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; }
 
-/* Celebrations */
-.titan-celebration-layer { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: center; align-items: center; z-index: 10; pointer-events: none; }
-.titan-celebration-stack { display: flex; flex-direction: column; gap: 4px; }
-.titan-celebration { background: rgba(0, 0, 0, 0.85); border: 2px solid #ffd700; border-radius: 8px; padding: 0.5rem 1rem; text-align: center; animation: titanCelebIn 0.3s ease-out; }
-@keyframes titanCelebIn { from { transform: scale(0.8); opacity: 0; } }
-.titan-celebration--jackpot { border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
-.titan-celebration--titan_wrath { border-color: #ff4500; box-shadow: 0 0 20px rgba(255, 69, 0, 0.6); }
-.titan-celebration--mega_combo { border-color: #ff00ff; }
-.titan-celebration--super_combo { border-color: #ff8c00; }
-.titan-celebration-kicker { font-size: 0.6rem; text-transform: uppercase; color: #a09080; }
-.titan-celebration-title { font-size: 1rem; color: #ffd700; margin: 0; }
-.titan-celebration-detail { font-size: 0.8rem; color: #c0b090; margin: 0; }
-.titan-celebration-layer--out { animation: titanCelebOut 0.3s ease-in forwards; }
-@keyframes titanCelebOut { to { opacity: 0; transform: scale(1.1); } }
-
 /* Combo overlay */
 .titan-combo-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; pointer-events: none; }
 .titan-combo-text { font-size: 1.5rem; font-weight: 900; text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); animation: titanComboIn 0.4s ease-out; }
