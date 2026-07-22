@@ -86,30 +86,47 @@ export default function PaylineReelGrid({ reels, matches, spinning }: PaylineRee
                 <polygon points="8 0, 0 3, 8 6" fill="currentColor" />
               </marker>
             </defs>
-            {lines.map((l, i) => (
-              <g key={i}>
-                {/* Glow underlay */}
-                <path
-                  d={l.d}
-                  fill="none"
-                  stroke={l.color}
-                  strokeWidth={5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  opacity={0.25}
-                />
-                {/* Main line */}
-                <path
-                  d={l.d}
-                  fill="none"
-                  stroke={l.color}
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  markerEnd={`url(#arrow-${l.ltr ? "ltr" : "rtl"})`}
-                />
-              </g>
-            ))}
+            {lines.map((l, i) => {
+              const pathId = `pl-${i}`;
+              return (
+                <g key={i}>
+                  {/* Glow underlay */}
+                  <path
+                    id={pathId}
+                    d={l.d}
+                    fill="none"
+                    stroke={l.color}
+                    strokeWidth={5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity={0.2}
+                  />
+                  {/* Main line */}
+                  <path
+                    d={l.d}
+                    fill="none"
+                    stroke={l.color}
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    markerEnd={`url(#arrow-${l.ltr ? "ltr" : "rtl"})`}
+                  />
+                  {/* Electric dash flowing in win direction */}
+                  <path
+                    d={l.d}
+                    fill="none"
+                    stroke="#fff"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="10 18"
+                    strokeDashoffset={l.ltr ? 0 : 28}
+                    opacity={0.7}
+                    className={l.ltr ? "titan-payline-flow-ltr" : "titan-payline-flow-rtl"}
+                  />
+                </g>
+              );
+            })}
           </svg>
         )}
       </div>

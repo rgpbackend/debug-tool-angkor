@@ -334,6 +334,22 @@
 }
 @keyframes payline-fade-in { from { opacity: 0; } }
 
+/* Electric dash flowing left→right */
+.titan-payline-flow-ltr {
+  animation: dash-flow-ltr 0.6s linear infinite;
+}
+@keyframes dash-flow-ltr {
+  to { stroke-dashoffset: -28; }
+}
+
+/* Electric dash flowing right→left */
+.titan-payline-flow-rtl {
+  animation: dash-flow-rtl 0.6s linear infinite;
+}
+@keyframes dash-flow-rtl {
+  to { stroke-dashoffset: 28; }
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .titan-game-screen::before { animation: none; }
