@@ -92,7 +92,6 @@ export function useReelSpin() {
         if (!strip) continue;
         let off = offsetsRef.current[r] - speed * dt;
         const loopLow = (3 + strip.loopLen) * STEP;
-        const loopHigh = loopLow + strip.loopLen * STEP;
         if (off < loopLow) off += strip.loopLen * STEP;
         offsetsRef.current[r] = off;
         applyOffset(r, off);
