@@ -42,6 +42,7 @@ export function useReelSpin() {
     Array.from({ length: GRID_REELS }, () => "idle"),
   );
   const [bouncingReel, setBouncingReel] = useState<number | null>(null);
+  const [stripSymbols, setStripSymbols] = useState<(string[] | null)[]>(Array.from({ length: GRID_REELS }, () => null));
 
   const stripsRef = useRef<(ReelStripData | null)[]>(Array.from({ length: GRID_REELS }, () => null));
   const offsetsRef = useRef<number[]>(Array.from({ length: GRID_REELS }, () => 0));
@@ -72,6 +73,7 @@ export function useReelSpin() {
     }
 
     setReelStates(Array.from({ length: GRID_REELS }, () => "spinning"));
+    setStripSymbols(newStrips.map(s => s?.symbols ?? null));
 
     let last = spinStartRef.current;
     const tick = (now: number) => {
@@ -106,14 +108,18 @@ export function useReelSpin() {
     cancelAnimationFrame(rafRef.current);
 
     // Rebuild strips with actual result
+    const updatedStrips: (ReelStripData | null)[] = [];
     for (let r = 0; r < GRID_REELS; r++) {
       const oldStrip = stripsRef.current[r];
       const prev = oldStrip
         ? [oldStrip.symbols[oldStrip.prevResultStart] ?? "?", oldStrip.symbols[oldStrip.prevResultStart + 1] ?? "?", oldStrip.symbols[oldStrip.prevResultStart + 2] ?? "?"]
         : ["?", "?", "?"];
       const result = [resultGrid[r]?.[0] ?? "?", resultGrid[r]?.[1] ?? "?", resultGrid[r]?.[2] ?? "?"];
-      stripsRef.current[r] = buildReelStrip(prev, result);
+      const newStrip = buildReelStrip(prev, result);
+      stripsRef.current[r] = newStrip;
+      updatedStrips.push(newStrip);
     }
+    setStripSymbols(updatedStrips.map(s => s?.symbols ?? null));
 
     // Schedule stop per reel with staggered delay
     for (let r = 0; r < GRID_REELS; r++) {
@@ -173,5 +179,5 @@ export function useReelSpin() {
     if (bounceTimerRef.current != null) window.clearTimeout(bounceTimerRef.current);
   }, []);
 
-  return { reelStates, bouncingReel, stripsRef, beginSpin, stopReels, applyOffset };
+  return { reelStates, bouncingReel, stripSymbols, stripsRef, beginSpin, stopReels, applyOffset };
 }

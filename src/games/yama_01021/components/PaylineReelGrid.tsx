@@ -20,7 +20,7 @@ function cellCenter(reel: number, row: number) {
 }
 
 export default function PaylineReelGrid({ reels, matches, spinning = false }: PaylineReelGridProps) {
-  const { reelStates, bouncingReel, beginSpin, stopReels } = useReelSpin();
+  const { reelStates, bouncingReel, stripSymbols, beginSpin, stopReels } = useReelSpin();
   const prevSpinningRef = useRef(false);
   const spinStartedRef = useRef(false);
 
@@ -78,6 +78,7 @@ export default function PaylineReelGrid({ reels, matches, spinning = false }: Pa
               column={col}
               reelState={reelStates[ci]}
               bouncing={bouncingReel === ci}
+              stripSymbols={stripSymbols[ci] ?? undefined}
               matchCells={cellSet}
             />
           );
