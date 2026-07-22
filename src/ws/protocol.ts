@@ -97,6 +97,28 @@ export interface SpinResponsePayload {
   };
 }
 
+// --- Titan spin response (cmd 1500) ---
+
+export interface TitanSpinResponsePayload {
+  cmd: number;
+  c: number;
+  spin: {
+    spinIndex: number;
+    /** Column-major grid (5 reels × N rows). */
+    grid: string[][];
+    winAmount: number;
+    superBet?: boolean;
+  };
+  round: {
+    roundId: string;
+    totalWin: number;
+    roundState: "ONGOING" | "ENDED";
+  };
+  state: {
+    isLastSpin: boolean;
+  };
+}
+
 // --- Join response (cmd 1005) ---
 
 /** lastRound uses the same { round, spin, state } shape as SpinResponsePayload,
