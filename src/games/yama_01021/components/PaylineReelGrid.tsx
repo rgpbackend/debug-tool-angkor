@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { GRID_REELS, GRID_ROWS, type PaylineMatch } from "../lib/paylines";
+import { useReelSpin } from "../hooks/useReelSpin";
 import TitanReelColumn from "./TitanReelColumn";
 
 type PaylineReelGridProps = {
@@ -10,35 +11,46 @@ type PaylineReelGridProps = {
 
 const CELL = 68;
 const GAP = 6;
-const STEP = CELL + GAP; // 74px
+const STEP = CELL + GAP;
 
 const LINE_COLORS = ["#e6cc6e", "#a78bfa", "#22d3ee", "#f97316", "#4ade80", "#f472b6", "#fbbf24", "#818cf8"];
 
-function cellCenter(reel: number, row: number): { x: number; y: number } {
+function cellCenter(reel: number, row: number) {
   return { x: reel * STEP + CELL / 2, y: row * STEP + CELL / 2 };
 }
 
-export default function PaylineReelGrid({ reels, matches, spinning }: PaylineReelGridProps) {
+export default function PaylineReelGrid({ reels, matches, spinning = false }: PaylineReelGridProps) {
+  const { reelStates, bouncingReel, beginSpin, stopReels } = useReelSpin();
+  const prevSpinningRef = useRef(false);
+  const spinStartedRef = useRef(false);
+
+  // Trigger spin animation on spinning=true edge
+  useEffect(() => {
+    if (spinning && !prevSpinningRef.current) {
+      spinStartedRef.current = true;
+      beginSpin(reels);
+    }
+    if (!spinning && prevSpinningRef.current && spinStartedRef.current) {
+      stopReels(reels);
+      spinStartedRef.current = false;
+    }
+    prevSpinningRef.current = spinning;
+  }, [spinning, reels, beginSpin, stopReels]);
+
   const matchCellSet = useMemo(() => {
     const s = new Set<string>();
-    for (const m of matches) {
-      for (const [r, row] of m.positions) s.add(`${r},${row}`);
-    }
+    for (const m of matches) for (const [r, row] of m.positions) s.add(`${r},${row}`);
     return s;
   }, [matches]);
 
-  // Payline SVG paths
+  // Payline SVG lines
   const lines = useMemo(() => {
     return matches.map((m, i) => {
       const pts = m.positions.map(([r, row]) => cellCenter(r, row));
       if (pts.length < 2) return null;
       const d = pts.map((p, j) => `${j === 0 ? "M" : "L"}${p.x} ${p.y}`).join(" ");
-      const last = pts[pts.length - 1];
-      const secondLast = pts[pts.length - 2];
-      const angle = Math.atan2(last.y - secondLast.y, last.x - secondLast.x) * (180 / Math.PI);
-      const color = LINE_COLORS[i % LINE_COLORS.length];
-      return { d, last, angle, color, ltr: m.direction === "ltr" };
-    }).filter(Boolean) as { d: string; last: { x: number; y: number }; angle: number; color: string; ltr: boolean }[];
+      return { d, color: LINE_COLORS[i % LINE_COLORS.length], ltr: m.direction === "ltr" };
+    }).filter(Boolean) as { d: string; color: string; ltr: boolean }[];
   }, [matches]);
 
   const normReels: string[][] = [];
@@ -65,6 +77,8 @@ export default function PaylineReelGrid({ reels, matches, spinning }: PaylineRee
               reelIndex={ci}
               column={col}
               spinning={spinning}
+              reelState={reelStates[ci]}
+              bouncing={bouncingReel === ci}
               matchCells={cellSet}
             />
           );
@@ -78,45 +92,15 @@ export default function PaylineReelGrid({ reels, matches, spinning }: PaylineRee
             viewBox={`0 0 ${svgW} ${svgH}`}
             style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 3 }}
           >
-            {lines.map((l, i) => {
-              const pathId = `pl-${i}`;
-              return (
-                <g key={i}>
-                  {/* Glow underlay */}
-                  <path
-                    id={pathId}
-                    d={l.d}
-                    fill="none"
-                    stroke={l.color}
-                    strokeWidth={8}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    opacity={0.15}
-                  />
-                  {/* Main line */}
-                  <path
-                    d={l.d}
-                    fill="none"
-                    stroke={l.color}
-                    strokeWidth={4}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  {/* Electric dash flowing in win direction */}
-                  <path
-                    d={l.d}
-                    fill="none"
-                    stroke="#fff"
-                    strokeWidth={4}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeDasharray="8 20"
-                    opacity={0.7}
-                    className={l.ltr ? "titan-payline-flow-ltr" : "titan-payline-flow-rtl"}
-                  />
-                </g>
-              );
-            })}
+            {lines.map((l, i) => (
+              <g key={i}>
+                <path d={l.d} fill="none" stroke={l.color} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" opacity={0.15} />
+                <path d={l.d} fill="none" stroke={l.color} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+                <path d={l.d} fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round"
+                  strokeDasharray="8 20" opacity={0.7}
+                  className={l.ltr ? "titan-payline-flow-ltr" : "titan-payline-flow-rtl"} />
+              </g>
+            ))}
           </svg>
         )}
       </div>
