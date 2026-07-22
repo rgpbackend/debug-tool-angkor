@@ -328,6 +328,12 @@
   font-size: 1.5rem; opacity: 0.15;
 }
 
+/* ── Payline SVG ── */
+.titan-paylines-svg {
+  animation: payline-fade-in 0.3s ease-out;
+}
+@keyframes payline-fade-in { from { opacity: 0; } }
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .titan-game-screen::before { animation: none; }
