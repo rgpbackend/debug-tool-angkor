@@ -42,7 +42,7 @@ const SYMBOL_KINDS: readonly SymbolKind[] = [
 
 export interface GameSymbol {
   id: string;
-  kind: SymbolKind;
+  kind?: SymbolKind;
   payouts?: Record<string, string>;
   substitutes?: boolean;
 }
@@ -590,7 +590,8 @@ export function parseGameSymbols(raw: unknown): GameSymbol[] {
     if (typeof row.id !== "string") {
       continue;
     }
-    if (!isSymbolKind(row.kind)) {
+    // kind is optional — server may omit it (e.g. Titan's Wrath).
+    if (row.kind !== undefined && !isSymbolKind(row.kind)) {
       continue;
     }
     let payouts: Record<string, string> | undefined;
