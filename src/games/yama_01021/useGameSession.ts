@@ -98,15 +98,15 @@ export function useGameSession(
     return paylineWinsToMatches(wins, ws.serverPaylines);
   }, [lastSpin, ws.serverPaylines]);
 
-  // Round ongoing → auto-spin next step
-  const roundOngoing = lastSpin?.round?.roundState === "ONGOING";
+  // Auto-spin next step when respin is active
+  const hasPendingRespin = lastSpin?.state?.respin?.active === true;
   useEffect(() => {
-    if (!roundOngoing || !canSpin || spinBusyRef.current) return;
+    if (!hasPendingRespin || !canSpin || spinBusyRef.current) return;
     const t = window.setTimeout(() => { void spin(); }, fastSpin ? 100 : 800);
     return () => window.clearTimeout(t);
-  }, [roundOngoing, canSpin, fastSpin, spin]);
+  }, [hasPendingRespin, canSpin, fastSpin, spin]);
 
-  const isSpinning = ws.phase === "spinning" || roundOngoing;
+  const isSpinning = ws.phase === "spinning" || hasPendingRespin;
 
   return {
     ...ws,
@@ -116,8 +116,9 @@ export function useGameSession(
     fastSpin, setFastSpin,
     autoSpinCount, setAutoSpinCount,
     lastSpin, spin, canSpin,
-    reelGrid, paylineMatches, isSpinning, roundOngoing,
+    reelGrid, paylineMatches, isSpinning,
   };
+}
 }
 
 export type TitanGameSession = ReturnType<typeof useGameSession>;

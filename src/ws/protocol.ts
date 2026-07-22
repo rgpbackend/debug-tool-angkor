@@ -112,19 +112,29 @@ export interface TitanSpinResponsePayload {
   c: number;
   spin: {
     spinIndex: number;
-    /** Flat 15-char grid string (column-major: reel0[0..2], reel1[0..2], ...). */
+    /** Flat 15-char grid string (row-major: first 5 = top row, next 5 = middle, last 5 = bottom). */
     patternGrid: string;
     winAmount: number;
     paylineWins: TitanPaylineWin[];
     superBet?: boolean;
+    titanWild?: {
+      triggered: boolean;
+      wildReels: number[];
+    };
   };
   round: {
     roundId: string;
+    state: "ACTIVE" | "RESPIN" | "ENDED";
     totalWin: number;
-    roundState: "ONGOING" | "ENDED";
+    isEnded: boolean;
   };
   state: {
     isLastSpin: boolean;
+    respin?: {
+      active: boolean;
+      spinCount: number;
+      lockedReels: number[];
+    };
   };
 }
 
