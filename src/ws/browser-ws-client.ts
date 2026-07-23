@@ -301,6 +301,16 @@ export class BrowserWsClient {
 
 export { StompTokenBannedError } from "./stomp-errors";
 
+function formatCmdErrorMessage(payload: Record<string, unknown>): string {
+  const msg = typeof payload.msg === "string" ? payload.msg.trim() : "";
+  const errorCode =
+    typeof payload.errorCode === "string" ? payload.errorCode.trim() : "";
+  if (errorCode && msg) return `${errorCode}: ${msg}`;
+  if (msg) return msg;
+  if (errorCode) return errorCode;
+  return "Command rejected";
+}
+
 // --- Shared matchers (used by useWsSession) ---
 
 function isObject(v: unknown): v is Record<string, unknown> {

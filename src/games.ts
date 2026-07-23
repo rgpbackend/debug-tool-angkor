@@ -1,6 +1,5 @@
 import type { ComponentType } from "react";
 import { GameScreen as AngkorGameScreen } from "./games/game-the-last-guardian-of-angkor";
-import { GameScreen as TitanGameScreen } from "./games/yama_01021";
 
 export interface JackpotTierDef {
   key: string;
@@ -44,20 +43,7 @@ const GAMES: GameDef[] = [
     ],
     GameScreen: AngkorGameScreen,
   },
-  {
-    id: "yama_01021",
-    name: "Titan's Wrath",
-    icon: "⚡",
-    agentId: "AGENCY_001",
-    winSystem: "paylines",
-    jackpotTiers: [
-      { key: "MINI", label: "MINI", isStatic: false },
-      { key: "MINOR", label: "MINOR", isStatic: false },
-      { key: "MAJOR", label: "MAJOR", isStatic: false },
-      { key: "GRAND", label: "GRAND", isStatic: false },
-    ],
-    GameScreen: TitanGameScreen,
-  },
+  // Add new games here — same GameDef shape.
 ];
 
 export function getGames(): GameDef[] {
