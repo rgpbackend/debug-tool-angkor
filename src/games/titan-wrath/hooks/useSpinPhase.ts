@@ -91,10 +91,14 @@ function nextPhase(
 ): SpinPhase {
   switch (current) {
     case "reveal":
-      return flags.hasWild ? "wild_expand" : flags.hasPaylineWins ? "paylines" : flags.hasRespin ? "pre_respin" : "result";
-    case "wild_expand":
-      return flags.hasPaylineWins ? "paylines" : flags.hasRespin ? "pre_respin" : "result";
+      // Show paylines first, then wild expansion for dramatic effect
+      if (flags.hasPaylineWins) return "paylines";
+      if (flags.hasWild) return "wild_expand";
+      return flags.hasRespin ? "pre_respin" : "result";
     case "paylines":
+      if (flags.hasWild) return "wild_expand";
+      return flags.hasRespin ? "pre_respin" : "result";
+    case "wild_expand":
       return flags.hasRespin ? "pre_respin" : "result";
     case "pre_respin":
       return "result";
