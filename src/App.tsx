@@ -62,6 +62,8 @@ export default function App() {
           loggedIn={auth.agencyUserToken !== ""}
           error={auth.error}
           busy={auth.busy}
+          depositBusy={auth.depositBusy}
+          onDeposit={auth.depositAmount}
           onLaunch={handleLaunchGame}
           onLogout={handleLogout}
         />

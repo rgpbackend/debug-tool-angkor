@@ -84,21 +84,156 @@
 }
 
 /* Lobby */
-.lobby-panel {
-  width: min(100%, 42rem);
+.lobby-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 3rem;
+  max-width: 48rem;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.lobby-header {
+.lobby-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
 }
 
-.lobby-header h2 {
-  margin: 0;
-  font-size: 1.15rem;
+.lobby-brand {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: 0.03em;
+}
+
+/* --- Wallet / Deposit --- */
+.lobby-wallet {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.wallet-deposit {
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 92%, var(--code-bg));
+}
+
+.wallet-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.65rem;
+}
+
+.deposit-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deposit-currency {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-h);
+  flex-shrink: 0;
+}
+
+.deposit-amount-input {
+  flex: 1;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 0;
+}
+
+.deposit-amount-input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.deposit-amount-input:disabled {
+  opacity: 0.5;
+}
+
+.deposit-btn {
+  flex-shrink: 0;
+  padding: 0.55rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.deposit-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.deposit-chip {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.deposit-chip:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+
+.deposit-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.deposit-success {
+  color: #15803d;
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin: 0 0 0.75rem;
+  width: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .deposit-success {
+    color: #4ade80;
+  }
+}
+
+/* --- Games --- */
+.lobby-games-section {
+  width: 100%;
+}
+
+.lobby-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .lobby-grid {
@@ -113,7 +248,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 1.25rem 0.75rem;
+  padding: 1.5rem 0.75rem;
   border-radius: 10px;
   cursor: pointer;
   text-align: center;

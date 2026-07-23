@@ -157,6 +157,19 @@ export function useAuth() {
     register: doRegister,
     logout: doLogout,
     deposit: doDeposit,
+    depositAmount: async (amount: number) => {
+      const token = agencyUserToken.trim();
+      if (!token || depositBusy) return;
+      setDepositBusy(true);
+      setError(null);
+      try {
+        await deposit(token, { amount: String(amount) });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setDepositBusy(false);
+      }
+    },
     playGame: doPlayGame,
     refreshAndGetToken: doRefreshAndGetToken,
   };
