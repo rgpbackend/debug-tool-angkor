@@ -28,14 +28,21 @@
 }
 
 .titan-reel-col {
+  --reel-rows: 3;
+  --reel-cell: 64px;
+  --reel-gap: 6px;
+  --reel-viewport-height: calc(var(--reel-rows) * var(--reel-cell) + (var(--reel-rows) - 1) * var(--reel-gap));
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--reel-gap);
   border-radius: 6px;
   padding: 4px;
   transition: box-shadow 0.3s ease;
   position: relative;
   overflow: hidden;
+  flex: 0 0 auto;
+  min-height: var(--reel-viewport-height);
+  justify-content: center;
 }
 
 .titan-reel-col.reel-locked {
@@ -52,7 +59,7 @@
 .reel-viewport {
   width: 100%;
   overflow: hidden;
-  height: calc(3 * 64px + 2 * 6px);
+  height: var(--reel-viewport-height);
   position: relative;
   contain: layout style paint;
 }
