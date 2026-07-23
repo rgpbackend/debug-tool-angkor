@@ -1,6 +1,7 @@
 import { useCallback, useState, type ReactNode } from "react";
 import type { GameSymbol, JackpotPoolsByTier, ServerPayline } from "../../../ws/protocol";
 import type { TitanPaylineWin, TitanWildSpinInfo } from "../titan-protocol";
+import type { SpinPhase } from "../hooks/useSpinPhase";
 import TitanReelGrid from "./TitanReelGrid";
 import TitanPaylineOverlay from "./TitanPaylineOverlay";
 import TitanWildExpansion from "./TitanWildExpansion";
@@ -15,7 +16,7 @@ interface TitanSlotMachineProps {
   // Grid
   patternGrid: string;
   lockedReels: number[];
-  spinIndex: number;
+  spinPhase: SpinPhase;
 
   // Paylines
   serverPaylines: ServerPayline[];
@@ -29,7 +30,6 @@ interface TitanSlotMachineProps {
   comboLevel: "COMBO" | "SUPER_COMBO" | "MEGA_COMBO" | null;
 
   // Display
-  spinning: boolean;
   totalWin: number | null;
 
   // Jackpot
@@ -61,11 +61,23 @@ interface TitanSlotMachineProps {
   toolbarSlot?: ReactNode;
 }
 
+/** Phases where grid + result are visible */
+function isGridOrResult(phase: SpinPhase): boolean {
+  return phase !== "idle" && phase !== "spinning";
+}
+
 export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const showPaylines = !props.spinning && props.paylineWins.length > 0;
+  const phase = props.spinPhase;
+  const spinning = phase === "spinning";
+  const showPaylines = phase === "paylines";
+  const showWild = phase === "wild_expand";
+  const showCombo = phase === "combo";
+  const showResult = phase === "result";
+  const isBusy = phase !== "idle";
+  const hasGrid = isGridOrResult(phase);
 
   const handleWildDone = useCallback(() => {
     props.wildAnimDone();
@@ -95,13 +107,27 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
       <TitanJackpotBar poolsByTier={props.jackpotPoolsByTier} />
 
       {/* Grid Area */}
-      <div className="titan-grid-area" data-spinning={props.spinning ? "" : undefined}>
-        <TitanReelGrid
-          patternGrid={props.patternGrid}
-          lockedReels={props.lockedReels}
-          spinning={props.spinning}
-          spinIndex={props.spinIndex}
-        />
+      <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
+        {hasGrid && (
+          <TitanReelGrid
+            patternGrid={props.patternGrid}
+            lockedReels={props.lockedReels}
+            spinning={spinning}
+            spinPhase={phase}
+          />
+        )}
+
+        {/* Empty state when idle */}
+        {!hasGrid && (
+          <div className="titan-grid-empty">
+            <TitanReelGrid
+              patternGrid={props.patternGrid}
+              lockedReels={props.lockedReels}
+              spinning={false}
+              spinPhase={"idle"}
+            />
+          </div>
+        )}
 
         <TitanPaylineOverlay
           paylines={props.serverPaylines}
@@ -110,17 +136,17 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         />
 
         <TitanWildExpansion
-          wildInfo={props.wildInfo}
+          wildInfo={showWild ? props.wildInfo : undefined}
           onComplete={handleWildDone}
         />
 
-        <TitanWinCelebration comboLevel={props.comboLevel} />
+        <TitanWinCelebration comboLevel={showCombo ? props.comboLevel : null} />
       </div>
 
       {/* Display Box */}
       <TitanDisplayBox
-        spinning={props.spinning}
-        totalWin={props.totalWin}
+        spinning={isBusy}
+        totalWin={showResult ? props.totalWin : null}
       />
 
       {/* Controls */}
@@ -130,7 +156,7 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         onBetChange={props.onBetChange}
         betDisabled={props.betDisabled}
         canSpin={props.canSpin}
-        spinning={props.spinning}
+        spinning={isBusy}
         onSpin={props.onSpin}
         autoSpinActive={props.autoSpinActive}
         autoSpinCount={props.autoSpinCount}

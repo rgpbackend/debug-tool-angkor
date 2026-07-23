@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSyncRef } from "../../hooks/useSyncRef";
 import { useAutoSpin } from "./hooks/useAutoSpin";
+import { useSpinPhase } from "./hooks/useSpinPhase";
 import { useTitanSession } from "./useTitanSession";
 import { readEnvDefaults } from "../../config";
 import type { GameScreenProps } from "../../games";
@@ -57,26 +57,59 @@ export default function GameScreen({
   // Auto-spin state
   const [autoSpinActive, setAutoSpinActive] = useState(false);
   const [autoSpinRemaining, setAutoSpinRemaining] = useState<number | null>(null);
-  const [spinIndex, setSpinIndex] = useState(0);
+  const [spinTick, setSpinTick] = useState(0);
 
-  const spinUiActive = isSpinning;
-  const spinUiActiveRef = useRef(spinUiActive);
-  useSyncRef(spinUiActiveRef, spinUiActive);
+  // Track spinResponseReady — true once isSpinning transitions false→ready for animation
+  const [spinResponseReady, setSpinResponseReady] = useState(false);
+  const wasSpinningRef = useRef(false);
 
-  const roundIdle = !isSpinning;
+  useEffect(() => {
+    if (isSpinning) {
+      wasSpinningRef.current = true;
+      setSpinResponseReady(false);
+    } else if (wasSpinningRef.current) {
+      wasSpinningRef.current = false;
+      setSpinResponseReady(true);
+    }
+  }, [isSpinning]);
+
+  // Animation phase machine
+  const hasWild = viewSpin?.spin?.titanWild?.triggered === true;
+  const hasPaylineWins = paylineWins.length > 0;
+  const hasCombo = comboLevel !== null;
+
+  const spinPhase = useSpinPhase({
+    spinTick,
+    hasWild,
+    hasPaylineWins,
+    hasCombo,
+    spinResponseReady,
+  });
+
+  // Reset spinResponseReady when phase goes idle (sequence complete)
+  useEffect(() => {
+    if (spinPhase === "idle") {
+      setSpinResponseReady(false);
+    }
+  }, [spinPhase]);
+
+  const spinBusy = spinPhase !== "idle";
+
+  const roundIdle = !spinBusy;
 
   // Spin handler
   const executeSpin = useCallback(async () => {
+    if (spinBusy) return;
+    setSpinTick((t) => t + 1); // kick off SPINNING phase
     const result = await spin();
     if (result) {
-      setSpinIndex((i) => i + 1);
       setAutoSpinRemaining((prev) => {
         if (prev === null) return null;
         if (prev === Infinity) return Infinity;
         return prev > 0 ? prev - 1 : 0;
       });
     }
-  }, [spin]);
+  }, [spin, spinBusy]);
 
   // Auto-spin lifecycle
   const startAutoSpin = useCallback((count: number) => {
@@ -100,27 +133,27 @@ export default function GameScreen({
   useAutoSpin({
     active: autoSpinActive && sessionReady,
     roundIdle,
-    canStartRound: canSpin && !spinUiActive,
+    canStartRound: canSpin && !spinBusy,
     onRunRound: () => void executeSpin(),
   });
 
-  // Handle respin chain — auto spin when round.state === "RESPIN"
+  // Handle respin chain — auto spin AFTER animation sequence completes (phase = idle)
   useEffect(() => {
     if (!viewSpin) return;
-    if (viewSpin.round.state === "RESPIN" && roundIdle && canSpin) {
+    if (viewSpin.round.state === "RESPIN" && spinPhase === "idle" && canSpin) {
       const timer = window.setTimeout(() => {
         void executeSpin();
       }, 800);
       return () => window.clearTimeout(timer);
     }
-  }, [viewSpin?.round.state, roundIdle, canSpin, executeSpin]);
+  }, [viewSpin?.round.state, spinPhase, canSpin, executeSpin]);
 
   // Derived grid state
   const patternGrid = viewSpin?.spin?.patternGrid ?? "";
   const wildInfo = viewSpin?.spin?.titanWild;
   const currentTotalWin = viewSpin?.round?.totalWin ?? null;
 
-  const betDisabled = isSpinning || !sessionReady || betLevels.length === 0;
+  const betDisabled = spinBusy || !sessionReady || betLevels.length === 0;
 
   const joining = !sessionReady && phase === "joining";
 
@@ -137,13 +170,12 @@ export default function GameScreen({
       <TitanSlotMachine
         patternGrid={patternGrid}
         lockedReels={lockedReels}
-        spinIndex={spinIndex}
+        spinPhase={spinPhase}
         serverPaylines={serverPaylines}
         paylineWins={paylineWins}
         wildInfo={wildInfo}
         wildAnimDone={() => {}}
         comboLevel={comboLevel as "COMBO" | "SUPER_COMBO" | "MEGA_COMBO" | null}
-        spinning={isSpinning}
         totalWin={currentTotalWin}
         jackpotPoolsByTier={jackpotPoolsByTier}
         betLevels={betLevels}

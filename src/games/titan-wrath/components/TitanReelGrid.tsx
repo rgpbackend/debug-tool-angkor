@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { parsePatternGrid } from "../titan-protocol";
+import type { SpinPhase } from "../hooks/useSpinPhase";
 
 interface TitanReelGridProps {
   patternGrid: string;
   lockedReels: number[];
   spinning: boolean;
-  spinIndex: number;
+  spinPhase: SpinPhase;
 }
 
 const SYMBOL_CLASS: Record<string, string> = {
@@ -26,7 +27,7 @@ export default function TitanReelGrid({
   patternGrid,
   lockedReels,
   spinning,
-  spinIndex,
+  spinPhase,
 }: TitanReelGridProps) {
   const grid = useMemo(() => parsePatternGrid(patternGrid), [patternGrid]);
 
@@ -37,7 +38,7 @@ export default function TitanReelGrid({
         const delay = spinning ? `${col * 0.12}s` : "0s";
         return (
           <div
-            key={`${spinIndex}-${col}`}
+            key={`${spinPhase}-${col}`}
             className={`titan-reel-col${isLocked ? " reel-locked" : ""}${spinning ? " reel-spinning" : ""}`}
             style={{ animationDelay: delay }}
           >
