@@ -293,6 +293,267 @@
   100% { opacity: 0; }
 }
 
+/* --- Controls --- */
+.titan-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--titan-ember);
+  border-radius: 0 0 6px 6px;
+}
+
+/* Super Bet */
+.titan-super-bet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--titan-ash);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.titan-super-bet:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.titan-super-bet.super-bet-on {
+  border-color: var(--titan-wrath-vermilion);
+  box-shadow: 0 0 12px rgba(232, 69, 45, 0.4);
+}
+
+.super-bet-label {
+  font-family: var(--titan-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--titan-ash);
+  letter-spacing: 1px;
+}
+
+.super-bet-on .super-bet-label { color: var(--titan-wrath-vermilion); }
+
+.super-bet-badge {
+  font-family: var(--titan-body);
+  font-size: 0.6rem;
+  color: var(--titan-forge-gold);
+  margin-top: 4px;
+}
+
+/* Bet Controls */
+.titan-bet-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bet-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--titan-ash);
+  border-radius: 50%;
+  color: var(--titan-smoke);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bet-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.bet-btn:not(:disabled):hover { border-color: var(--titan-forge-gold); color: var(--titan-forge-gold); }
+
+.bet-display {
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--titan-ash);
+  border-radius: 6px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.bet-display:hover { border-color: var(--titan-forge-gold); }
+
+/* Spin Button */
+.titan-spin-btn {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 3px solid var(--titan-forge-gold);
+  background: linear-gradient(135deg, var(--titan-ember), var(--titan-obsidian));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 16px rgba(212, 168, 67, 0.3);
+}
+
+.titan-spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.titan-spin-btn:not(:disabled):hover {
+  box-shadow: 0 0 28px rgba(212, 168, 67, 0.6);
+  transform: scale(1.05);
+}
+
+.titan-spin-btn.spin-spinning {
+  border-radius: 8px;
+  border-color: var(--titan-wrath-vermilion);
+}
+
+.titan-spin-btn.spin-auto {
+  border-radius: 8px;
+}
+
+.spin-icon {
+  font-size: 1.75rem;
+  animation: spin-arrows 2s linear infinite;
+}
+
+@keyframes spin-arrows {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spin-stop-icon {
+  font-size: 1.5rem;
+  color: var(--titan-wrath-vermilion);
+}
+
+.spin-auto-count {
+  font-family: var(--titan-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+}
+
+/* Auto Spin Button */
+.titan-auto-btn {
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--titan-ash);
+  border-radius: 8px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.titan-auto-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.titan-auto-btn:not(:disabled):hover { border-color: var(--titan-forge-gold); }
+
+/* --- Autospin Picker --- */
+.autospin-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.autospin-picker {
+  background: var(--titan-ember);
+  border: 1px solid var(--titan-forge-gold);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 240px;
+}
+
+.autospin-title {
+  font-family: var(--titan-display);
+  font-size: 1.25rem;
+  color: var(--titan-forge-gold);
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.autospin-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.autospin-option {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--titan-ash);
+  border-radius: 6px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-display);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.autospin-option:hover { border-color: var(--titan-forge-gold); color: var(--titan-forge-gold); }
+
+.autospin-cancel {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: var(--titan-ash);
+  font-family: var(--titan-body);
+  cursor: pointer;
+}
+
+/* --- Bet Picker --- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.bet-picker {
+  background: var(--titan-ember);
+  border: 1px solid var(--titan-forge-gold);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+}
+
+.bet-picker-title {
+  font-family: var(--titan-display);
+  font-size: 1.25rem;
+  color: var(--titan-forge-gold);
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.bet-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.bet-option {
+  padding: 8px 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--titan-ash);
+  border-radius: 4px;
+  color: var(--titan-smoke);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.bet-option:hover { border-color: var(--titan-forge-gold); }
+.bet-option.bet-selected { border-color: var(--titan-forge-gold); background: rgba(212, 168, 67, 0.15); }
+
 /* --- Reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
   .titan-reel-col.reel-spinning { animation: none; }
@@ -300,4 +561,6 @@
   .payline-group .payline-glow { animation: none; }
   .wild-fire-burst { animation: none; }
   .wild-fire-text { animation: none; }
+  .spin-icon { animation: none; }
+  .combo-text { animation: none; }
 }
