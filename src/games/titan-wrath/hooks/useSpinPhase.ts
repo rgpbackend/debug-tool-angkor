@@ -10,7 +10,7 @@ export type SpinPhase =
 
 const PHASE_TIMINGS: Record<Exclude<SpinPhase, "idle" | "spinning">, number> = {
   reveal: 400,
-  wild_expand: 600,
+  wild_expand: 1200,
   paylines: 1200,
   result: 1500,
 };
