@@ -5,6 +5,8 @@ type LobbyScreenProps = {
   loggedIn: boolean;
   error: string | null;
   busy: boolean;
+  balance: number | null;
+  balanceLoading: boolean;
   depositBusy: boolean;
   onDeposit: (amount: number) => Promise<void>;
   onLaunch: (game: GameDef) => void;
@@ -17,6 +19,8 @@ export default function LobbyScreen({
   loggedIn,
   error,
   busy,
+  balance,
+  balanceLoading,
   depositBusy,
   onDeposit,
   onLaunch,
@@ -49,6 +53,17 @@ export default function LobbyScreen({
       </header>
 
       <section className="lobby-wallet">
+        <div className="wallet-balance-card">
+          <span className="wallet-label">Balance</span>
+          <span className="wallet-balance-value">
+            {balanceLoading
+              ? "…"
+              : balance != null
+                ? `$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : "$0.00"}
+          </span>
+        </div>
+
         <div className="wallet-deposit">
           <label className="wallet-label">Deposit Funds</label>
           <div className="deposit-input-row">

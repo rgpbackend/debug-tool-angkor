@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { login as loginAgency, register, deposit, playGame } from "../api/agency";
+import { fetchProfile, login as loginAgency, register, deposit, playGame } from "../api/agency";
 import { refreshSessionToken } from "../api/auth";
 import {
   clearGameSession,
@@ -23,6 +23,8 @@ export function useAuth() {
   );
   const [busy, setBusy] = useState(false);
   const [depositBusy, setDepositBusy] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
   const doLogin = useCallback(
     async (username: string, password: string): Promise<boolean> => {
@@ -85,6 +87,20 @@ export function useAuth() {
     setAgencyUserToken("");
     setError(null);
   }, []);
+
+  const fetchBalance = useCallback(async () => {
+    const token = agencyUserToken.trim();
+    if (!token) return;
+    setBalanceLoading(true);
+    try {
+      const profile = await fetchProfile(token);
+      setBalance(profile.balance);
+    } catch {
+      // silent — balance stays null
+    } finally {
+      setBalanceLoading(false);
+    }
+  }, [agencyUserToken]);
 
   const doDeposit = useCallback(async () => {
     const token = agencyUserToken.trim();
@@ -153,6 +169,9 @@ export function useAuth() {
     setAuthSuccessMessage,
     busy,
     depositBusy,
+    balance,
+    balanceLoading,
+    fetchBalance,
     login: doLogin,
     register: doRegister,
     logout: doLogout,

@@ -22,7 +22,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\",\n    \"displayName\": \"Vjp Pro\"\n}",
+              "raw": "{\n    \"username\": \"tester_1ac\",\n    \"password\": \"tester_1ac\",\n    \"displayName\": \"Tester 1ac\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -50,9 +50,7 @@
               "script": {
                 "exec": [
                   "const response = pm.response.json();",
-                  "",
-                  "pm.environment.set(\"user.token\", response.token);",
-                  ""
+                  "pm.collectionVariables.set(\"luigi.user.token\", response.token);"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -70,7 +68,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\"\n}",
+              "raw": "{\n    \"username\": \"tester_1ac\",\n    \"password\": \"tester_1ac\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -135,7 +133,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{user.token}}",
+                  "value": "{{luigi.user.token}}",
                   "type": "string"
                 }
               ]
@@ -143,16 +141,11 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://agency001.relaxwmestu.xyz/api/v1/user/me",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/user/me",
               "host": [
-                "agency001",
-                "relaxwmestu",
-                "xyz"
+                "{{baseUrl}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "user",
                 "me"
               ]
@@ -173,7 +166,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{luigi.user.token}}",
                   "type": "string"
                 }
               ]
@@ -188,7 +181,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": \"10000\"\n}",
+              "raw": "{\n  \"amount\": \"100\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -240,7 +233,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{user.token}}",
+                  "value": "{{luigi.user.token}}",
                   "type": "string"
                 }
               ]
@@ -317,6 +310,10 @@
     },
     {
       "key": "password",
+      "value": ""
+    },
+    {
+      "key": "luigi.user.token",
       "value": ""
     }
   ]

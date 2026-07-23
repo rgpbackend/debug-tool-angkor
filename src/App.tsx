@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { type GameDef } from "./games";
 import { loadAgencyUserToken } from "./lib/game-session-storage";
@@ -17,6 +17,21 @@ export default function App() {
   });
   const [selectedGame, setSelectedGame] = useState<GameDef | null>(null);
   const [wsAccessToken, setWsAccessToken] = useState("");
+
+  // Fetch balance when entering lobby
+  useEffect(() => {
+    if (view === "lobby" && auth.agencyUserToken) {
+      void auth.fetchBalance();
+    }
+  }, [view, auth.agencyUserToken, auth.fetchBalance]);
+
+  // Refresh balance after deposit
+  useEffect(() => {
+    if (view === "lobby" && !auth.depositBusy && auth.agencyUserToken) {
+      void auth.fetchBalance();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.depositBusy]);
 
   const handleLoginSuccess = useCallback(() => setView("lobby"), []);
   const handleRegisterSuccess = useCallback(() => setView("login"), []);
@@ -62,6 +77,8 @@ export default function App() {
           loggedIn={auth.agencyUserToken !== ""}
           error={auth.error}
           busy={auth.busy}
+          balance={auth.balance}
+          balanceLoading={auth.balanceLoading}
           depositBusy={auth.depositBusy}
           onDeposit={auth.depositAmount}
           onLaunch={handleLaunchGame}

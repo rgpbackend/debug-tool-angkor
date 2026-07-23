@@ -25,10 +25,36 @@ export async function postJson<T>(
     headers.Authorization = `Bearer ${bearer}`;
   }
 
+  return requestJson<T>(url, "POST", body, headers);
+}
+
+export async function getJson<T>(
+  path: string,
+  options?: PostJsonOptions,
+): Promise<T> {
+  const baseUrl = trimTrailingSlash(readEnvDefaults().apiBaseUrl);
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${baseUrl}${normalizedPath}`;
+
+  const headers: Record<string, string> = {};
+  const bearer = options?.bearer?.trim();
+  if (bearer) {
+    headers.Authorization = `Bearer ${bearer}`;
+  }
+
+  return requestJson<T>(url, "GET", undefined, headers);
+}
+
+async function requestJson<T>(
+  url: string,
+  method: string,
+  body: unknown,
+  headers: Record<string, string>,
+): Promise<T> {
   const response = await fetch(url, {
-    method: "POST",
+    method,
     headers,
-    body: JSON.stringify(body),
+    body: body != null ? JSON.stringify(body) : undefined,
   });
 
   if (!response.ok) {

@@ -1,4 +1,4 @@
-import { postJson } from "./http";
+import { getJson, postJson } from "./http";
 
 export interface LoginRequest {
   username: string;
@@ -55,6 +55,19 @@ export async function deposit(
   await postJson<void>("/user/deposit", { amount } satisfies DepositRequest, {
     bearer: userToken,
   });
+}
+
+export interface UserProfile {
+  username: string;
+  displayName: string;
+  balance: number;
+}
+
+/** GET /user/me — returns user profile including balance. Uses login token. */
+export async function fetchProfile(
+  userToken: string,
+): Promise<UserProfile> {
+  return getJson<UserProfile>("/user/me", { bearer: userToken });
 }
 
 export async function playGame(
