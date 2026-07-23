@@ -75,13 +75,10 @@ export default function GameScreen({
   // Animation phase machine
   const hasWild = viewSpin?.spin?.titanWild?.triggered === true;
   const hasPaylineWins = paylineWins.length > 0;
-  const hasRespin = viewSpin?.round?.state === "RESPIN";
-
   const spinPhase = useSpinPhase({
     spinTick,
     hasWild,
     hasPaylineWins,
-    hasRespin,
     spinResponseReady,
   });
 

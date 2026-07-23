@@ -6,14 +6,12 @@ export type SpinPhase =
   | "reveal"
   | "wild_expand"
   | "paylines"
-  | "pre_respin"
   | "result";
 
 const PHASE_TIMINGS: Record<Exclude<SpinPhase, "idle" | "spinning">, number> = {
   reveal: 400,
   wild_expand: 1200,
   paylines: 1200,
-  pre_respin: 1200,
   result: 1500,
 };
 
@@ -21,8 +19,6 @@ interface UseSpinPhaseArgs {
   spinTick: number;
   hasWild: boolean;
   hasPaylineWins: boolean;
-  /** True when this spin will be followed by a respin (round.state === "RESPIN") */
-  hasRespin: boolean;
   spinResponseReady: boolean;
 }
 
@@ -30,7 +26,6 @@ export function useSpinPhase({
   spinTick,
   hasWild,
   hasPaylineWins,
-  hasRespin,
   spinResponseReady,
 }: UseSpinPhaseArgs): SpinPhase {
   const [phase, setPhase] = useState<SpinPhase>("idle");
@@ -44,7 +39,6 @@ export function useSpinPhase({
     }
   }, []);
 
-  // When spinTick increments → start SPINNING
   useEffect(() => {
     if (spinTick !== spinTickRef.current) {
       spinTickRef.current = spinTick;
@@ -53,7 +47,6 @@ export function useSpinPhase({
     }
   }, [spinTick, clearTimer]);
 
-  // When spinResponseReady → REVEAL
   useEffect(() => {
     if (spinResponseReady && phase === "spinning") {
       clearTimer();
@@ -64,13 +57,12 @@ export function useSpinPhase({
     return clearTimer;
   }, [spinResponseReady, phase, clearTimer]);
 
-  // Phase transitions
   useEffect(() => {
     if (phase === "idle" || phase === "spinning") return;
 
     clearTimer();
 
-    const next = nextPhase(phase, { hasWild, hasPaylineWins, hasRespin });
+    const next = nextPhase(phase, { hasWild, hasPaylineWins });
     const delay = PHASE_TIMINGS[phase];
 
     timerRef.current = window.setTimeout(() => {
@@ -78,7 +70,7 @@ export function useSpinPhase({
     }, delay);
 
     return clearTimer;
-  }, [phase, hasWild, hasPaylineWins, hasRespin, clearTimer]);
+  }, [phase, hasWild, hasPaylineWins, clearTimer]);
 
   useEffect(() => () => clearTimer(), [clearTimer]);
 
@@ -87,20 +79,17 @@ export function useSpinPhase({
 
 function nextPhase(
   current: Exclude<SpinPhase, "idle" | "spinning">,
-  flags: { hasWild: boolean; hasPaylineWins: boolean; hasRespin: boolean },
+  flags: { hasWild: boolean; hasPaylineWins: boolean },
 ): SpinPhase {
   switch (current) {
     case "reveal":
-      // Show paylines first, then wild expansion for dramatic effect
       if (flags.hasPaylineWins) return "paylines";
       if (flags.hasWild) return "wild_expand";
-      return flags.hasRespin ? "pre_respin" : "result";
+      return "result";
     case "paylines":
       if (flags.hasWild) return "wild_expand";
-      return flags.hasRespin ? "pre_respin" : "result";
+      return "result";
     case "wild_expand":
-      return flags.hasRespin ? "pre_respin" : "result";
-    case "pre_respin":
       return "result";
     case "result":
       return "idle";
