@@ -95,9 +95,9 @@ export default function TitanReelGrid({
     prevSpinningRef.current = spinning;
   }, [spinning, lockedReels, reels, clearStopTimers, onPresentationChange]);
 
-  // Schedule reel stops (staggered left→right, skipping locked)
+  // Schedule reel stops when spinning ends (response arrived)
   useEffect(() => {
-    if (!spinning || !spinCycleRef.current || stopScheduledRef.current) return;
+    if (spinning || !spinCycleRef.current || stopScheduledRef.current) return;
 
     stopScheduledRef.current = true;
     const elapsed = Date.now() - spinStartRef.current;

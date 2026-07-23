@@ -57,11 +57,6 @@ interface TitanSlotMachineProps {
   toolbarSlot?: ReactNode;
 }
 
-/** Phases where grid is visible — includes spinning so locked W columns stay during respin */
-function isGridOrResult(phase: SpinPhase): boolean {
-  return phase !== "idle";
-}
-
 export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const [paytableOpen, setPaytableOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -72,7 +67,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const showWild = phase === "wild_expand";
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
-  const hasGrid = isGridOrResult(phase);
 
   const handleWildDone = useCallback(() => {
     props.wildAnimDone();
@@ -103,13 +97,11 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
 
       {/* Grid Area */}
       <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
-        {hasGrid && (
-          <TitanReelGrid
-            patternGrid={props.patternGrid}
-            lockedReels={props.lockedReels}
-            spinning={spinning}
-          />
-        )}
+        <TitanReelGrid
+          patternGrid={props.patternGrid}
+          lockedReels={props.lockedReels}
+          spinning={spinning}
+        />
 
 
         <TitanPaylineOverlay
