@@ -5,7 +5,6 @@ import type { SpinPhase } from "../hooks/useSpinPhase";
 import TitanReelGrid from "./TitanReelGrid";
 import TitanPaylineOverlay from "./TitanPaylineOverlay";
 import TitanWildExpansion from "./TitanWildExpansion";
-import TitanWinCelebration from "./TitanWinCelebration";
 import TitanDisplayBox from "./TitanDisplayBox";
 import TitanJackpotBar from "./TitanJackpotBar";
 import TitanControls from "./TitanControls";
@@ -25,9 +24,6 @@ interface TitanSlotMachineProps {
   // Wild expansion
   wildInfo: TitanWildSpinInfo | undefined;
   wildAnimDone: () => void;
-
-  // Celebration
-  comboLevel: "COMBO" | "SUPER_COMBO" | "MEGA_COMBO" | null;
 
   // Display
   totalWin: number | null;
@@ -74,7 +70,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const spinning = phase === "spinning";
   const showPaylines = phase === "paylines";
   const showWild = phase === "wild_expand";
-  const showCombo = phase === "combo";
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
   const hasGrid = isGridOrResult(phase);
@@ -140,7 +135,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           onComplete={handleWildDone}
         />
 
-        <TitanWinCelebration comboLevel={showCombo ? props.comboLevel : null} />
       </div>
 
       {/* Display Box */}

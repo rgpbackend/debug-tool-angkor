@@ -8,7 +8,6 @@ import {
   formatTitanError,
   isTitanRespinPending,
   isTitanRoundEnded,
-  getComboLevel,
   type TitanSpinPayload,
 } from "./titan-protocol";
 import { titanSpinFrame } from "./titan-frames";
@@ -154,11 +153,6 @@ export function useTitanSession(
   const paylineWins = viewSpin?.spin?.paylineWins ?? [];
   const totalWin = viewSpin?.round?.totalWin ?? 0;
 
-  const comboLevel = useMemo(() => {
-    if (isSpinning) return null;
-    return paylineWins.length > 0 ? getComboLevel(paylineWins.length) : null;
-  }, [isSpinning, paylineWins.length]);
-
   // Super Bet can only toggle when not in an active round
   const superBetToggleable = !betLocked;
 
@@ -188,7 +182,6 @@ export function useTitanSession(
     setSuperBetActive: (v: boolean) => { if (superBetToggleable || !v) setSuperBetActive(v); },
     superBetToggleable,
     respinPending,
-    comboLevel,
     paylineWins,
     totalWin,
     gameError,

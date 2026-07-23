@@ -40,7 +40,6 @@ export default function GameScreen({
     superBetActive,
     setSuperBetActive,
     superBetToggleable,
-    comboLevel,
     paylineWins,
     symbolCatalog,
     serverPaylines,
@@ -76,13 +75,10 @@ export default function GameScreen({
   // Animation phase machine
   const hasWild = viewSpin?.spin?.titanWild?.triggered === true;
   const hasPaylineWins = paylineWins.length > 0;
-  const hasCombo = comboLevel !== null;
-
   const spinPhase = useSpinPhase({
     spinTick,
     hasWild,
     hasPaylineWins,
-    hasCombo,
     spinResponseReady,
   });
 
@@ -175,7 +171,6 @@ export default function GameScreen({
         paylineWins={paylineWins}
         wildInfo={wildInfo}
         wildAnimDone={() => {}}
-        comboLevel={comboLevel as "COMBO" | "SUPER_COMBO" | "MEGA_COMBO" | null}
         totalWin={currentTotalWin}
         jackpotPoolsByTier={jackpotPoolsByTier}
         betLevels={betLevels}

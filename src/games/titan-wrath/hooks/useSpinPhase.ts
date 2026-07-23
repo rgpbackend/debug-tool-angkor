@@ -6,14 +6,12 @@ export type SpinPhase =
   | "reveal"
   | "wild_expand"
   | "paylines"
-  | "combo"
   | "result";
 
 const PHASE_TIMINGS: Record<Exclude<SpinPhase, "idle" | "spinning">, number> = {
   reveal: 400,
   wild_expand: 600,
   paylines: 1200,
-  combo: 1000,
   result: 1500,
 };
 
@@ -24,8 +22,6 @@ interface UseSpinPhaseArgs {
   hasWild: boolean;
   /** True when there are winning paylines */
   hasPaylineWins: boolean;
-  /** True when there's a combo level */
-  hasCombo: boolean;
   /** True once the WS spin response arrives (isSpinning from session goes false) */
   spinResponseReady: boolean;
 }
@@ -34,7 +30,6 @@ export function useSpinPhase({
   spinTick,
   hasWild,
   hasPaylineWins,
-  hasCombo,
   spinResponseReady,
 }: UseSpinPhaseArgs): SpinPhase {
   const [phase, setPhase] = useState<SpinPhase>("idle");
@@ -74,7 +69,7 @@ export function useSpinPhase({
 
     clearTimer();
 
-    const next = nextPhase(phase, { hasWild, hasPaylineWins, hasCombo });
+    const next = nextPhase(phase, { hasWild, hasPaylineWins });
     const delay = PHASE_TIMINGS[phase];
 
     timerRef.current = window.setTimeout(() => {
@@ -82,7 +77,7 @@ export function useSpinPhase({
     }, delay);
 
     return clearTimer;
-  }, [phase, hasWild, hasPaylineWins, hasCombo, clearTimer]);
+  }, [phase, hasWild, hasPaylineWins, clearTimer]);
 
   // Cleanup on unmount
   useEffect(() => () => clearTimer(), [clearTimer]);
@@ -92,7 +87,7 @@ export function useSpinPhase({
 
 function nextPhase(
   current: Exclude<SpinPhase, "idle" | "spinning">,
-  flags: { hasWild: boolean; hasPaylineWins: boolean; hasCombo: boolean },
+  flags: { hasWild: boolean; hasPaylineWins: boolean },
 ): SpinPhase {
   switch (current) {
     case "reveal":
@@ -100,8 +95,6 @@ function nextPhase(
     case "wild_expand":
       return flags.hasPaylineWins ? "paylines" : "result";
     case "paylines":
-      return flags.hasCombo ? "combo" : "result";
-    case "combo":
       return "result";
     case "result":
       return "idle";

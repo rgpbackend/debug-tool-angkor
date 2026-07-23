@@ -205,14 +205,3 @@ export function isTitanRespinPending(payload: TitanSpinPayload): boolean {
 export function isTitanRoundEnded(payload: TitanSpinPayload): boolean {
   return payload.round.state === "ENDED";
 }
-
-// ---------------------------------------------------------------------------
-// Combo threshold helper
-// ---------------------------------------------------------------------------
-
-export function getComboLevel(count: number): "COMBO" | "SUPER_COMBO" | "MEGA_COMBO" | null {
-  if (count >= 6) return "MEGA_COMBO";
-  if (count >= 4) return "SUPER_COMBO";
-  if (count >= 2) return "COMBO";
-  return null;
-}
