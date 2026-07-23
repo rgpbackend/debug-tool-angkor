@@ -131,7 +131,7 @@ export function useGameSession(
   }, [ws.betLevels]);
 
   // --- derived state ---
-  const isSpinning = ws.phase === "spinning";
+  const [isSpinning, setIsSpinning] = useState(false);
   const displaySpin = lastSpin ?? angkorLastRound;
 
   const viewSpin = useMemo(() => {
@@ -161,6 +161,7 @@ export function useGameSession(
     }
     setGameError(null);
     spinBusyRef.current = true;
+    setIsSpinning(true);
     setSpinFreeze(lastSpin ?? angkorLastRound);
     try {
       const payloadPromise = client.waitForPayload(isSpinResponsePayload, "spin response", {
@@ -183,6 +184,7 @@ export function useGameSession(
         setForceJackpotArmed(false);
       }
       spinBusyRef.current = false;
+      setIsSpinning(false);
       setSpinFreeze(null);
       return spinPayload;
     } catch (e) {
@@ -195,6 +197,7 @@ export function useGameSession(
       return null;
     } finally {
       spinBusyRef.current = false;
+      setIsSpinning(false);
       setSpinFreeze(null);
     }
   }, [lastSpin, angkorLastRound, activeBet, cheatArmed, forceJackpotArmed, ws, callbacks]);
