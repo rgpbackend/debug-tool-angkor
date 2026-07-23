@@ -57,9 +57,9 @@ interface TitanSlotMachineProps {
   toolbarSlot?: ReactNode;
 }
 
-/** Phases where grid + result are visible */
+/** Phases where grid is visible — includes spinning so locked W columns stay during respin */
 function isGridOrResult(phase: SpinPhase): boolean {
-  return phase !== "idle" && phase !== "spinning";
+  return phase !== "idle";
 }
 
 export default function TitanSlotMachine(props: TitanSlotMachineProps) {
