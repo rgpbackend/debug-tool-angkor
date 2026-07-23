@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getWsSessionRefreshIntervalMs } from "../lib/ws-session-refresh";
-import { refreshSessionToken } from "../api/auth";
-import {
-  clearGameSession,
-  loadRefreshToken,
-  saveRefreshToken,
-} from "../lib/game-session-storage";
+import { clearGameSession } from "../lib/game-session-storage";
 import { readEnvDefaults } from "../config";
 import {
   BrowserWsClient,
@@ -71,8 +65,6 @@ export function useWsSession(
   const clientRef = useRef<BrowserWsClient | null>(null);
   const heartbeatTimerRef = useRef<number | null>(null);
   const heartbeatCounterRef = useRef(1);
-  const sessionRefreshTimerRef = useRef<number | null>(null);
-  const sessionRefreshInFlightRef = useRef(false);
   const stompListenerCleanupRef = useRef<(() => void) | null>(null);
   const disconnectListenerCleanupRef = useRef<(() => void) | null>(null);
   const sessionReadyRef = useRef(false);
@@ -115,14 +107,6 @@ export function useWsSession(
       window.clearInterval(heartbeatTimerRef.current);
       heartbeatTimerRef.current = null;
     }
-  }, []);
-
-  const stopSessionRefresh = useCallback(() => {
-    if (sessionRefreshTimerRef.current !== null) {
-      window.clearInterval(sessionRefreshTimerRef.current);
-      sessionRefreshTimerRef.current = null;
-    }
-    sessionRefreshInFlightRef.current = false;
   }, []);
 
   const detachStompListener = useCallback(() => {
@@ -200,66 +184,6 @@ export function useWsSession(
     }
   }, [applyJackpotPools]);
 
-  // --- session refresh ---
-
-  const reauthWsWithToken = useCallback(
-    (client: BrowserWsClient, token: string) => {
-      client.sendFrame(
-        connectFrame(agentId.trim(), token.trim(), true),
-      );
-    },
-    [agentId],
-  );
-
-  const performWsSessionRefresh = useCallback(
-    async (client: BrowserWsClient) => {
-      if (sessionRefreshInFlightRef.current) {
-        return;
-      }
-      sessionRefreshInFlightRef.current = true;
-      try {
-        if (clientRef.current !== client) {
-          return;
-        }
-        if (!client.isConnected()) {
-          callbacksRef.current.onConnectionLost(
-            "Connection lost (refresh: socket not open)",
-          );
-          return;
-        }
-        const storedRefresh = loadRefreshToken();
-        if (!storedRefresh) {
-          callbacksRef.current.onConnectionLost(
-            "Session refresh token missing",
-          );
-          return;
-        }
-        const { accessToken, refreshToken: nextRefresh } =
-          await refreshSessionToken(storedRefresh);
-        saveRefreshToken(nextRefresh);
-        reauthWsWithToken(client, accessToken);
-      } catch (e) {
-        const detail = e instanceof Error ? e.message : String(e);
-        callbacksRef.current.onConnectionLost(
-          `Session refresh failed: ${detail}`,
-        );
-      } finally {
-        sessionRefreshInFlightRef.current = false;
-      }
-    },
-    [reauthWsWithToken, refreshBalance],
-  );
-
-  const startSessionRefresh = useCallback(
-    (client: BrowserWsClient) => {
-      stopSessionRefresh();
-      sessionRefreshTimerRef.current = window.setInterval(() => {
-        void performWsSessionRefresh(client);
-      }, getWsSessionRefreshIntervalMs());
-    },
-    [performWsSessionRefresh, stopSessionRefresh],
-  );
-
   // --- heartbeat ---
 
   const startHeartbeat = useCallback(
@@ -304,7 +228,6 @@ export function useWsSession(
       detachDisconnectListener();
       detachStompListener();
       stopHeartbeat();
-      stopSessionRefresh();
       clientRef.current?.close();
       clientRef.current = null;
       setError(opts?.error === undefined ? null : opts.error);
@@ -330,7 +253,6 @@ export function useWsSession(
       detachDisconnectListener,
       detachStompListener,
       stopHeartbeat,
-      stopSessionRefresh,
       setPhase,
     ],
   );
@@ -415,7 +337,6 @@ export function useWsSession(
 
         setPhase("connected");
         startHeartbeat(client);
-        startSessionRefresh(client);
         setGameScreenActive(true);
       } catch (e) {
         if (clientRef.current !== client) {
@@ -437,7 +358,6 @@ export function useWsSession(
       detachStompListener,
       disconnect,
       startHeartbeat,
-      startSessionRefresh,
       setPhase,
     ],
   );
@@ -570,9 +490,8 @@ export function useWsSession(
   useEffect(
     () => () => {
       stopHeartbeat();
-      stopSessionRefresh();
     },
-    [stopHeartbeat, stopSessionRefresh],
+    [stopHeartbeat],
   );
 
   return {
