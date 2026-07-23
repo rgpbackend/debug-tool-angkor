@@ -45,7 +45,7 @@ const GAMES: GameDef[] = [
     GameScreen: AngkorGameScreen,
   },
   {
-    id: "titan-wrath",
+    id: "yama_01021",
     name: "Titan's Wrath",
     icon: "⚡",
     agentId: "AGENCY_001",
