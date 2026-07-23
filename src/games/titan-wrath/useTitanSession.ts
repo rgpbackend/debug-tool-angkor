@@ -1,0 +1,201 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useWsSession, type WsSessionCallbacks } from "../../ws/useWsSession";
+import { parseTitanMessage } from "./titan-message-parser";
+import {
+  isTitanSpinResponse,
+  isTitanSpinError,
+  parseTitanSpinPayload,
+  formatTitanError,
+  isTitanRespinPending,
+  isTitanRoundEnded,
+  getComboLevel,
+  type TitanSpinPayload,
+} from "./titan-protocol";
+import { titanSpinFrame } from "./titan-frames";
+import {
+  parseJackpotPoolsFromPayload,
+  readTopLevelBalance,
+  type JackpotTierInfo,
+} from "../../ws/protocol";
+
+const WS_CONNECTION_LOST_RE =
+  /timeout|WS closed|WS connect error|not connected|Disconnected before|Disconnected after/i;
+
+function isWsConnectionLost(msg: string): boolean {
+  return WS_CONNECTION_LOST_RE.test(msg);
+}
+
+const TITAN_JACKPOT_TIERS: JackpotTierInfo[] = [
+  { key: "MINI", isStatic: false },
+  { key: "MINOR", isStatic: false },
+  { key: "MAJOR", isStatic: false },
+  { key: "GRAND", isStatic: false },
+];
+
+// Server route from backend contract — used as the WS game route.
+const TITAN_GAME_ROUTE = "yama_01021";
+
+export function useTitanSession(
+  wsUrl: string,
+  wsAccessToken: string,
+  callbacks: WsSessionCallbacks,
+) {
+  const ws = useWsSession(
+    wsUrl,
+    TITAN_GAME_ROUTE,
+    "AGENCY_001",
+    TITAN_JACKPOT_TIERS,
+    wsAccessToken,
+    callbacks,
+    parseTitanMessage,
+  );
+
+  // --- titan-specific state ---
+  const [bet, setBet] = useState<string>("0.10");
+  const [lastSpin, setLastSpin] = useState<TitanSpinPayload | null>(null);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [gameError, setGameError] = useState<string | null>(null);
+  const [superBetActive, setSuperBetActive] = useState(false);
+  const spinBusyRef = useRef(false);
+
+  const error = gameError || ws.error;
+
+  // --- resolve bet from join betLevels ---
+  useEffect(() => {
+    if (ws.betLevels.length > 0 && !ws.betLevels.includes(bet)) {
+      setBet(ws.betLevels[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ws.betLevels]);
+
+  // --- derived ---
+  const betLocked = useMemo(() => {
+    return lastSpin !== null && !isTitanRoundEnded(lastSpin);
+  }, [lastSpin]);
+
+  const activeBet = betLocked ? String(lastSpin?.round.betAmount ?? bet) : bet;
+
+  const selectBetValue = ws.betLevels.length > 0 ? activeBet : "0.10";
+
+  const canSpin =
+    ws.phase === "joined" && ws.sessionReady && ws.betLevels.length > 0 && !spinBusyRef.current;
+
+  // --- spin ---
+  const spin = useCallback(async (): Promise<TitanSpinPayload | null> => {
+    const client = ws.clientRef.current;
+    if (!client?.isConnected() || ws.phase !== "joined" || !ws.sessionReady || spinBusyRef.current) {
+      return null;
+    }
+    setGameError(null);
+    spinBusyRef.current = true;
+    setIsSpinning(true);
+    try {
+      const payloadPromise = client.waitForPayload(isTitanSpinResponse, "titan spin", {
+        rejectMatcher: isTitanSpinError,
+      });
+      const betNum = Number(selectBetValue);
+      client.sendFrame(titanSpinFrame(Number.isFinite(betNum) ? betNum : 0.1, superBetActive));
+      const raw = await payloadPromise;
+      const parsed = parseTitanSpinPayload(raw);
+      setIsSpinning(false);
+
+      const bal = readTopLevelBalance(raw);
+      if (bal) ws.setBalance(bal);
+
+      setLastSpin(parsed);
+
+      const poolsFromSpin = parseJackpotPoolsFromPayload(raw);
+      if (poolsFromSpin) ws.applyJackpotPools(poolsFromSpin);
+      else void ws.fetchJackpotPools();
+
+      spinBusyRef.current = false;
+      return parsed;
+    } catch (e) {
+      setIsSpinning(false);
+      spinBusyRef.current = false;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!client.isConnected() || isWsConnectionLost(msg)) {
+        callbacks.onConnectionLost(msg);
+      } else {
+        setGameError(msg);
+      }
+      return null;
+    }
+  }, [selectBetValue, superBetActive, ws, callbacks]);
+
+  // --- error listener for spin errors arriving as pushes ---
+  useEffect(() => {
+    const client = ws.clientRef.current;
+    if (!client) return;
+    const cleanup = client.addPayloadListener((payload) => {
+      if (isTitanSpinError(payload)) {
+        const c = typeof payload.c === "number" ? payload.c : 0;
+        const mgs = typeof payload.mgs === "string" ? payload.mgs : undefined;
+        const msg = formatTitanError(c, mgs);
+        setGameError(msg);
+        setIsSpinning(false);
+        spinBusyRef.current = false;
+        // Auto-retry hint for lock errors
+        if (c === 1310) {
+          window.setTimeout(() => { /* UI can prompt retry */ }, 500);
+        }
+        // Auto re-join for session/state errors
+        if (c === 1305 || c === 1312) {
+          void ws.joinGame();
+        }
+      }
+    });
+    return cleanup;
+  }, [ws.clientRef, ws.joinGame]);
+
+  // --- view state ---
+  const viewSpin = lastSpin;
+
+  const lockedReels = viewSpin?.state?.titanWild?.lockedReels ?? [];
+  const respinPending = viewSpin ? isTitanRespinPending(viewSpin) : false;
+  const paylineWins = viewSpin?.spin?.paylineWins ?? [];
+  const totalWin = viewSpin?.round?.totalWin ?? 0;
+
+  const comboLevel = useMemo(() => {
+    if (isSpinning) return null;
+    return paylineWins.length > 0 ? getComboLevel(paylineWins.length) : null;
+  }, [isSpinning, paylineWins.length]);
+
+  // Super Bet can only toggle when not in an active round
+  const superBetToggleable = !betLocked;
+
+  return {
+    // from ws
+    phase: ws.phase,
+    sessionReady: ws.sessionReady,
+    gameScreenActive: ws.gameScreenActive,
+    joinGame: ws.joinGame,
+    error,
+    balance: ws.balance,
+    betLevels: ws.betLevels,
+    symbolCatalog: ws.symbolCatalog,
+    serverPaylines: ws.serverPaylines,
+    jackpotPoolsByTier: ws.jackpotPoolsByTier,
+    jackpotPoolsLoading: ws.jackpotPoolsLoading,
+    // titan-specific
+    bet, setBet,
+    selectBetValue,
+    betLocked,
+    spin, canSpin,
+    isSpinning,
+    lastSpin,
+    viewSpin,
+    lockedReels,
+    superBetActive,
+    setSuperBetActive: (v: boolean) => { if (superBetToggleable || !v) setSuperBetActive(v); },
+    superBetToggleable,
+    respinPending,
+    comboLevel,
+    paylineWins,
+    totalWin,
+    gameError,
+    setGameError,
+  };
+}
+
+export type TitanSession = ReturnType<typeof useTitanSession>;
