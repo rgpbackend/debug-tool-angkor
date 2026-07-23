@@ -9,7 +9,7 @@ export type SpinPhase =
   | "result";
 
 const PHASE_TIMINGS: Record<Exclude<SpinPhase, "idle" | "spinning">, number> = {
-  reveal: 400,
+  reveal: 200,
   wild_expand: 1200,
   paylines: 1200,
   result: 1500,
@@ -19,18 +19,20 @@ interface UseSpinPhaseArgs {
   spinTick: number;
   hasWild: boolean;
   hasPaylineWins: boolean;
-  spinResponseReady: boolean;
+  /** Response arrived AND reels fully stopped → ready to show effects */
+  readyForEffects: boolean;
 }
 
 export function useSpinPhase({
   spinTick,
   hasWild,
   hasPaylineWins,
-  spinResponseReady,
+  readyForEffects,
 }: UseSpinPhaseArgs): SpinPhase {
   const [phase, setPhase] = useState<SpinPhase>("idle");
   const timerRef = useRef<number | null>(null);
   const spinTickRef = useRef(spinTick);
+  const effectsStartedRef = useRef(false);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -39,24 +41,29 @@ export function useSpinPhase({
     }
   }, []);
 
+  // Spin starts → SPINNING
   useEffect(() => {
     if (spinTick !== spinTickRef.current) {
       spinTickRef.current = spinTick;
+      effectsStartedRef.current = false;
       clearTimer();
       setPhase("spinning");
     }
   }, [spinTick, clearTimer]);
 
+  // When readyForEffects (response + reels done) → REVEAL → start effect sequence
   useEffect(() => {
-    if (spinResponseReady && phase === "spinning") {
+    if (readyForEffects && phase === "spinning" && !effectsStartedRef.current) {
+      effectsStartedRef.current = true;
       clearTimer();
       timerRef.current = window.setTimeout(() => {
         setPhase("reveal");
       }, 200);
     }
     return clearTimer;
-  }, [spinResponseReady, phase, clearTimer]);
+  }, [readyForEffects, phase, clearTimer]);
 
+  // Phase auto-advance (reveal → paylines → wild_expand → result → idle)
   useEffect(() => {
     if (phase === "idle" || phase === "spinning") return;
 

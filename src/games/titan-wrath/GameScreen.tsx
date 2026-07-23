@@ -57,6 +57,7 @@ export default function GameScreen({
   const [autoSpinActive, setAutoSpinActive] = useState(false);
   const [autoSpinRemaining, setAutoSpinRemaining] = useState<number | null>(null);
   const [spinTick, setSpinTick] = useState(0);
+  const [reelsAnimating, setReelsAnimating] = useState(false);
 
   // Track spinResponseReady — true once isSpinning transitions false→ready for animation
   const [spinResponseReady, setSpinResponseReady] = useState(false);
@@ -72,6 +73,9 @@ export default function GameScreen({
     }
   }, [isSpinning]);
 
+  // Effects start only when BOTH response arrived AND reels stopped
+  const readyForEffects = spinResponseReady && !reelsAnimating;
+
   // Animation phase machine
   const hasWild = viewSpin?.spin?.titanWild?.triggered === true;
   const hasPaylineWins = paylineWins.length > 0;
@@ -79,7 +83,7 @@ export default function GameScreen({
     spinTick,
     hasWild,
     hasPaylineWins,
-    spinResponseReady,
+    readyForEffects,
   });
 
   // Reset spinResponseReady when phase goes idle (sequence complete)
@@ -167,6 +171,7 @@ export default function GameScreen({
         patternGrid={patternGrid}
         lockedReels={lockedReels}
         spinPhase={spinPhase}
+        onPresentationChange={setReelsAnimating}
         serverPaylines={serverPaylines}
         paylineWins={paylineWins}
         wildInfo={wildInfo}

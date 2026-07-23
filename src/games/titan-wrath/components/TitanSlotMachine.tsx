@@ -16,6 +16,7 @@ interface TitanSlotMachineProps {
   patternGrid: string;
   lockedReels: number[];
   spinPhase: SpinPhase;
+  onPresentationChange?: (active: boolean) => void;
 
   // Paylines
   serverPaylines: ServerPayline[];
@@ -68,6 +69,10 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
 
+  const handlePresentationChange = useCallback((active: boolean) => {
+    props.onPresentationChange?.(active);
+  }, [props]);
+
   const handleWildDone = useCallback(() => {
     props.wildAnimDone();
   }, [props]);
@@ -101,6 +106,7 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           patternGrid={props.patternGrid}
           lockedReels={props.lockedReels}
           spinning={spinning}
+          onPresentationChange={handlePresentationChange}
         />
 
 
