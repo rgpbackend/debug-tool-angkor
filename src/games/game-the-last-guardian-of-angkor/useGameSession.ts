@@ -169,6 +169,7 @@ export function useGameSession(
       });
       client.sendFrame(spinFrame(ws.gameRoute, String(activeBet)));
       const payload = await payloadPromise;
+      setIsSpinning(false);
       const spinPayload = payload as unknown as SpinResponsePayload;
       const bal = readTopLevelBalance(payload);
       if (bal) ws.setBalance(bal);
@@ -184,10 +185,10 @@ export function useGameSession(
         setForceJackpotArmed(false);
       }
       spinBusyRef.current = false;
-      setIsSpinning(false);
       setSpinFreeze(null);
       return spinPayload;
     } catch (e) {
+      setIsSpinning(false);
       const message = e instanceof Error ? e.message : String(e);
       if (!client.isConnected() || isWsConnectionLostMessage(message)) {
         callbacks.onConnectionLost(message);
@@ -197,7 +198,6 @@ export function useGameSession(
       return null;
     } finally {
       spinBusyRef.current = false;
-      setIsSpinning(false);
       setSpinFreeze(null);
     }
   }, [lastSpin, angkorLastRound, activeBet, cheatArmed, forceJackpotArmed, ws, callbacks]);
