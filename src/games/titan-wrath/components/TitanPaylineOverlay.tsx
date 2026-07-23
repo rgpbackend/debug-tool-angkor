@@ -1,5 +1,5 @@
 import type { TitanPaylineWin } from "../titan-protocol";
-import type { ServerPayline } from "../../ws/protocol";
+import type { ServerPayline } from "../../../ws/protocol";
 
 const CELL_W = 70;
 const CELL_H = 70;

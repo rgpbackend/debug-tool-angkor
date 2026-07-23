@@ -1,4 +1,4 @@
-import type { JackpotPoolsByTier } from "../../ws/protocol";
+import type { JackpotPoolsByTier } from "../../../ws/protocol";
 
 const TIER_ORDER = ["MINI", "MINOR", "MAJOR", "GRAND"] as const;
 

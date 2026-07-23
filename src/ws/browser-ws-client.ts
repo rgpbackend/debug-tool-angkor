@@ -313,10 +313,6 @@ function formatCmdErrorMessage(payload: Record<string, unknown>): string {
 
 // --- Shared matchers (used by useWsSession) ---
 
-function isObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
 /** Matches cmd 1005 join/subscribe response. */
 export function isJoinResponsePayload(
   payload: Record<string, unknown>,

@@ -127,8 +127,7 @@ export function useTitanSession(
   useEffect(() => {
     const client = ws.clientRef.current;
     if (!client) return;
-    const cleanup = client.addPayloadListener((payload) => {
-      if (isTitanSpinError(payload)) {
+    const cleanup = client.addPayloadListener(isTitanSpinError, (payload) => {
         const c = typeof payload.c === "number" ? payload.c : 0;
         const mgs = typeof payload.mgs === "string" ? payload.mgs : undefined;
         const msg = formatTitanError(c, mgs);
@@ -143,7 +142,6 @@ export function useTitanSession(
         if (c === 1305 || c === 1312) {
           void ws.joinGame();
         }
-      }
     });
     return cleanup;
   }, [ws.clientRef, ws.joinGame]);
