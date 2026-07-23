@@ -108,21 +108,9 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
             patternGrid={props.patternGrid}
             lockedReels={props.lockedReels}
             spinning={spinning}
-            spinPhase={phase}
           />
         )}
 
-        {/* Empty state when idle */}
-        {!hasGrid && (
-          <div className="titan-grid-empty">
-            <TitanReelGrid
-              patternGrid={props.patternGrid}
-              lockedReels={props.lockedReels}
-              spinning={false}
-              spinPhase={"idle"}
-            />
-          </div>
-        )}
 
         <TitanPaylineOverlay
           paylines={props.serverPaylines}
