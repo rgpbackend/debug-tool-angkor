@@ -48,12 +48,17 @@
 }
 
 .slot-playfield {
-  --slot-gold: #c9a227;
-  --slot-gold-dim: color-mix(in srgb, var(--slot-gold) 55%, var(--border));
-  --slot-frame-deep: #1a1228;
-  --slot-frame-mid: #2d2244;
-  --slot-screen-bg: #0a0810;
-  --slot-screen-edge: color-mix(in srgb, var(--slot-gold) 28%, #3d2e5c);
+  /* ── Angkor: Temple Stone palette ── */
+  --slot-gold: #c4a44a;
+  --slot-gold-dim: color-mix(in srgb, var(--slot-gold) 48%, #5c4a32);
+  --slot-frame-deep: #1a1510;
+  --slot-frame-mid: #2d2518;
+  --slot-screen-bg: #0e0c08;
+  --slot-screen-edge: color-mix(in srgb, var(--slot-gold) 32%, #4a3a22);
+  --slot-stone: #3a3025;
+  --slot-stone-light: #5c4e3c;
+  --slot-jungle: #1a3324;
+  --slot-guardian: #0d9488;
   --slot-cell: clamp(1.7rem, min(6.5cqw, 9cqh), 4.15rem);
   --slot-cell-gap: clamp(0.22rem, 0.7cqw, 0.5rem);
   --slot-console-h: clamp(4.25rem, 11cqh, 5.5rem);
@@ -92,15 +97,18 @@
   flex-direction: column;
   border-radius: calc(var(--slot-radius) + 4px);
   padding: 3px;
+  /* Temple stone doorway — warm stone with gold vein */
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, var(--slot-gold) 75%, #fff) 0%,
-    var(--slot-frame-mid) 35%,
+    color-mix(in srgb, var(--slot-gold) 60%, #f5e6c8) 0%,
+    var(--slot-stone-light) 28%,
+    var(--slot-stone) 65%,
     var(--slot-frame-deep) 100%
   );
   box-shadow:
-    0 12px 40px rgb(0 0 0 / 22%),
-    inset 0 1px 0 rgb(255 255 255 / 18%);
+    0 12px 40px rgb(0 0 0 / 35%),
+    inset 0 1px 0 rgb(255 255 255 / 10%),
+    0 0 0 1px color-mix(in srgb, var(--slot-gold) 18%, transparent);
 }
 
 .slot-cabinet-alerts {
@@ -132,17 +140,18 @@
   justify-content: center;
   padding: clamp(0.5rem, 1.5cqw, 1rem);
   border-radius: var(--slot-radius);
+  /* Temple sanctum — dark interior with warm ambient glow */
   border: 2px solid var(--slot-screen-edge);
   background:
     radial-gradient(
       ellipse 90% 70% at 50% 20%,
-      color-mix(in srgb, var(--accent) 14%, transparent),
+      color-mix(in srgb, var(--slot-gold) 10%, transparent),
       transparent 55%
     ),
-    linear-gradient(180deg, #12101a 0%, var(--slot-screen-bg) 45%, #06050a 100%);
+    linear-gradient(180deg, #1a1610 0%, var(--slot-screen-bg) 45%, #080604 100%);
   box-shadow:
-    inset 0 4px 24px rgb(0 0 0 / 55%),
-    inset 0 0 0 1px rgb(255 255 255 / 06%);
+    inset 0 4px 24px rgb(0 0 0 / 60%),
+    inset 0 0 0 1px rgb(255 255 255 / 04%);
 }
 
 .slot-reel-window--stacked {
@@ -247,7 +256,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: color-mix(in srgb, var(--slot-gold) 70%, var(--text));
+  color: color-mix(in srgb, var(--slot-gold) 65%, #f5e6c8);
 }
 
 .winway-reels-layout--cabinet .winway-legend-panel {
@@ -397,13 +406,13 @@
 }
 
 .slot-reels-badge--respin {
-  border-color: color-mix(in srgb, gold 55%, var(--border));
+  border-color: color-mix(in srgb, var(--slot-gold) 55%, var(--border));
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, gold 35%, #3d3010) 0%,
-    color-mix(in srgb, gold 12%, var(--slot-screen-bg)) 100%
+    color-mix(in srgb, var(--slot-gold) 32%, #3d3010) 0%,
+    color-mix(in srgb, var(--slot-gold) 10%, var(--slot-screen-bg)) 100%
   );
-  color: color-mix(in srgb, gold 85%, #fff);
+  color: color-mix(in srgb, var(--slot-gold) 82%, #fef9ef);
 }
 
 .slot-reels-hud-status-cluster {
@@ -428,13 +437,13 @@
 }
 
 .slot-reels-badge--freespin {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-color: color-mix(in srgb, var(--slot-guardian) 55%, var(--border));
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--accent) 45%, #2e1064) 0%,
-    color-mix(in srgb, var(--accent) 12%, var(--slot-screen-bg)) 100%
+    color-mix(in srgb, var(--slot-guardian) 40%, #134e4a) 0%,
+    color-mix(in srgb, var(--slot-guardian) 10%, var(--slot-screen-bg)) 100%
   );
-  color: color-mix(in srgb, var(--accent) 90%, #fff);
+  color: color-mix(in srgb, var(--slot-guardian) 90%, #f0fdfa);
 }
 
 .slot-scatter-tracker {
@@ -444,15 +453,15 @@
   gap: 0.12rem;
   padding: 0.28rem 0.35rem 0.32rem;
   border-radius: clamp(6px, 0.8cqw, 10px);
-  border: 1px solid color-mix(in srgb, #22d3ee 50%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--slot-guardian) 50%, var(--border));
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #22d3ee 22%, #0c4a6e) 0%,
-    color-mix(in srgb, #22d3ee 8%, var(--slot-screen-bg)) 100%
+    color-mix(in srgb, var(--slot-guardian) 20%, #134e4a) 0%,
+    color-mix(in srgb, var(--slot-guardian) 6%, var(--slot-screen-bg)) 100%
   );
   box-shadow:
     0 4px 12px rgb(0 0 0 / 35%),
-    inset 0 1px 0 rgb(255 255 255 / 12%);
+    inset 0 1px 0 rgb(255 255 255 / 10%);
 }
 
 .slot-scatter-tracker-slots {
@@ -482,21 +491,21 @@
 
 .slot-scatter-tracker-slot--filled {
   border-style: solid;
-  border-color: color-mix(in srgb, #67e8f9 80%, var(--slot-gold-dim));
+  border-color: color-mix(in srgb, #5eead4 75%, var(--slot-gold-dim));
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, #22d3ee 52%, #0e7490) 0%,
-    color-mix(in srgb, #0891b2 42%, #16141f) 100%
+    color-mix(in srgb, #14b8a6 48%, #0f766e) 0%,
+    color-mix(in srgb, #0d9488 38%, #1a1510) 100%
   );
-  color: #ecfeff;
+  color: #f0fdfa;
   opacity: 1;
   text-shadow:
-    0 0 8px rgb(34 211 238 / 75%),
+    0 0 8px rgb(20 184 166 / 70%),
     0 1px 2px rgb(0 0 0 / 55%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 18%),
-    0 0 0 1px color-mix(in srgb, #22d3ee 50%, transparent),
-    0 0 10px color-mix(in srgb, #22d3ee 32%, transparent);
+    inset 0 1px 0 rgb(255 255 255 / 15%),
+    0 0 0 1px color-mix(in srgb, #14b8a6 45%, transparent),
+    0 0 10px color-mix(in srgb, #14b8a6 28%, transparent);
 }
 
 .slot-reels-badge-label {
@@ -538,16 +547,17 @@
   justify-content: center;
   padding: clamp(2px, 0.35cqw, 5px);
   border-radius: clamp(8px, 1.1cqw, 12px);
-  border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 70%, var(--border));
+  /* Carved stone column housing */
+  border: 1px solid color-mix(in srgb, var(--slot-stone-light) 60%, var(--slot-stone));
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #000 18%, var(--slot-screen-bg)) 0%,
-    color-mix(in srgb, #000 42%, var(--slot-screen-bg)) 100%
+    color-mix(in srgb, #000 22%, var(--slot-stone)) 0%,
+    color-mix(in srgb, #000 38%, var(--slot-frame-deep)) 100%
   );
   box-shadow:
-    inset 0 0 14px rgb(0 0 0 / 48%),
-    inset 0 1px 0 rgb(255 255 255 / 08%),
-    0 2px 10px rgb(0 0 0 / 22%);
+    inset 0 0 14px rgb(0 0 0 / 55%),
+    inset 0 1px 0 rgb(255 255 255 / 05%),
+    0 2px 10px rgb(0 0 0 / 30%);
   overflow: hidden;
   position: relative;
 }
@@ -610,12 +620,13 @@
   pointer-events: none;
 }
 
+/* Lotus vignette — temple sanctum shadow gradient */
 .winway-reels-layout--cabinet .slot-reels-stage::before {
   top: 0;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--slot-screen-bg) 78%, #000) 0%,
-    transparent 100%
+    color-mix(in srgb, var(--slot-frame-deep) 82%, #000) 0%,
+    color-mix(in srgb, var(--slot-stone) 25%, transparent) 100%
   );
 }
 
@@ -623,8 +634,8 @@
   bottom: 0;
   background: linear-gradient(
     0deg,
-    color-mix(in srgb, var(--slot-screen-bg) 78%, #000) 0%,
-    transparent 100%
+    color-mix(in srgb, var(--slot-frame-deep) 82%, #000) 0%,
+    color-mix(in srgb, var(--slot-stone) 25%, transparent) 100%
   );
 }
 
@@ -656,39 +667,42 @@
   min-height: var(--slot-cell);
   font-size: clamp(0.72rem, 2.8cqw, 1.05rem);
   border-radius: clamp(6px, 0.8cqw, 10px);
-  border-color: color-mix(in srgb, var(--slot-gold-dim) 40%, var(--border));
+  /* Carved stone tablet */
+  border-color: color-mix(in srgb, var(--slot-stone-light) 50%, var(--slot-stone));
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #fff 8%, var(--bg)) 0%,
-    var(--bg) 100%
+    color-mix(in srgb, #f5e6c8 10%, var(--slot-stone)) 0%,
+    var(--slot-stone) 100%
   );
+  color: color-mix(in srgb, var(--slot-gold) 40%, #f5e6c8);
   box-shadow:
-    inset 0 2px 0 rgb(255 255 255 / 10%),
-    0 2px 6px rgb(0 0 0 / 25%);
+    inset 0 2px 0 rgb(255 255 255 / 08%),
+    0 2px 6px rgb(0 0 0 / 35%);
 }
 
 @media (prefers-color-scheme: dark) {
   .winway-reels-layout--cabinet .cell {
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, #fff 6%, #252030) 0%,
-      #16141f 100%
+      color-mix(in srgb, #f5e6c8 8%, var(--slot-stone)) 0%,
+      color-mix(in srgb, #000 15%, var(--slot-stone)) 100%
     );
   }
 }
 
 .winway-reels-layout--cabinet .cell.cell-scatter {
-  border-color: color-mix(in srgb, #67e8f9 80%, var(--slot-gold-dim));
+  /* Guardian spirit energy — teal glow */
+  border-color: color-mix(in srgb, #5eead4 75%, var(--slot-gold-dim));
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, #22d3ee 52%, #0e7490) 0%,
-    color-mix(in srgb, #0891b2 42%, #16141f) 100%
+    color-mix(in srgb, #14b8a6 48%, #0f766e) 0%,
+    color-mix(in srgb, #0d9488 42%, #1a1510) 100%
   );
-  color: #ecfeff;
+  color: #f0fdfa;
   box-shadow:
-    inset 0 2px 0 rgb(255 255 255 / 18%),
-    0 0 0 1px color-mix(in srgb, #22d3ee 50%, transparent),
-    0 0 16px color-mix(in srgb, #22d3ee 38%, transparent),
+    inset 0 2px 0 rgb(255 255 255 / 16%),
+    0 0 0 1px color-mix(in srgb, #2dd4bf 45%, transparent),
+    0 0 16px color-mix(in srgb, #14b8a6 35%, transparent),
     0 2px 8px rgb(0 0 0 / 35%);
 }
 
@@ -697,36 +711,38 @@
 }
 
 .winway-reels-layout--cabinet .cell.cell-wild {
-  border-color: color-mix(in srgb, #fcd34d 82%, var(--slot-gold-dim));
+  /* Sacred jungle guardian — deep emerald gold */
+  border-color: color-mix(in srgb, var(--slot-gold) 72%, #f5e6c8);
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, #fcd34d 54%, #b45309) 0%,
-    color-mix(in srgb, #d97706 44%, #16141f) 100%
+    color-mix(in srgb, var(--slot-gold) 48%, #5c4a1a) 0%,
+    color-mix(in srgb, var(--slot-gold) 36%, #1a1510) 100%
   );
-  color: #fffbeb;
+  color: #fef9ef;
   box-shadow:
-    inset 0 2px 0 rgb(255 255 255 / 20%),
-    0 0 0 1px color-mix(in srgb, #fbbf24 52%, transparent),
-    0 0 16px color-mix(in srgb, #f59e0b 36%, transparent),
+    inset 0 2px 0 rgb(255 255 255 / 18%),
+    0 0 0 1px color-mix(in srgb, var(--slot-gold) 45%, transparent),
+    0 0 16px color-mix(in srgb, var(--slot-gold) 32%, transparent),
     0 2px 8px rgb(0 0 0 / 35%);
 }
 
 .winway-reels-layout--cabinet .cell.sym-GW {
-  border-color: color-mix(in srgb, #fb923c 80%, var(--slot-gold-dim));
+  /* Golden Wild — radiant temple gold */
+  border-color: color-mix(in srgb, #fbbf24 80%, var(--slot-gold-dim));
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, #fbbf24 56%, #c2410c) 0%,
-    color-mix(in srgb, #ea580c 46%, #16141f) 100%
+    color-mix(in srgb, #fbbf24 52%, #92400e) 0%,
+    color-mix(in srgb, #f59e0b 44%, #1a1510) 100%
   );
-  color: #fff7ed;
+  color: #fffbeb;
   box-shadow:
-    inset 0 2px 0 rgb(255 255 255 / 18%),
-    0 0 0 1px color-mix(in srgb, #f59e0b 50%, transparent),
-    0 0 14px color-mix(in srgb, #f59e0b 34%, transparent),
+    inset 0 2px 0 rgb(255 255 255 / 16%),
+    0 0 0 1px color-mix(in srgb, #f59e0b 45%, transparent),
+    0 0 14px color-mix(in srgb, #f59e0b 30%, transparent),
     0 2px 8px rgb(0 0 0 / 35%);
 }
 
-/* Console footer */
+/* Console footer — stone slab */
 .slot-cabinet-console {
   flex-shrink: 0;
   display: flex;
@@ -734,11 +750,11 @@
   min-height: var(--slot-console-h);
   padding: clamp(0.45rem, 1.2cqw, 0.75rem) var(--slot-pad)
     clamp(0.55rem, 1.4cqw, 0.85rem);
-  border-top: 1px solid color-mix(in srgb, var(--slot-gold) 25%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--slot-gold) 30%, transparent);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--slot-frame-mid) 40%, var(--bg)) 0%,
-    color-mix(in srgb, var(--slot-frame-deep) 30%, var(--code-bg)) 100%
+    color-mix(in srgb, var(--slot-stone-light) 50%, var(--slot-stone)) 0%,
+    color-mix(in srgb, var(--slot-frame-deep) 40%, var(--slot-stone)) 100%
   );
 }
 
@@ -788,7 +804,7 @@
   font-size: clamp(1rem, 3cqw, 1.35rem);
   font-weight: 800;
   line-height: 1.1;
-  color: color-mix(in srgb, var(--slot-gold) 75%, var(--text-h));
+  color: color-mix(in srgb, var(--slot-gold) 65%, #f5e6c8);
   font-variant-numeric: tabular-nums;
   word-break: break-all;
   text-shadow: 0 1px 2px rgb(0 0 0 / 25%);
@@ -799,10 +815,10 @@
   width: clamp(1.65rem, 4cqw, 2rem);
   height: clamp(1.65rem, 4cqw, 2rem);
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--slot-gold) 55%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--slot-gold) 45%, var(--slot-stone));
   border-radius: 0.35rem;
-  background: color-mix(in srgb, var(--slot-gold) 18%, var(--panel));
-  color: var(--text-h);
+  background: color-mix(in srgb, var(--slot-gold) 14%, var(--slot-frame-deep));
+  color: color-mix(in srgb, var(--slot-gold) 80%, #f5e6c8);
   font-size: clamp(1rem, 2.5cqw, 1.2rem);
   font-weight: 800;
   line-height: 1;
@@ -810,7 +826,7 @@
 }
 
 .slot-console-deposit-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--slot-gold) 32%, var(--panel));
+  background: color-mix(in srgb, var(--slot-gold) 26%, var(--slot-stone));
   border-color: var(--slot-gold);
 }
 
@@ -843,9 +859,10 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   border-radius: clamp(8px, 1.2cqw, 999px);
-  border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 75%, var(--border));
-  background: color-mix(in srgb, var(--slot-frame-mid) 45%, var(--bg));
-  color: var(--text-h);
+  /* Stone button with gold rim */
+  border: 1px solid color-mix(in srgb, var(--slot-stone-light) 60%, var(--slot-stone));
+  background: color-mix(in srgb, var(--slot-stone) 65%, var(--slot-frame-deep));
+  color: color-mix(in srgb, var(--slot-gold) 75%, #fef9ef);
   cursor: pointer;
   transition:
     border-color 0.15s ease,
@@ -854,8 +871,8 @@
 }
 
 .slot-console-bar .slot-console-chip-btn:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--slot-gold) 55%, var(--accent-border));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: var(--slot-gold);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--slot-gold) 18%, transparent);
 }
 
 .slot-console-bar .slot-console-chip-btn:disabled {
@@ -1071,9 +1088,9 @@
   height: clamp(2.5rem, 6.5cqw, 2.85rem);
   margin: 0;
   opacity: 0.85;
-  border: 1px solid color-mix(in srgb, var(--slot-gold-dim) 60%, var(--border));
-  background: color-mix(in srgb, var(--slot-frame-mid) 50%, var(--bg));
-  color: var(--text-h);
+  border: 1px solid color-mix(in srgb, var(--slot-stone-light) 55%, var(--slot-stone));
+  background: color-mix(in srgb, var(--slot-stone) 55%, var(--slot-frame-deep));
+  color: color-mix(in srgb, var(--slot-gold) 75%, #fef9ef);
   box-shadow: var(--shadow);
 }
 
@@ -1175,15 +1192,18 @@
   padding: 0 clamp(1.25rem, 4cqw, 2.25rem);
   font-size: clamp(0.88rem, 2.5cqw, 1.08rem);
   border-radius: clamp(8px, 1.2cqw, 999px);
-  border-color: color-mix(in srgb, var(--slot-gold) 55%, var(--accent));
+  /* Sacred gold spin button */
+  border-color: color-mix(in srgb, var(--slot-gold) 60%, #f5e6c8);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--slot-gold) 35%, var(--accent)) 0%,
-    color-mix(in srgb, var(--accent) 70%, #4c1d95) 100%
+    color-mix(in srgb, var(--slot-gold) 42%, #f5e6c8) 0%,
+    color-mix(in srgb, var(--slot-gold) 60%, #5c4a1a) 100%
   );
+  color: #1a1510;
+  font-weight: 700;
   box-shadow:
-    0 4px 16px color-mix(in srgb, var(--accent) 40%, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 28%);
+    0 4px 16px color-mix(in srgb, var(--slot-gold) 35%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 30%);
 }
 
 /* Narrow cabinet: keep legend overlay; horizontal scroll for many win ways */
@@ -1362,13 +1382,13 @@
 }
 
 .slot-celebration--jackpot {
-  border-color: color-mix(in srgb, #fbbf24 70%, #fff);
+  border-color: color-mix(in srgb, var(--slot-gold) 70%, #f5e6c8);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, #f59e0b 88%, #78350f) 0%,
-    color-mix(in srgb, #fcd34d 55%, #451a03) 100%
+    color-mix(in srgb, var(--slot-gold) 82%, #5c4a1a) 0%,
+    color-mix(in srgb, var(--slot-gold) 50%, #3d3010) 100%
   );
-  color: #fffbeb;
+  color: #fef9ef;
   animation:
     slot-celebrate-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both,
     slot-celebrate-pulse-gold 2.2s ease-in-out 520ms infinite;
@@ -1376,53 +1396,53 @@
 }
 
 .slot-celebration--free_spin {
-  border-color: color-mix(in srgb, #a78bfa 65%, #fff);
+  border-color: color-mix(in srgb, var(--slot-guardian) 60%, #fff);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, #7c3aed 80%, #1e1b4b) 0%,
-    color-mix(in srgb, #c4b5fd 45%, #312e81) 100%
+    color-mix(in srgb, var(--slot-guardian) 75%, #134e4a) 0%,
+    color-mix(in srgb, #5eead4 40%, #042f2e) 100%
   );
-  color: #f5f3ff;
+  color: #f0fdfa;
 }
 
 .slot-celebration--retrigger {
-  border-color: color-mix(in srgb, #34d399 60%, #fff);
+  border-color: color-mix(in srgb, var(--slot-guardian) 55%, #fff);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, #059669 82%, #064e3b) 0%,
-    color-mix(in srgb, #6ee7b7 40%, #022c22) 100%
+    color-mix(in srgb, var(--slot-guardian) 78%, #0f766e) 0%,
+    color-mix(in srgb, #2dd4bf 38%, #042f2e) 100%
   );
-  color: #ecfdf5;
+  color: #f0fdfa;
 }
 
 .slot-celebration--guardian_wild {
-  border-color: color-mix(in srgb, #fb923c 65%, #fff);
+  border-color: color-mix(in srgb, var(--slot-gold) 62%, #f5e6c8);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, #ea580c 78%, #431407) 0%,
-    color-mix(in srgb, #fdba74 42%, #7c2d12) 100%
+    color-mix(in srgb, var(--slot-gold) 72%, #5c4a1a) 0%,
+    color-mix(in srgb, var(--slot-gold) 38%, #3d2810) 100%
   );
-  color: #fff7ed;
+  color: #fef9ef;
 }
 
 .slot-celebration--respin {
-  border-color: color-mix(in srgb, #38bdf8 60%, #fff);
+  border-color: color-mix(in srgb, var(--slot-guardian) 55%, #fff);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, #0284c7 78%, #0c4a6e) 0%,
-    color-mix(in srgb, #7dd3fc 42%, #082f49) 100%
+    color-mix(in srgb, var(--slot-guardian) 72%, #0f766e) 0%,
+    color-mix(in srgb, #5eead4 38%, #042f2e) 100%
   );
-  color: #f0f9ff;
+  color: #f0fdfa;
 }
 
 .slot-celebration--win {
-  border-color: color-mix(in srgb, #60a5fa 55%, #fff);
+  border-color: color-mix(in srgb, var(--slot-gold) 45%, #f5e6c8);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, #2563eb 72%, #1e3a8a) 0%,
-    color-mix(in srgb, #93c5fd 38%, #172554) 100%
+    color-mix(in srgb, var(--slot-stone-light) 65%, var(--slot-stone)) 0%,
+    color-mix(in srgb, var(--slot-gold) 30%, var(--slot-frame-deep)) 100%
   );
-  color: #eff6ff;
+  color: #fef9ef;
 }
 
 @keyframes slot-celebrate-in {

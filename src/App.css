@@ -304,11 +304,11 @@
 
 .slot-stage {
   position: relative;
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-color: color-mix(in srgb, var(--slot-gold, #c4a44a) 35%, var(--border));
   background: radial-gradient(
       ellipse 120% 80% at 50% -20%,
-      color-mix(in srgb, var(--accent) 8%, transparent),
-      transparent 55%
+      color-mix(in srgb, var(--slot-gold, #c4a44a) 6%, transparent),
+      transparent 58%
     ),
     color-mix(in srgb, var(--bg) 90%, var(--code-bg));
 }
