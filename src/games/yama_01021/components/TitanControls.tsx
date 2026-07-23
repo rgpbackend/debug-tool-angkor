@@ -11,6 +11,7 @@ type TitanControlsProps = {
   spinning: boolean;
   onSpin: () => void;
   autoSpinCount: number | null;
+  autoSpinRemaining: number;
   onAutoSpinChange: (count: number | null) => void;
   fastSpin: boolean;
   onFastSpinToggle: () => void;
@@ -22,7 +23,7 @@ type TitanControlsProps = {
 
 export default function TitanControls({
   betValue, betLevels, onBetChange, betDisabled, canSpin, spinning, onSpin,
-  autoSpinCount, onAutoSpinChange, fastSpin, onFastSpinToggle,
+  autoSpinCount, autoSpinRemaining, onAutoSpinChange, fastSpin, onFastSpinToggle,
   superBet, onSuperBetToggle, balance, connected,
 }: TitanControlsProps) {
   const [autoPickerOpen, setAutoPickerOpen] = useState(false);
@@ -61,7 +62,7 @@ export default function TitanControls({
       )}
 
       <button className="titan-spin-btn" onClick={onSpin} disabled={!canSpin || spinning}>
-        {spinning ? "…" : autoSpinCount != null ? `◼ ${autoSpinCount}` : "⟳ Spin"}
+        {spinning ? "…" : autoSpinRemaining > 0 ? `◼ ${autoSpinRemaining}` : autoSpinCount != null ? `▶ ${autoSpinCount}` : "⟳ Spin"}
       </button>
     </div>
   );

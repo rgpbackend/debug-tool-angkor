@@ -12,14 +12,16 @@ import {
   validateCheatReels,
 } from "./lib/cheat";
 import {
-  buildGoldenWildHighlightSet,
   parseBetLevelsFromJoin,
   readRoundBetString,
-  readRoundFeatureBadges,
-  readSpinJackpot,
-  readSpinRetrigger,
   resolveBetFromLevels,
 } from "../../lib/session-utils";
+import {
+  parseJackpotPoolsFromPayload,
+  readTopLevelBalance,
+  type JackpotTier,
+  type JackpotTierInfo,
+} from "../../ws/protocol";
 import {
   isSpinResponsePayload,
   isSpinErrorPayload,
@@ -27,7 +29,14 @@ import {
   isHistoryDetailPayload,
   isJackpotWinHistoryPayload,
   isForceJackpotResponse,
-} from "../../ws/browser-ws-client";
+  parseHistoryListPayload,
+  parseHistoryDetailPayload,
+  type SpinResponsePayload,
+  type HistoryListPayload,
+  type HistoryDetailPayload,
+  type JackpotWinHistoryPayload,
+  type LastRound,
+} from "./lib/protocol";
 import {
   spinFrame,
   cheatFrame,
@@ -36,20 +45,13 @@ import {
   HISTORY_LIST_DEFAULT_SIZE,
   historyDetailFrame,
   jackpotWinHistoryFrame,
-} from "../../ws/frames";
+} from "./lib/frames";
 import {
-  parseHistoryListPayload,
-  parseHistoryDetailPayload,
-  parseJackpotPoolsFromPayload,
-  readTopLevelBalance,
-  type JackpotTier,
-  type JackpotTierInfo,
-  type SpinResponsePayload,
-  type HistoryListPayload,
-  type HistoryDetailPayload,
-  type JackpotWinHistoryPayload,
-  type LastRound,
-} from "../../ws/protocol";
+  buildGoldenWildHighlightSet,
+  readSpinJackpot,
+  readSpinRetrigger,
+  readRoundFeatureBadges,
+} from "./lib/spin-parsers";
 
 function parseBalanceAmount(balance: string | null): number | null {
   if (balance == null) return null;
@@ -112,11 +114,12 @@ export function useGameSession(
   }, []);
 
   // Apply last round reels from join
+  const angkorLastRound = ws.lastRound as LastRound | null;
   useEffect(() => {
-    if (ws.lastRound?.spin?.reels) {
-      applyCheatGridFromReels(ws.lastRound.spin.reels);
+    if (angkorLastRound?.spin?.reels) {
+      applyCheatGridFromReels(angkorLastRound.spin.reels);
     }
-  }, [ws.lastRound, applyCheatGridFromReels]);
+  }, [angkorLastRound, applyCheatGridFromReels]);
 
   // Resolve bet from join bet levels
   useEffect(() => {
@@ -129,7 +132,7 @@ export function useGameSession(
 
   // --- derived state ---
   const isSpinning = ws.phase === "spinning";
-  const displaySpin = lastSpin ?? ws.lastRound;
+  const displaySpin = lastSpin ?? angkorLastRound;
 
   const viewSpin = useMemo(() => {
     if (isSpinning && spinFreeze !== null) return spinFreeze;
@@ -158,7 +161,7 @@ export function useGameSession(
     }
     setGameError(null);
     spinBusyRef.current = true;
-    setSpinFreeze(lastSpin ?? ws.lastRound);
+    setSpinFreeze(lastSpin ?? angkorLastRound);
     try {
       const payloadPromise = client.waitForPayload(isSpinResponsePayload, "spin response", {
         rejectMatcher: isSpinErrorPayload,
@@ -194,7 +197,7 @@ export function useGameSession(
       spinBusyRef.current = false;
       setSpinFreeze(null);
     }
-  }, [lastSpin, ws.lastRound, activeBet, cheatArmed, forceJackpotArmed, ws, callbacks]);
+  }, [lastSpin, angkorLastRound, activeBet, cheatArmed, forceJackpotArmed, ws, callbacks]);
 
   // --- cheat ---
   const sendCheat = useCallback(() => {

@@ -1,4 +1,4 @@
-import type { SpinResponsePayload } from "../../../ws/protocol";
+import type { SpinResponsePayload } from "./protocol";
 
 /** Round still has pending feature steps (another cmd 1500 required). */
 export function isRoundUnfinished(payload: SpinResponsePayload): boolean {

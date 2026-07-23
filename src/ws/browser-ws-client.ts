@@ -301,46 +301,7 @@ export class BrowserWsClient {
 
 export { StompTokenBannedError } from "./stomp-errors";
 
-export function isSpinResponsePayload(
-  payload: Record<string, unknown>,
-): boolean {
-  if (
-    !hasCmd(payload, "1500") ||
-    !isObject(payload.spin) ||
-    !isObject(payload.round) ||
-    !isObject(payload.state)
-  ) {
-    return false;
-  }
-  const spin = payload.spin as Record<string, unknown>;
-  return isObject(spin.jackpot);
-}
-
-/** Spin cmd 1500 error envelope (`c: 1` or `errorCode`). */
-export function isSpinErrorPayload(
-  payload: Record<string, unknown>,
-): boolean {
-  if (!hasCmd(payload, "1500")) {
-    return false;
-  }
-  return payload.c === 1 || payload.errorCode != null;
-}
-
-function formatCmdErrorMessage(payload: Record<string, unknown>): string {
-  const msg = typeof payload.msg === "string" ? payload.msg.trim() : "";
-  const errorCode =
-    typeof payload.errorCode === "string" ? payload.errorCode.trim() : "";
-  if (errorCode && msg) {
-    return `${errorCode}: ${msg}`;
-  }
-  if (msg) {
-    return msg;
-  }
-  if (errorCode) {
-    return errorCode;
-  }
-  return "Command rejected";
-}
+// --- Shared matchers (used by useWsSession) ---
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -369,36 +330,6 @@ export function isJoinResponsePayload(
   );
 }
 
-/** Matches cmd 1502 history-list response. */
-export function isHistoryListPayload(
-  payload: Record<string, unknown>,
-): boolean {
-  return (
-    hasCmd(payload, "1502") &&
-    Array.isArray(payload.items) &&
-    typeof payload.totalItems === "number" &&
-    typeof payload.totalPage === "number"
-  );
-}
-
-/** Matches cmd 1503 history-detail success (flat spin-step body, no spinId). */
-export function isHistoryDetailPayload(
-  payload: Record<string, unknown>,
-): boolean {
-  if (!hasCmd(payload, "1503")) {
-    return false;
-  }
-  if (payload.c === 1 || payload.errorCode != null) {
-    return false;
-  }
-  return (
-    typeof payload.roundId === "string" &&
-    Array.isArray(payload.reels) &&
-    (typeof payload.spinIndex === "number" ||
-      typeof payload.stepIndex === "number")
-  );
-}
-
 /** Matches cmd 1510 (pull) or 1520 (push) jackpot pools response. */
 export function isJackpotPoolsPayload(
   payload: Record<string, unknown>,
@@ -414,25 +345,6 @@ export function isJackpotPoolsPushPayload(
   payload: Record<string, unknown>,
 ): boolean {
   return hasCmd(payload, "1520") && Array.isArray(payload.pools);
-}
-
-/** Matches cmd 1511 jackpot win history response. */
-export function isJackpotWinHistoryPayload(
-  payload: Record<string, unknown>,
-): boolean {
-  return hasCmd(payload, "1511") && Array.isArray(payload.items);
-}
-
-/** Matches cmd 2002 force-jackpot arm response. */
-export function isForceJackpotResponse(
-  payload: Record<string, unknown>,
-): boolean {
-  return (
-    hasCmd(payload, "2002") &&
-    payload.c !== 1 &&
-    payload.errorCode == null &&
-    typeof payload.tier === "string"
-  );
 }
 
 /** Matches cmd 1521 jackpot winner broadcast. */

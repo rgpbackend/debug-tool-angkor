@@ -13,7 +13,7 @@ import { buildSpinCelebrations } from "./lib/celebrations";
 import { useGameSession } from "./useGameSession";
 import { readEnvDefaults } from "../../config";
 import type { GameScreenProps } from "../../games";
-import type { SpinResponsePayload } from "../../ws/protocol";
+import type { SpinResponsePayload } from "./lib/protocol";
 import type { JackpotTierInfo } from "../../ws/protocol";
 import "./slot-cabinet.css";
 

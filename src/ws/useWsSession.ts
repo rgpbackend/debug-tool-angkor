@@ -238,9 +238,6 @@ export function useWsSession(
           await refreshSessionToken(storedRefresh);
         saveRefreshToken(nextRefresh);
         reauthWsWithToken(client, accessToken);
-        if (sessionReadyRef.current) {
-          void refreshBalance();
-        }
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
         callbacksRef.current.onConnectionLost(

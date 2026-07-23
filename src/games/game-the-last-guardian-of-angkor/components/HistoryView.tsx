@@ -6,14 +6,14 @@ import {
   useRef,
   useState,
 } from "react";
-import { formatCreditAmount } from "../../../lib/session-utils";
+import { formatCreditAmount } from "../lib/spin-parsers";
 import type {
   HistoryDetailPayload,
   HistoryItem,
   HistoryListPayload,
   HistorySpinType,
   HistoryWinWay,
-} from "../../../ws/protocol";
+} from "../lib/protocol";
 
 // ---------------------------------------------------------------------------
 // Utility helpers (mirror App.tsx pattern, kept local to avoid coupling)

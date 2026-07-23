@@ -36,132 +36,19 @@ export interface GameSymbol {
   substitutes?: boolean;
 }
 
-export interface GuardianWildPayload {
-  triggered: boolean;
-  originalReels: string[][];
-  addedPositions: [number, number][];
-}
-
-export interface SpinResponsePayload {
-  /** Wallet balance after this spin's settlement (decimal string, §1.1). */
-  balance?: string;
-  spin: {
-    spinType: string;
-    reels: string[][];
-    /** Credited line/feature win for this spin (decimal string on wire). */
-    win: string | number;
-    triggers: string[];
-    winWays?: WinWay[];
-    guardianWild: GuardianWildPayload;
-    retrigger: {
-      triggered: boolean;
-      scatterCount: number;
-      addedFreeSpins: number;
-      scatterPositions: [number, number][];
-    };
-    jackpot: {
-      triggered: boolean;
-      tier: string | null;
-      /** Decimal string on wire (§1.1); not subject to line win cap. */
-      jackpotWin: string | number;
-      goldenWildPositions: [number, number][];
-    };
-  };
-  round: {
-    roundId: string;
-    state: string;
-    bet: string | number;
-    totalWin: string | number;
-    isFinished: boolean;
-    winCapReached: boolean;
-  };
-  state: {
-    freeSpin: {
-      active: boolean;
-      spinsLeft: number;
-      preScatterCount?: number;
-      scatterCollected: number;
-      triggeredScatterCount: number;
-      initialFreeSpinCount?: number;
-      currentStep: number;
-      totalSteps: number;
-    };
-    respin: {
-      active: boolean;
-      origin: string;
-      currentStep: number;
-      totalSteps: number;
-      spinsLeft: number;
-      stickyWildAnchorRows: Record<string, number>;
-    };
-  };
-}
-
-// --- Titan spin response (cmd 1500) ---
-
-export interface TitanPaylineWin {
-  paylineId: string;
-  symbol: string;
-  count: number;
-  winAmount: number;
-  direction: "LTR" | "RTL";
-}
-
-export interface TitanSpinResponsePayload {
-  cmd: number;
-  c: number;
-  spin: {
-    spinIndex: number;
-    /** Flat 15-char grid string (row-major: first 5 = top row, next 5 = middle, last 5 = bottom). */
-    patternGrid: string;
-    winAmount: number;
-    paylineWins: TitanPaylineWin[];
-    superBet?: boolean;
-    titanWild?: {
-      triggered: boolean;
-      wildReels: number[];
-    };
-  };
-  round: {
-    roundId: string;
-    state: "ACTIVE" | "RESPIN" | "ENDED";
-    totalWin: number;
-    isEnded: boolean;
-  };
-  state: {
-    isLastSpin: boolean;
-    respin?: {
-      active: boolean;
-      spinCount: number;
-      lockedReels: number[];
-    };
-  };
-}
-
-/** Decode flat patternGrid (row-major) into column-major reels grid (5×3).
- *  Row-major layout: first 5 chars = top row, next 5 = middle, last 5 = bottom. */
-export function decodePatternGrid(flat: string): string[][] {
-  const reels: string[][] = [[], [], [], [], []];
-  for (let reel = 0; reel < 5; reel++) {
-    for (let row = 0; row < 3; row++) {
-      const idx = row * 5 + reel;
-      reels[reel].push(flat[idx] ?? "?");
-    }
-  }
-  return reels;
-}
-
 // --- Join response (cmd 1005) ---
-
-/** lastRound uses the same { round, spin, state } shape as SpinResponsePayload,
- *  but `spin` can be absent when the round has no spins yet. */
-export type LastRound = Omit<SpinResponsePayload, 'spin'> & {
-  spin?: SpinResponsePayload['spin'] | null;
-};
 
 export interface ServerPayline {
   id: string;
   rows: number[];
+}
+
+/** Minimal shared last-round type — games define their own typed versions. */
+export interface LastRound {
+  round?: Record<string, unknown>;
+  spin?: Record<string, unknown> | null;
+  state?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface JoinResponsePayload {
@@ -209,64 +96,6 @@ export function parseGetBalancePayload(
     roundId: null,
     timestampMillis: Number(payload.timestampMillis ?? 0),
   };
-}
-
-export interface WinWay {
-  symbol: string;
-  matchCount: number;
-  ways: number;
-  payout: string | number;
-  positions: number[][];
-}
-
-// --- History (cmd 1502 / 1503) ---
-
-export type HistorySpinType = "BASE" | "FREE_SPIN" | "RESPIN";
-
-/** Same contract as live spin `jackpot` (1500) and history wire payloads. */
-export interface HistoryJackpotSnapshot {
-  triggered: boolean;
-  tier: string | null;
-  jackpotWin: string;
-  goldenWildPositions: [number, number][];
-}
-
-export interface HistoryItem {
-  roundId: string;
-  /** 0-based index within the parent round (Level 2 `spinIndex`). */
-  spinIndex: number;
-  transactionId: string;
-  spinType: HistorySpinType;
-  /** Same value as `spinIndex` on the wire. */
-  stepIndex: number;
-  /** Parent round display time (finishedAt / updatedAt). Not exact spin instant. */
-  timestampMillis: number;
-  /** Only BASE step carries round stake; FREE_SPIN / RESPIN use 0. */
-  bet: number;
-  win: number;
-  profit: number;
-  totalStepsInRound?: number;
-  jackpot?: HistoryJackpotSnapshot;
-}
-
-export interface HistoryListPayload {
-  cmd: string | number;
-  items: HistoryItem[];
-  /** 1-based page echoed from the server (guide §8.1). */
-  page: number;
-  size: number;
-  totalItems: number;
-  totalPage: number;
-}
-
-export interface HistoryWinWay {
-  wayIndex: number;
-  symbol: string;
-  matchCount: number;
-  ways: number;
-  payout: number;
-  /** Reel-major: positions[i] = winning row indices on reel i. */
-  positions: number[][];
 }
 
 // --- Jackpot pools (cmd 1510 / 1520) & win history (1511) ---
@@ -348,26 +177,6 @@ export interface JackpotGoldenWildPosition {
   rowIndex: number;
 }
 
-export interface JackpotWinHistoryItem {
-  id: string;
-  poolId: string;
-  tier: JackpotTier;
-  roundId: string;
-  userId: string;
-  agencyId: number;
-  betAmount: string;
-  winAmount: string;
-  poolAmountAtWin: string;
-  goldenWildPositions: JackpotGoldenWildPosition[];
-  createdAt: number;
-}
-
-export interface JackpotWinHistoryPayload {
-  cmd: string | number;
-  items: JackpotWinHistoryItem[];
-  count: number;
-}
-
 export type JackpotPoolsByTier = Record<string, JackpotPool | null>;
 
 export function emptyJackpotPoolsByTier(
@@ -430,172 +239,6 @@ export function parseJackpotPoolsFromPayload(
   return pools.length > 0 ? pools : null;
 }
 
-function readHistorySpinType(value: unknown): HistorySpinType {
-  if (value === "BASE" || value === "FREE_SPIN" || value === "RESPIN") {
-    return value;
-  }
-  return "BASE";
-}
-
-/** Monetary fields on history wire payloads (§1.1 decimal strings). */
-function parseHistoryJackpot(raw: unknown): HistoryJackpotSnapshot | undefined {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return undefined;
-  }
-  const j = raw as Record<string, unknown>;
-  const jackpotWin = readWireDecimalString(j.jackpotWin);
-  if (!jackpotWin) {
-    return undefined;
-  }
-  return {
-    triggered: Boolean(j.triggered),
-    tier: typeof j.tier === "string" ? j.tier : null,
-    jackpotWin,
-    goldenWildPositions: parseJackpotGoldenWildPositions(j.goldenWildPositions),
-  };
-}
-
-function readHistoryAmount(value: unknown): number {
-  if (typeof value === "string" && value.trim()) {
-    const n = Number(value.trim());
-    return Number.isFinite(n) ? n : 0;
-  }
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  return 0;
-}
-
-function parseHistoryWinWay(
-  entry: unknown,
-  fallbackIndex: number,
-): HistoryWinWay | null {
-  if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-    return null;
-  }
-  const row = entry as Record<string, unknown>;
-  const positions = Array.isArray(row.positions)
-    ? (row.positions as unknown[]).map((col) =>
-        Array.isArray(col) ? col.map((r) => Number(r)) : [],
-      )
-    : [];
-  return {
-    wayIndex:
-      typeof row.wayIndex === "number" ? row.wayIndex : fallbackIndex,
-    symbol: String(row.symbol ?? ""),
-    matchCount: Number(row.matchCount ?? 0),
-    ways: Number(row.ways ?? 0),
-    payout: readHistoryAmount(row.payout),
-    positions,
-  };
-}
-
-export function parseHistoryListItem(row: unknown): HistoryItem | null {
-  if (typeof row !== "object" || row === null || Array.isArray(row)) {
-    return null;
-  }
-  const r = row as Record<string, unknown>;
-  if (typeof r.roundId !== "string") {
-    return null;
-  }
-  const spinIndex = Number(r.spinIndex ?? r.stepIndex ?? 0);
-  const totalStepsInRound = Number(r.totalStepsInRound ?? 0);
-  const jackpot = parseHistoryJackpot(r.jackpot);
-  return {
-    roundId: r.roundId,
-    spinIndex,
-    transactionId:
-      typeof r.transactionId === "string" ? r.transactionId : r.roundId,
-    spinType: readHistorySpinType(r.spinType),
-    stepIndex: Number(r.stepIndex ?? spinIndex),
-    timestampMillis: Number(r.timestampMillis ?? 0),
-    bet: readHistoryAmount(r.bet),
-    win: readHistoryAmount(r.win),
-    profit: readHistoryAmount(r.profit),
-    ...(totalStepsInRound > 0 ? { totalStepsInRound } : {}),
-    ...(jackpot ? { jackpot } : {}),
-  };
-}
-
-export function parseHistoryListPayload(
-  payload: Record<string, unknown>,
-): HistoryListPayload {
-  const rawItems = Array.isArray(payload.items) ? payload.items : [];
-  const items = rawItems
-    .map((row) => parseHistoryListItem(row))
-    .filter((item): item is HistoryItem => item !== null);
-  return {
-    cmd: payload.cmd as string | number,
-    items,
-    page: Number(payload.page ?? 1),
-    size: Number(payload.size ?? 6),
-    totalItems: Number(payload.totalItems ?? 0),
-    totalPage: Number(payload.totalPage ?? 0),
-  };
-}
-
-export function parseHistoryDetailPayload(
-  payload: Record<string, unknown>,
-): HistoryDetailPayload {
-  const spinIndex = Number(payload.spinIndex ?? payload.stepIndex ?? 0);
-  const rawWinWays = Array.isArray(payload.winWays) ? payload.winWays : [];
-  const winWays: HistoryWinWay[] = [];
-  rawWinWays.forEach((entry, idx) => {
-    const way = parseHistoryWinWay(entry, idx);
-    if (way) {
-      winWays.push(way);
-    }
-  });
-  const reels = Array.isArray(payload.reels)
-    ? (payload.reels as unknown[]).map((col) =>
-        Array.isArray(col) ? col.map((sym) => String(sym)) : [],
-      )
-    : [];
-  const totalStepsInRound = Number(payload.totalStepsInRound ?? 0);
-  const jackpot = parseHistoryJackpot(payload.jackpot);
-
-  return {
-    cmd: payload.cmd as string | number,
-    roundId: String(payload.roundId ?? ""),
-    transactionId: String(
-      payload.transactionId ?? payload.roundId ?? "",
-    ),
-    finishedAtMillis: Number(payload.finishedAtMillis ?? 0),
-    spinIndex,
-    stepIndex: Number(payload.stepIndex ?? spinIndex),
-    totalStepsInRound,
-    spinType: readHistorySpinType(payload.spinType),
-    bet: readHistoryAmount(payload.bet),
-    win: readHistoryAmount(payload.win),
-    profit: readHistoryAmount(payload.profit),
-    reels,
-    winWays,
-    ...(jackpot ? { jackpot } : {}),
-  };
-}
-
-export interface HistoryDetailPayload {
-  cmd: string | number;
-  roundId: string;
-  transactionId: string;
-  /** Parent round display time — same semantics as HistoryItem.timestampMillis. */
-  finishedAtMillis: number;
-  /** 0-based index of this spin within its parent round. */
-  spinIndex: number;
-  stepIndex: number;
-  /** Total spin steps in the parent round (`spins.length`). */
-  totalStepsInRound: number;
-  spinType: HistorySpinType;
-  /** Only BASE step carries round stake; FREE_SPIN / RESPIN use 0. */
-  bet: number;
-  win: number;
-  profit: number;
-  /** Column-major grid, same layout as live spin reels. */
-  reels: string[][];
-  winWays: HistoryWinWay[];
-  jackpot?: HistoryJackpotSnapshot;
-}
-
 function isSymbolKind(value: unknown): value is SymbolKind {
   return (
     typeof value === "string" &&
@@ -603,7 +246,7 @@ function isSymbolKind(value: unknown): value is SymbolKind {
   );
 }
 
-function readWireDecimalString(value: unknown): string | undefined {
+export function readWireDecimalString(value: unknown): string | undefined {
   if (typeof value === "string" && value.trim()) {
     return value.trim();
   }

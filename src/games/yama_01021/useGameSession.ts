@@ -2,10 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWsSession, type WsSessionCallbacks } from "../../ws/useWsSession";
 import { parseTitanMessage } from "./lib/message-parser";
 import {
-  hasCmd, decodePatternGrid, readTopLevelBalance,
-  type JackpotTierInfo, type TitanSpinResponsePayload, type TitanPaylineWin,
+  hasCmd, readTopLevelBalance,
+  type JackpotTierInfo,
 } from "../../ws/protocol";
-import { titanSpinFrame } from "../../ws/frames";
+import {
+  decodePatternGrid,
+  type TitanSpinResponsePayload,
+  type TitanPaylineWin,
+} from "./lib/protocol";
+import { titanSpinFrame } from "./lib/frames";
 import type { PaylineMatch } from "./lib/paylines";
 
 function isTitanSpinPayload(payload: Record<string, unknown>): boolean {
@@ -57,6 +62,8 @@ export function useGameSession(
   const [lastSpin, setLastSpin] = useState<TitanSpinResponsePayload | null>(null);
   const [gameError, setGameError] = useState<string | null>(null);
   const spinBusyRef = useRef(false);
+  const autoSpinRemainingRef = useRef(0);
+  const [autoSpinRemaining, setAutoSpinRemaining] = useState(0);
 
   const totalBet = useMemo(() => {
     const base = Number(bet);
@@ -86,6 +93,24 @@ export function useGameSession(
     } finally { spinBusyRef.current = false; }
   }, [totalBet, ws]);
 
+  const spinRef = useRef(spin);
+  spinRef.current = spin;
+
+  /** Button spin — initialises auto-spin counter when count is set. */
+  const startSpin = useCallback(async (): Promise<TitanSpinResponsePayload | null> => {
+    if (autoSpinRemainingRef.current > 0) {
+      // mid-auto-spin press → cancel
+      autoSpinRemainingRef.current = 0;
+      setAutoSpinRemaining(0);
+      return null;
+    }
+    if (autoSpinCount != null && autoSpinCount > 0) {
+      autoSpinRemainingRef.current = autoSpinCount;
+      setAutoSpinRemaining(autoSpinCount);
+    }
+    return spin();
+  }, [autoSpinCount, spin]);
+
   // Decode grid from patternGrid, or random placeholder before first spin
   const reelGrid = useMemo(() => {
     if (!lastSpin?.spin?.patternGrid) {
@@ -107,11 +132,27 @@ export function useGameSession(
   const hasPendingRespin = lastSpin?.state?.respin?.active === true;
   useEffect(() => {
     if (!hasPendingRespin || !canSpin || spinBusyRef.current) return;
-    const t = window.setTimeout(() => { void spin(); }, fastSpin ? 100 : 800);
+    const t = window.setTimeout(() => { void spinRef.current(); }, fastSpin ? 100 : 800);
     return () => window.clearTimeout(t);
-  }, [hasPendingRespin, canSpin, fastSpin, spin]);
+  }, [hasPendingRespin, canSpin, fastSpin]);
 
-  const isSpinning = ws.phase === "spinning" || hasPendingRespin;
+  // Auto-spin: chain across rounds when autoSpinRemaining > 0
+  useEffect(() => {
+    const ended = lastSpin?.round?.isEnded === true;
+    if (!ended || !canSpin || spinBusyRef.current) return;
+    const remaining = autoSpinRemainingRef.current;
+    if (remaining <= 1) {
+      autoSpinRemainingRef.current = 0;
+      setAutoSpinRemaining(0);
+      return;
+    }
+    autoSpinRemainingRef.current = remaining - 1;
+    setAutoSpinRemaining(remaining - 1);
+    const t = window.setTimeout(() => { void spinRef.current(); }, fastSpin ? 100 : 800);
+    return () => window.clearTimeout(t);
+  }, [lastSpin?.round?.isEnded, canSpin, fastSpin]);
+
+  const isSpinning = ws.phase === "spinning" || hasPendingRespin || spinBusyRef.current;
 
   return {
     ...ws,
@@ -119,8 +160,8 @@ export function useGameSession(
     bet, setBet, betLevels: ws.betLevels,
     totalBet, superBet, setSuperBet,
     fastSpin, setFastSpin,
-    autoSpinCount, setAutoSpinCount,
-    lastSpin, spin, canSpin,
+    autoSpinCount, autoSpinRemaining, setAutoSpinCount,
+    lastSpin, spin: startSpin, canSpin,
     reelGrid, paylineMatches, isSpinning,
   };
 }

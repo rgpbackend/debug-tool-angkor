@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { useSyncRef } from "../../../hooks/useSyncRef";
 import { isRoundUnfinished } from "../lib/round-flow";
 import { waitAfterSpinStep } from "../lib/wait-for-spin-ui";
-import type { SpinResponsePayload } from "../../../ws/protocol";
+import type { SpinResponsePayload } from "../lib/protocol";
 
 type UseRoundRunnerArgs = {
   spin: () => Promise<SpinResponsePayload | null>;

@@ -3,8 +3,8 @@ import {
   readDecimalWire,
   readSpinJackpot,
   readSpinRetrigger,
-} from "../../../lib/session-utils";
-import type { SpinResponsePayload, WinWay } from "../../../ws/protocol";
+} from "./spin-parsers";
+import type { SpinResponsePayload, WinWay } from "./protocol";
 
 export type CelebrationKind =
   | "jackpot"

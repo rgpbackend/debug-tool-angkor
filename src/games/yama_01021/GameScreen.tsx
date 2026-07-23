@@ -61,6 +61,7 @@ export default function GameScreen({ wsAccessToken, onBackToLobby, onLogout }: G
             spinning={spinUiActive}
             onSpin={() => void session.spin()}
             autoSpinCount={session.autoSpinCount}
+            autoSpinRemaining={session.autoSpinRemaining}
             onAutoSpinChange={session.setAutoSpinCount}
             fastSpin={session.fastSpin}
             onFastSpinToggle={() => session.setFastSpin(!session.fastSpin)}

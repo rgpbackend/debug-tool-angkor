@@ -8,7 +8,7 @@ import {
   spinningReelStates,
   type ReelVisualState,
 } from "../lib/reel-spin";
-import type { WinWay } from "../../../ws/protocol";
+import type { WinWay } from "../lib/protocol";
 import SlotReelColumn from "./SlotReelColumn";
 
 const REEL_COUNT = EXPECTED_CHEAT_REEL_SIZES.length;

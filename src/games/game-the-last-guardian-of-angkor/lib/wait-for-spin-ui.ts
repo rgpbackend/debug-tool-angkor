@@ -3,7 +3,7 @@ import {
   WIN_PRESENTATION_DWELL_MS,
 } from "./celebration-timing";
 import { buildSpinCelebrations } from "./celebrations";
-import type { SpinResponsePayload } from "../../../ws/protocol";
+import type { SpinResponsePayload } from "./protocol";
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
