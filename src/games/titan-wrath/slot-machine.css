@@ -1,0 +1,100 @@
+/* ============================================================
+   Titan's Wrath — Slot Machine Styles
+   ============================================================ */
+
+/* --- Design Tokens --- */
+:root {
+  --titan-obsidian: #0D0B0F;
+  --titan-ember: #1A1410;
+  --titan-forge-gold: #D4A843;
+  --titan-wrath-vermilion: #E8452D;
+  --titan-divine-amber: #F0C060;
+  --titan-ash: #8A8580;
+  --titan-smoke: #C4BFB8;
+  --titan-display: 'Cinzel', serif;
+  --titan-body: Inter, system-ui, -apple-system, sans-serif;
+}
+
+/* --- Reel Grid --- */
+.titan-reel-grid {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 12px;
+  background: var(--titan-obsidian);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.titan-reel-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: 6px;
+  padding: 4px;
+  transition: box-shadow 0.3s ease;
+}
+
+.titan-reel-col.reel-locked {
+  box-shadow: 0 0 12px var(--titan-divine-amber), inset 0 0 8px rgba(240, 192, 96, 0.2);
+  animation: locked-pulse 2s ease-in-out infinite;
+}
+
+.titan-reel-col.reel-spinning {
+  animation: reel-drop 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes reel-drop {
+  0% { transform: translateY(-30px); opacity: 0; filter: blur(4px); }
+  100% { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+
+@keyframes locked-pulse {
+  0%, 100% { box-shadow: 0 0 12px var(--titan-divine-amber), inset 0 0 8px rgba(240, 192, 96, 0.2); }
+  50% { box-shadow: 0 0 20px var(--titan-divine-amber), inset 0 0 14px rgba(240, 192, 96, 0.35); }
+}
+
+/* --- Symbol Cells --- */
+.titan-symbol-cell {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: var(--titan-ember);
+  border: 1px solid rgba(138, 133, 128, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.titan-symbol-text {
+  font-family: var(--titan-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  user-select: none;
+}
+
+.symbol-high .titan-symbol-text { color: var(--titan-forge-gold); }
+.symbol-mid .titan-symbol-text { color: #B8B0A0; }
+.symbol-low .titan-symbol-text { color: #A08060; }
+.symbol-wild .titan-symbol-text {
+  color: var(--titan-wrath-vermilion);
+  text-shadow: 0 0 10px var(--titan-wrath-vermilion);
+  animation: wild-flicker 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes wild-flicker {
+  0% { text-shadow: 0 0 6px var(--titan-wrath-vermilion); }
+  100% { text-shadow: 0 0 16px var(--titan-wrath-vermilion), 0 0 24px var(--titan-forge-gold); }
+}
+
+.symbol-wild {
+  background: linear-gradient(135deg, rgba(232, 69, 45, 0.15), rgba(212, 168, 67, 0.1));
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .titan-reel-col.reel-spinning { animation: none; }
+  .symbol-wild .titan-symbol-text { animation: none; }
+}
