@@ -162,6 +162,14 @@ export default function GameScreen({
     return (
       <div className="angkor-screen">
         <p className="angkor-joining" role="status">Joining The Last Guardian of Angkor…</p>
+        <div className="angkor-joining-actions">
+          <button type="button" className="lobby-btn" onClick={onBackToLobby}>
+            ← Lobby
+          </button>
+          <button type="button" className="logout-btn" onClick={onLogout}>
+            Log out
+          </button>
+        </div>
       </div>
     );
   }

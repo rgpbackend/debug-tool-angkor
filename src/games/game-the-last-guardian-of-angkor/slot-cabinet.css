@@ -1543,6 +1543,29 @@
   animation: pulse-text 1.5s ease-in-out infinite;
 }
 
+.angkor-joining-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.angkor-joining-actions button {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-h);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.angkor-joining-actions button:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
 @keyframes pulse-text {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }

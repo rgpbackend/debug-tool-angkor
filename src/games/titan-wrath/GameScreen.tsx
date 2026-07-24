@@ -161,6 +161,14 @@ export default function GameScreen({
     return (
       <div className="titan-screen">
         <p className="titan-joining" role="status">Joining Titan&apos;s Wrath…</p>
+        <div className="titan-joining-actions">
+          <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
+            ← Lobby
+          </button>
+          <button type="button" className="titan-logout-btn" onClick={onLogout}>
+            Log out
+          </button>
+        </div>
       </div>
     );
   }
