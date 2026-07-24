@@ -330,9 +330,12 @@
    Symbol Cells
    ============================================================ */
 
-.titan-symbol-cell {
-  width: var(--reel-cell, 62px);
-  height: var(--reel-cell, 62px);
+.titan-symbol-cell,
+.titan-reel-grid .titan-symbol-cell {
+  width: var(--reel-cell, 62px) !important;
+  min-width: var(--reel-cell, 62px) !important;
+  height: var(--reel-cell, 62px) !important;
+  min-height: var(--reel-cell, 62px) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -342,16 +345,19 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.titan-symbol-cell.cell--motion {
+.titan-symbol-cell.cell--motion,
+.titan-reel-grid .cell--motion {
   opacity: 0.94;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 1px 4px rgb(0 0 0 / 18%);
 }
 
-.titan-symbol-cell.cell--empty {
+.titan-symbol-cell.cell--empty,
+.titan-reel-grid .cell--empty {
   opacity: 0.35;
 }
 
-.titan-symbol-cell.cell--empty .titan-symbol-text {
+.titan-symbol-cell.cell--empty .titan-symbol-text,
+.titan-reel-grid .cell--empty .titan-symbol-text {
   color: rgba(255, 255, 255, 0.1);
 }
 
