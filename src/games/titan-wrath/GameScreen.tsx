@@ -25,7 +25,6 @@ export default function GameScreen({
   );
 
   const {
-    phase,
     sessionReady,
     joinGame,
     error,
@@ -155,7 +154,8 @@ export default function GameScreen({
 
   const betDisabled = spinBusy || !sessionReady || betLevels.length === 0;
 
-  const joining = !sessionReady && phase === "joining";
+  // Show joining screen until game is fully ready (covers connecting → joining phases)
+  const joining = !sessionReady;
 
   if (joining) {
     return (
