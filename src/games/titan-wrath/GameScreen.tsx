@@ -29,7 +29,7 @@ export default function GameScreen({
     joinGame,
     error,
     betLevels,
-    balance,
+    balance: wsBalance,
     selectBetValue,
     spin,
     canSpin,
@@ -152,6 +152,9 @@ export default function GameScreen({
   const wildInfo = viewSpin?.spin?.titanWild;
   const currentTotalWin = viewSpin?.round?.totalWin ?? null;
 
+  // Use WS balance when available, fall back to agency balance from parent
+  const displayBalance = wsBalance ?? _parentBalance ?? null;
+
   const betDisabled = spinBusy || !sessionReady || betLevels.length === 0;
 
   // Show joining screen until game is fully ready (covers connecting → joining phases)
@@ -209,7 +212,7 @@ export default function GameScreen({
         onSuperBetToggle={setSuperBetActive}
         error={error}
         symbols={symbolCatalog}
-        balance={balance}
+        balance={displayBalance}
         toolbarSlot={
           <>
             <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>

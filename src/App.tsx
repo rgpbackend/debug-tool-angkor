@@ -66,7 +66,7 @@ export default function App() {
         <GameScreenComponent
           agencyUserToken={auth.agencyUserToken}
           wsAccessToken={wsAccessToken}
-          balance={null}
+          balance={auth.balance != null ? String(auth.balance) : null}
           depositBusy={auth.depositBusy}
           depositFunds={auth.deposit}
           onBackToLobby={handleBackToLobby}

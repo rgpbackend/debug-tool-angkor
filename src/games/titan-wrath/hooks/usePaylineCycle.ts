@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { TitanPaylineWin } from "../titan-protocol";
 
-const CYCLE_MS = 900;
+const CYCLE_MS = 600;
 
 export function usePaylineCycle(paylineWins: TitanPaylineWin[], spinning: boolean) {
   const [activeIdx, setActiveIdx] = useState(0);
