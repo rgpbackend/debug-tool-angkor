@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import type { GameSymbol, JackpotPoolsByTier, ServerPayline } from "../../../ws/protocol";
 import type { TitanPaylineWin, TitanWildSpinInfo } from "../titan-protocol";
 import type { SpinPhase } from "../hooks/useSpinPhase";
@@ -16,6 +16,7 @@ interface TitanSlotMachineProps {
   patternGrid: string;
   lockedReels: number[];
   spinPhase: SpinPhase;
+  isSpinning: boolean;
   onPresentationChange?: (active: boolean) => void;
 
   // Paylines
@@ -63,19 +64,22 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const phase = props.spinPhase;
-  const spinning = phase === "spinning";
+  const spinning = props.isSpinning;
   const showPaylines = phase === "paylines";
   const showWild = phase === "wild_expand";
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
 
+  const onPresentationChangeRef = useRef(props.onPresentationChange);
+  onPresentationChangeRef.current = props.onPresentationChange;
+
   const handlePresentationChange = useCallback((active: boolean) => {
-    props.onPresentationChange?.(active);
-  }, [props]);
+    onPresentationChangeRef.current?.(active);
+  }, []);
 
   const handleWildDone = useCallback(() => {
     props.wildAnimDone();
-  }, [props]);
+  }, [props.wildAnimDone]);
 
   return (
     <div className="titan-slot-machine">

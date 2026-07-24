@@ -171,6 +171,7 @@ export default function GameScreen({
         patternGrid={patternGrid}
         lockedReels={lockedReels}
         spinPhase={spinPhase}
+        isSpinning={isSpinning}
         onPresentationChange={setReelsAnimating}
         serverPaylines={serverPaylines}
         paylineWins={paylineWins}

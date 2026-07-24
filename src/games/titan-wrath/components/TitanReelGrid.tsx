@@ -51,14 +51,18 @@ export default function TitanReelGrid({
     stopTimersRef.current = [];
   }, []);
 
+  // Use a ref for the presentation callback to avoid it being a dependency
+  const onPresentationChangeRef = useRef(onPresentationChange);
+  onPresentationChangeRef.current = onPresentationChange;
+
   const finishPresentation = useCallback(() => {
     if (!spinCycleRef.current) return;
     clearStopTimers();
     spinCycleRef.current = false;
     stopScheduledRef.current = false;
     stoppedReelsRef.current.clear();
-    onPresentationChange?.(false);
-  }, [clearStopTimers, onPresentationChange]);
+    onPresentationChangeRef.current?.(false);
+  }, [clearStopTimers]);
 
   // Start spinning
   useEffect(() => {
@@ -68,7 +72,7 @@ export default function TitanReelGrid({
       stopScheduledRef.current = false;
       stoppedReelsRef.current.clear();
       spinStartRef.current = Date.now();
-      onPresentationChange?.(true);
+      onPresentationChangeRef.current?.(true);
 
       // Locked reels stay idle — only spin unlocked ones
       const states = spinningReelStates(REEL_COUNT);
@@ -93,21 +97,26 @@ export default function TitanReelGrid({
       setBouncingReel(null);
     }
     prevSpinningRef.current = spinning;
-  }, [spinning, lockedReels, reels, clearStopTimers, onPresentationChange]);
+  }, [spinning, lockedReels, reels, clearStopTimers]);
 
-  // Schedule reel stops when spinning ends (response arrived)
+  // Schedule reel stops when spinning ends (response arrived).
+  // Uses refs for callbacks to avoid clearing timers on unrelated re-renders.
+  const finishPresentationRef = useRef(finishPresentation);
+  finishPresentationRef.current = finishPresentation;
+  const lockedSetRef = useRef(lockedSet);
+  lockedSetRef.current = lockedSet;
+
   useEffect(() => {
     if (spinning || !spinCycleRef.current || stopScheduledRef.current) return;
 
     stopScheduledRef.current = true;
     const elapsed = Date.now() - spinStartRef.current;
     const delayBeforeStop = Math.max(0, REEL_SPIN.minSpinMs - elapsed);
-    clearStopTimers();
 
     const scheduleStop = window.setTimeout(() => {
       let stopSlot = 0;
       for (let ci = 0; ci < REEL_COUNT; ci++) {
-        if (lockedSet.has(ci)) continue; // locked reels don't stop — they never started
+        if (lockedSetRef.current.has(ci)) continue;
         const timer = window.setTimeout(() => {
           setReelStates((prev) => {
             if (prev[ci] !== "spinning") return prev;
@@ -132,12 +141,10 @@ export default function TitanReelGrid({
     const fallback = window.setTimeout(() => {
       if (!spinCycleRef.current) return;
       setReelStates(Array.from({ length: REEL_COUNT }, () => "stopped"));
-      finishPresentation();
+      finishPresentationRef.current();
     }, fallbackMs);
     stopTimersRef.current.push(fallback);
-
-    return clearStopTimers;
-  }, [spinning, lockedSet, reels, clearStopTimers, finishPresentation]);
+  }, [spinning, reels]); // Only re-trigger when spinning or reels actually change
 
   // Cleanup
   useEffect(() => () => {
@@ -146,36 +153,37 @@ export default function TitanReelGrid({
   }, [clearStopTimers]);
 
   // Handle individual reel stopped
-  const handleReelStopped = useCallback(
-    (ci: number) => {
-      if (stoppedReelsRef.current.has(ci)) return;
-      stoppedReelsRef.current.add(ci);
+  const handleReelStoppedRef = useRef<(ci: number) => void>();
+  handleReelStoppedRef.current = (ci: number) => {
+    if (stoppedReelsRef.current.has(ci)) return;
+    stoppedReelsRef.current.add(ci);
 
-      setReelStates((prev) => {
-        if (prev[ci] === "stopped") return prev;
-        const next = [...prev];
-        next[ci] = "stopped";
-        return next;
-      });
+    setReelStates((prev) => {
+      if (prev[ci] === "stopped") return prev;
+      const next = [...prev];
+      next[ci] = "stopped";
+      return next;
+    });
 
-      setBouncingReel(ci);
-      if (bounceTimerRef.current != null) window.clearTimeout(bounceTimerRef.current);
-      bounceTimerRef.current = window.setTimeout(() => {
-        setBouncingReel(null);
-        bounceTimerRef.current = null;
-      }, REEL_SPIN.bounceMs);
+    setBouncingReel(ci);
+    if (bounceTimerRef.current != null) window.clearTimeout(bounceTimerRef.current);
+    bounceTimerRef.current = window.setTimeout(() => {
+      setBouncingReel(null);
+      bounceTimerRef.current = null;
+    }, REEL_SPIN.bounceMs);
 
-      // Count only non-locked reels
-      const activeReelCount = REEL_COUNT - lockedReels.length;
-      const stoppedCount = [...stoppedReelsRef.current].filter(
-        (c) => !lockedSet.has(c),
-      ).length;
-      if (stoppedCount >= activeReelCount) {
-        finishPresentation();
-      }
-    },
-    [lockedReels.length, lockedSet, finishPresentation],
-  );
+    const activeReelCount = REEL_COUNT - lockedReels.length;
+    const stoppedCount = [...stoppedReelsRef.current].filter(
+      (c) => !lockedSet.has(c),
+    ).length;
+    if (stoppedCount >= activeReelCount) {
+      finishPresentationRef.current();
+    }
+  };
+
+  const handleReelStopped = useCallback((ci: number) => {
+    handleReelStoppedRef.current?.(ci);
+  }, []);
 
   return (
     <div className="titan-reel-grid" data-spinning={spinning ? "" : undefined}>
