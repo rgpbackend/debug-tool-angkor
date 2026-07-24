@@ -65,14 +65,21 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
 
   const phase = props.spinPhase;
   const spinning = props.isSpinning;
+  const showPaylines = phase === "paylines";
   const showWild = phase === "wild_expand";
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
 
-  // Paylines active whenever not spinning and there are wins — persist after effects
-  const paylinesActive = !spinning && props.paylineWins.length > 0;
+  // Paylines show only after reels have fully stopped (phase past "spinning")
+  const paylinesReady = phase !== "spinning" && props.paylineWins.length > 0;
 
-  const { currentWin } = usePaylineCycle(props.paylineWins, paylinesActive);
+  // Cycle during dedicated paylines phase; show static last win during other phases
+  const paylinesCycling = paylinesReady && (phase === "paylines");
+
+  const { currentWin } = usePaylineCycle(props.paylineWins, paylinesCycling);
+
+  // Current payline to display (cycling during phase, static last one after)
+  const displayPayline = paylinesReady ? currentWin ?? props.paylineWins[props.paylineWins.length - 1] : null;
 
   const onPresentationChangeRef = useRef(props.onPresentationChange);
   onPresentationChangeRef.current = props.onPresentationChange;
@@ -91,15 +98,19 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
 
   // What to show in the display box
   const renderDisplay = () => {
-    // Show total win during result phase
+    // Result phase: show total win
     if (showResult && props.totalWin !== null && props.totalWin > 0) {
       return <span className="titan-win-amount" key={props.totalWin}>${props.totalWin.toFixed(2)}</span>;
     }
-    // Show cycling payline win amount whenever there's one
-    if (currentWin !== null) {
+    // Payline phases: show cycling payline amount
+    if ((showPaylines || showWild) && currentWin !== null) {
       return <span className="titan-display-amount">${currentWin.winAmount.toFixed(2)}</span>;
     }
-    // Busy (spinning/reels stopping) — show ellipsis
+    // Idle with wins: show last payline amount dimmed
+    if (phase === "idle" && displayPayline !== null) {
+      return <span className="titan-display-amount titan-display-amount--idle">${displayPayline.winAmount.toFixed(2)}</span>;
+    }
+    // Busy — ellipsis
     if (isBusy) {
       return <span className="titan-display-muted">…</span>;
     }
@@ -144,7 +155,7 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           <TitanPaylineOverlay
             paylines={props.serverPaylines}
             paylineWins={props.paylineWins}
-            ready={paylinesActive}
+            ready={paylinesReady}
           />
           <TitanWildExpansion
             wildInfo={showWild ? props.wildInfo : undefined}
