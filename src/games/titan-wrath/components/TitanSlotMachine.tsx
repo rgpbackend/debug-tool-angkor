@@ -4,6 +4,7 @@ import type { TitanPaylineWin, TitanWildSpinInfo } from "../titan-protocol";
 import type { SpinPhase } from "../hooks/useSpinPhase";
 import TitanReelGrid from "./TitanReelGrid";
 import TitanPaylineOverlay from "./TitanPaylineOverlay";
+import PaylineWinInfo from "./PaylineWinInfo";
 import TitanWildExpansion from "./TitanWildExpansion";
 import TitanJackpotBar from "./TitanJackpotBar";
 import TitanControls from "./TitanControls";
@@ -64,7 +65,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
 
   const phase = props.spinPhase;
   const spinning = props.isSpinning;
-  const showPaylines = phase === "paylines";
   const showWild = phase === "wild_expand";
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
@@ -125,13 +125,19 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           <TitanPaylineOverlay
             paylines={props.serverPaylines}
             paylineWins={props.paylineWins}
-            visible={showPaylines}
+            spinning={spinning}
           />
           <TitanWildExpansion
             wildInfo={showWild ? props.wildInfo : undefined}
             onComplete={handleWildDone}
           />
         </div>
+        {/* Win info — cycles through multiple wins, persists after spin */}
+        {!spinning && props.paylineWins.length > 0 && (
+          <PaylineWinInfo
+            paylineWins={props.paylineWins}
+          />
+        )}
       </div>
 
       {/* Display — show win amount or idle message */}

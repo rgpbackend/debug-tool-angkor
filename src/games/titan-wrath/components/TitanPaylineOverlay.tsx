@@ -1,3 +1,4 @@
+import { usePaylineCycle } from "../hooks/usePaylineCycle";
 import type { TitanPaylineWin } from "../titan-protocol";
 import type { ServerPayline } from "../../../ws/protocol";
 
@@ -36,17 +37,19 @@ const PAYLINE_PATHS: Record<string, string> = {
 interface TitanPaylineOverlayProps {
   paylines: ServerPayline[];
   paylineWins: TitanPaylineWin[];
-  visible: boolean;
+  spinning: boolean;
 }
 
 export default function TitanPaylineOverlay({
   paylines,
   paylineWins,
-  visible,
+  spinning,
 }: TitanPaylineOverlayProps) {
-  if (!visible || paylineWins.length === 0) return null;
+  const { activeWin } = usePaylineCycle(paylineWins, spinning);
 
-  const winIds = new Set(paylineWins.map((w) => w.paylineId));
+  if (spinning || paylineWins.length === 0 || !activeWin) return null;
+
+  const highlightId = activeWin.paylineId;
 
   return (
     <svg
@@ -55,37 +58,23 @@ export default function TitanPaylineOverlay({
       preserveAspectRatio="none"
     >
       {paylines
-        .filter((p) => winIds.has(p.id))
+        .filter((p) => paylineWins.some((w) => w.paylineId === p.id))
         .map((p) => {
+          const isActive = p.id === highlightId;
           const win = paylineWins.find((w) => w.paylineId === p.id);
-          const pathData = PAYLINE_PATHS[p.id] ?? makePath(p.rows);
-          const direction = win?.direction === "RTL" ? -1 : 1;
+          const d = PAYLINE_PATHS[p.id] ?? makePath(p.rows);
+          const dir = win?.direction === "RTL" ? -1 : 1;
           return (
-            <g key={p.id} className="payline-group">
+            <g key={p.id} className="payline-group" opacity={isActive ? 1 : 0.18}>
               <path
-                d={pathData}
+                d={d}
                 fill="none"
                 stroke="var(--titan-divine-amber)"
-                strokeWidth={3}
+                strokeWidth={isActive ? 3 : 2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`payline-glow${direction === -1 ? " payline-rtl" : ""}`}
+                className={`payline-glow${dir === -1 ? " payline-rtl" : ""}`}
               />
-              {win && (
-                <text
-                  x={colCenter(2)}
-                  y={rowCenter(p.rows[2]) + 4}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="payline-win-text"
-                  fill="var(--titan-forge-gold)"
-                  fontFamily="var(--titan-display)"
-                  fontSize={18}
-                  fontWeight={700}
-                >
-                  ${win.winAmount.toFixed(2)}
-                </text>
-              )}
             </g>
           );
         })}

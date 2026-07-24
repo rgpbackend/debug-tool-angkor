@@ -231,8 +231,10 @@
 .titan-grid-area {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   padding: 10px 12px;
   background:
     radial-gradient(ellipse 70% 60% at 50% 50%, rgba(26, 20, 16, 0.6) 0%, var(--titan-obsidian) 100%);
@@ -243,6 +245,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* --- Payline win info bar --- */
+.titan-payline-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 10px;
+  min-height: 24px;
+  z-index: 20;
+}
+
+.titan-payline-label {
+  font-family: var(--titan-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--titan-divine-amber);
+  letter-spacing: 0.06em;
+}
+
+.titan-payline-amount {
+  font-family: var(--titan-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+}
+
+.titan-payline-counter {
+  font-family: var(--titan-body);
+  font-size: 0.65rem;
+  color: var(--titan-ash);
+  margin-left: 4px;
 }
 
 /* ============================================================
