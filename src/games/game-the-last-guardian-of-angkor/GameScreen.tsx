@@ -49,7 +49,6 @@ export default function GameScreen({
   );
 
   const {
-    phase,
     sessionReady,
     joinGame,
     error,
@@ -155,17 +154,20 @@ export default function GameScreen({
     ].join("|");
   }, [viewSpin, winWays.length]);
 
-  const canQueryHistory = sessionReady && phase !== "spinning";
-  const joining = !sessionReady && phase === "joining";
+  const canQueryHistory = sessionReady && !isSpinning;
+  // Show joining screen until game is fully ready (covers connecting → joining phases)
+  const joining = !sessionReady;
+
+  if (joining) {
+    return (
+      <div className="angkor-screen">
+        <p className="angkor-joining" role="status">Joining The Last Guardian of Angkor…</p>
+      </div>
+    );
+  }
 
   return (
     <>
-      {joining ? (
-        <p className="muted game-screen-joining" role="status">
-          Joining game…
-        </p>
-      ) : null}
-
       <div className="game-screen-toolbar row">
         <button type="button" onClick={onBackToLobby}>
           ← Lobby

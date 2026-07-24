@@ -1519,3 +1519,31 @@
     display: none;
   }
 }
+
+/* --- Joining screen --- */
+.angkor-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  background: radial-gradient(
+    ellipse 120% 80% at 50% -20%,
+    color-mix(in srgb, var(--slot-gold, #c4a44a) 6%, transparent),
+    transparent 58%
+  ),
+  color-mix(in srgb, var(--bg) 90%, var(--code-bg));
+}
+
+.angkor-joining {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-h);
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
