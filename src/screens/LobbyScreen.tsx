@@ -43,29 +43,33 @@ export default function LobbyScreen({
     }
   };
 
+  const formatBalance = (n: number | null) => {
+    if (n == null) return "$0.00";
+    return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   return (
     <main className="lobby-screen">
       <header className="lobby-topbar">
-        <span className="lobby-brand">Game Hub</span>
-        <button type="button" className="logout-btn" onClick={onLogout}>
+        <div className="lobby-brand">
+          <span className="lobby-brand-icon">🎰</span>
+          <span className="lobby-brand-text">Game Hub</span>
+        </div>
+        <button type="button" className="lobby-logout-btn" onClick={onLogout}>
           Log out
         </button>
       </header>
 
       <section className="lobby-wallet">
-        <div className="wallet-balance-card">
+        <div className="wallet-balance">
           <span className="wallet-label">Balance</span>
           <span className="wallet-balance-value">
-            {balanceLoading
-              ? "…"
-              : balance != null
-                ? `$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                : "$0.00"}
+            {balanceLoading ? "…" : formatBalance(balance)}
           </span>
         </div>
 
         <div className="wallet-deposit">
-          <label className="wallet-label">Deposit Funds</label>
+          <span className="wallet-label">Add Funds</span>
           <div className="deposit-input-row">
             <span className="deposit-currency">$</span>
             <input
@@ -80,11 +84,11 @@ export default function LobbyScreen({
             />
             <button
               type="button"
-              className="deposit-btn primary"
+              className="deposit-btn"
               disabled={depositBusy || !loggedIn}
               onClick={handleDeposit}
             >
-              {depositBusy ? "Depositing…" : depositOk ? "✓ Done" : "Deposit"}
+              {depositBusy ? "…" : depositOk ? "✓" : "Deposit"}
             </button>
           </div>
           <div className="deposit-quick">
@@ -103,37 +107,35 @@ export default function LobbyScreen({
         </div>
       </section>
 
-      {error ? <p className="error">{error}</p> : null}
-
-      {depositOk ? (
-        <p className="deposit-success">Deposit successful.</p>
-      ) : null}
+      {error ? <p className="lobby-error">{error}</p> : null}
+      {depositOk ? <p className="lobby-success">Funds added.</p> : null}
 
       <section className="lobby-games-section">
         <h2 className="lobby-section-title">Select Game</h2>
 
         {empty ? (
-          <p className="muted">No games configured.</p>
+          <p className="lobby-empty">No games configured.</p>
         ) : (
           <div className="lobby-grid">
             {games.map((game) => (
               <button
                 key={game.id}
                 type="button"
-                className="lobby-game-card primary"
+                className={`lobby-game-card lobby-game-card--${game.id === "yama_01021" ? "titan" : "angkor"}`}
                 disabled={busy || !loggedIn}
                 onClick={() => onLaunch(game)}
               >
                 <span className="lobby-game-icon">{game.icon}</span>
                 <span className="lobby-game-name">{game.name}</span>
+                <span className="lobby-game-meta">
+                  {game.winSystem === "paylines" ? "10 Paylines" : "Win Ways"}
+                </span>
               </button>
             ))}
           </div>
         )}
 
-        {busy ? (
-          <p className="muted login-phase">Launching game…</p>
-        ) : null}
+        {busy ? <p className="lobby-launching">Launching…</p> : null}
       </section>
     </main>
   );

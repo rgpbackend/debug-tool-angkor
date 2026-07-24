@@ -83,13 +83,15 @@
   flex-shrink: 0;
 }
 
-/* Lobby */
+/* ====================================================================
+   Lobby
+   ==================================================================== */
+
 .lobby-screen {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 1rem 1rem 1.5rem;
+  padding: 2rem 1.5rem 3rem;
   max-width: 56rem;
   margin: 0 auto;
   width: 100%;
@@ -97,72 +99,110 @@
   min-height: 100svh;
 }
 
+/* --- Topbar --- */
+
 .lobby-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  margin-bottom: 1.25rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .lobby-brand {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-h);
-  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
-/* --- Wallet / Deposit --- */
+.lobby-brand-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.lobby-brand-text {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e8e0d5;
+  letter-spacing: 0.06em;
+}
+
+.lobby-logout-btn {
+  padding: 0.45rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  color: #807870;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.lobby-logout-btn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #e8e0d5;
+}
+
+/* --- Wallet --- */
+
 .lobby-wallet {
   width: 100%;
-  margin-bottom: 1.25rem;
-  display: flex;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
   gap: 0.75rem;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 540px) {
   .lobby-wallet {
-    flex-direction: column;
-    gap: 0.5rem;
+    grid-template-columns: 1fr;
   }
 }
 
-/* Balance card */
-.wallet-balance-card {
-  flex: 0 0 auto;
-  min-width: 10rem;
-  padding: 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--bg) 92%, var(--code-bg));
+.wallet-balance {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 0.35rem;
-}
-
-.wallet-balance-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-h);
-  font-variant-numeric: tabular-nums;
-}
-
-.wallet-deposit {
-  flex: 1;
-  padding: 1.25rem;
-  border: 1px solid var(--border);
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--bg) 92%, var(--code-bg));
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .wallet-label {
-  display: block;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  color: var(--text);
+  color: #807870;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+.wallet-balance-value {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #c4a44a;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.wallet-deposit {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.wallet-deposit .wallet-label {
+  margin-bottom: 0.75rem;
 }
 
 .deposit-input-row {
@@ -172,19 +212,19 @@
 }
 
 .deposit-currency {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-h);
+  color: #c4a44a;
   flex-shrink: 0;
 }
 
 .deposit-amount-input {
   flex: 1;
   padding: 0.55rem 0.6rem;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  background: var(--bg);
-  color: var(--text-h);
+  background: rgba(0, 0, 0, 0.2);
+  color: #e8e0d5;
   font: inherit;
   font-size: 1rem;
   font-weight: 500;
@@ -193,19 +233,35 @@
 
 .deposit-amount-input:focus {
   outline: none;
-  border-color: var(--accent-border);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: #c4a44a;
+  box-shadow: 0 0 0 2px rgba(196, 164, 74, 0.15);
 }
 
 .deposit-amount-input:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .deposit-btn {
   flex-shrink: 0;
   padding: 0.55rem 1.25rem;
+  border: 1px solid #c4a44a;
+  border-radius: 6px;
+  background: rgba(196, 164, 74, 0.1);
+  color: #c4a44a;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.deposit-btn:hover:not(:disabled) {
+  background: rgba(196, 164, 74, 0.2);
+  color: #d4b85a;
+}
+
+.deposit-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .deposit-quick {
@@ -216,92 +272,157 @@
 }
 
 .deposit-chip {
-  padding: 0.3rem 0.65rem;
-  border: 1px solid var(--border);
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: #807870;
+  font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
 .deposit-chip:hover:not(:disabled) {
-  border-color: var(--accent-border);
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  border-color: rgba(196, 164, 74, 0.4);
+  color: #c4a44a;
+  background: rgba(196, 164, 74, 0.06);
 }
 
 .deposit-chip:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-.deposit-success {
-  color: #15803d;
-  font-size: 0.88rem;
-  font-weight: 500;
-  margin: 0 0 0.75rem;
-  width: 100%;
+.lobby-error {
+  color: #e8452d;
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  .deposit-success {
-    color: #4ade80;
-  }
+.lobby-success {
+  color: #4ade80;
+  font-size: 0.82rem;
+  margin: 0 0 1rem;
 }
 
 /* --- Games --- */
+
 .lobby-games-section {
   width: 100%;
 }
 
 .lobby-section-title {
-  margin: 0 0 0.75rem;
-  font-size: 0.85rem;
+  margin: 0 0 0.85rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  color: var(--text);
+  color: #807870;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
 }
 
 .lobby-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
+
+@media (max-width: 480px) {
+  .lobby-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lobby-empty {
+  color: #807870;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.lobby-launching {
+  color: #c4a44a;
+  font-size: 0.85rem;
+  margin: 1rem 0 0;
+}
+
+/* --- Game Cards --- */
 
 .lobby-game-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 2rem 1rem;
-  border-radius: 10px;
+  gap: 0.5rem;
+  padding: 2.5rem 1.5rem;
+  border-radius: 12px;
   cursor: pointer;
   text-align: center;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    transform 0.1s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid transparent;
 }
 
 .lobby-game-card:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+}
+
+.lobby-game-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Angkor card — temple stone */
+.lobby-game-card--angkor {
+  border-color: rgba(196, 164, 74, 0.15);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 30%, rgba(94, 234, 212, 0.04) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(196, 164, 74, 0.06) 0%, rgba(0, 0, 0, 0.2) 100%),
+    #1a1814;
+}
+
+.lobby-game-card--angkor:hover:not(:disabled) {
+  border-color: rgba(196, 164, 74, 0.35);
+  box-shadow: 0 0 30px rgba(196, 164, 74, 0.08);
+}
+
+/* Titan card — forge ember */
+.lobby-game-card--titan {
+  border-color: rgba(232, 69, 45, 0.12);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 30%, rgba(232, 69, 45, 0.05) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(212, 168, 67, 0.04) 0%, rgba(0, 0, 0, 0.2) 100%),
+    #100c0a;
+}
+
+.lobby-game-card--titan:hover:not(:disabled) {
+  border-color: rgba(232, 69, 45, 0.3);
+  box-shadow: 0 0 30px rgba(232, 69, 45, 0.08);
 }
 
 .lobby-game-icon {
-  font-size: 2.2rem;
+  font-size: 2.5rem;
   line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(196, 164, 74, 0.3));
+}
+
+.lobby-game-card--titan .lobby-game-icon {
+  filter: drop-shadow(0 0 12px rgba(232, 69, 45, 0.4));
 }
 
 .lobby-game-name {
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e8e0d5;
+  letter-spacing: 0.04em;
   line-height: 1.3;
+}
+
+.lobby-game-meta {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #807870;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .slot-stage {
