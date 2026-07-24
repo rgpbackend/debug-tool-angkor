@@ -153,7 +153,7 @@ export default function TitanReelGrid({
   }, [clearStopTimers]);
 
   // Handle individual reel stopped
-  const handleReelStoppedRef = useRef<(ci: number) => void>();
+  const handleReelStoppedRef = useRef<(ci: number) => void>(undefined);
   handleReelStoppedRef.current = (ci: number) => {
     if (stoppedReelsRef.current.has(ci)) return;
     stoppedReelsRef.current.add(ci);

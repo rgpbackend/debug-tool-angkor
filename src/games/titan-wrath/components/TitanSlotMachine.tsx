@@ -64,7 +64,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
 
   const phase = props.spinPhase;
   const spinning = props.isSpinning;
-  const showPaylines = phase === "paylines";
   const showWild = phase === "wild_expand";
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
