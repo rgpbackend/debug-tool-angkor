@@ -253,13 +253,8 @@
    ============================================================ */
 
 .titan-reel-grid {
-  /*
-   * Cell size: the smaller of width-fit (fixed px) and height-fill (svh-based).
-   * Width-fit keeps 5 cols inside cabinet at each breakpoint.
-   * Height-fill lets cells grow on tall viewports to fill the grid area.
-   */
-  --titan-cell-w: min(85px, calc((100svh - 270px) / 3.4));
-  --titan-cell-gap: 5px;
+  --titan-cell-w: 72px;
+  --titan-cell-gap: 4px;
   --titan-reel-pad: 4px;
   display: flex;
   gap: var(--titan-cell-gap);
@@ -272,22 +267,15 @@
 
 @media (min-width: 600px) {
   .titan-reel-grid {
-    --titan-cell-w: min(105px, calc((100svh - 260px) / 3.3));
+    --titan-cell-w: 82px;
     --titan-cell-gap: 5px;
   }
 }
 
 @media (min-width: 800px) {
   .titan-reel-grid {
-    --titan-cell-w: min(120px, calc((100svh - 250px) / 3.2));
-    --titan-cell-gap: 6px;
-  }
-}
-
-@media (min-width: 1100px) {
-  .titan-reel-grid {
-    --titan-cell-w: min(135px, calc((100svh - 240px) / 3.2));
-    --titan-cell-gap: 6px;
+    --titan-cell-w: 92px;
+    --titan-cell-gap: 5px;
   }
 }
 
