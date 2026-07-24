@@ -63,27 +63,24 @@ export default function TitanPaylineOverlay({
       viewBox={`0 0 ${SVG_W} ${SVG_H}`}
       preserveAspectRatio="none"
     >
-      {paylines
-        .filter((p) => paylineWins.some((w) => w.paylineId === p.id))
-        .map((p) => {
-          const isActive = p.id === highlightId;
-          const win = paylineWins.find((w) => w.paylineId === p.id);
-          const d = PAYLINE_PATHS[p.id] ?? makePath(p.rows);
-          const dir = win?.direction === "RTL" ? -1 : 1;
-          return (
-            <g key={p.id} className="payline-group" opacity={isActive ? 1 : 0.15}>
-              <path
-                d={d}
-                fill="none"
-                stroke="var(--titan-divine-amber)"
-                strokeWidth={isActive ? 3 : 1.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={`payline-glow${dir === -1 ? " payline-rtl" : ""}`}
-              />
-            </g>
-          );
-        })}
+      {/* Active payline path */}
+      {(() => {
+        const d = PAYLINE_PATHS[highlightId] ?? makePath(activePayline?.rows ?? []);
+        const dir = currentWin.direction === "RTL" ? -1 : 1;
+        return (
+          <g className="payline-group">
+            <path
+              d={d}
+              fill="none"
+              stroke="var(--titan-divine-amber)"
+              strokeWidth={3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`payline-glow${dir === -1 ? " payline-rtl" : ""}`}
+            />
+          </g>
+        );
+      })()}
 
       {/* Win amount label on the grid */}
       <g>
