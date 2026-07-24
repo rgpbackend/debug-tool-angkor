@@ -238,6 +238,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: stretch;
+  width: 100%;
 }
 
 /* ============================================================
@@ -245,12 +247,23 @@
    ============================================================ */
 
 .titan-reel-grid {
-  --titan-cell-w: min(72px, calc((100vw - 100px) / 6));
+  /*
+   * Cell size: constrained by both viewport width AND available height.
+   * height = (100svh - chrome ~300px) / 3.5 cells — lets grid fill vertical space.
+   * width  = (100vw - padding) / 6 cols — keeps cells from exceeding horizontal space.
+   * Capped at 100px to prevent absurdly large cells on ultrawide screens.
+   */
+  --titan-cell-w: min(
+    100px,
+    calc((100vw - 100px) / 6),
+    calc((100svh - 290px) / 3.5)
+  );
   --titan-cell-gap: 5px;
   --titan-reel-pad: 4px;
   display: flex;
   gap: var(--titan-cell-gap);
   justify-content: center;
+  align-items: center;
   position: relative;
   z-index: 1;
   padding: 8px 10px;
@@ -258,14 +271,22 @@
 
 @media (min-width: 600px) {
   .titan-reel-grid {
-    --titan-cell-w: min(82px, calc((100vw - 120px) / 6));
+    --titan-cell-w: min(
+      110px,
+      calc((100vw - 120px) / 6),
+      calc((100svh - 280px) / 3.5)
+    );
     --titan-cell-gap: 5px;
   }
 }
 
 @media (min-width: 800px) {
   .titan-reel-grid {
-    --titan-cell-w: min(92px, calc((100vw - 140px) / 6));
+    --titan-cell-w: min(
+      120px,
+      calc((100vw - 140px) / 6),
+      calc((100svh - 270px) / 3.5)
+    );
     --titan-cell-gap: 6px;
   }
 }
