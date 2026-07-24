@@ -339,7 +339,7 @@ export function useWsSession(
         startHeartbeat(client);
         setGameScreenActive(true);
       } catch (e) {
-        if (clientRef.current !== client) {
+        if (clientRef.current !== client || sessionEndingRef.current) {
           return;
         }
         if (e instanceof StompTokenBannedError) {
@@ -448,6 +448,7 @@ export function useWsSession(
       setSessionReady(true);
       setPhase("joined");
     } catch (e) {
+      if (sessionEndingRef.current) return;
       if (e instanceof StompTokenBannedError) {
         callbacksRef.current.onTokenBan();
         return;
