@@ -36,7 +36,7 @@
 
 .titan-slot-machine {
   width: 100%;
-  max-width: 440px;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, #120F0D 0%, var(--titan-obsidian) 100%);
@@ -47,6 +47,19 @@
     0 0 60px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(212, 168, 67, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Scale up on larger screens */
+@media (min-width: 600px) {
+  .titan-slot-machine {
+    max-width: 560px;
+  }
+}
+
+@media (min-width: 800px) {
+  .titan-slot-machine {
+    max-width: 620px;
+  }
 }
 
 /* ============================================================
@@ -71,13 +84,21 @@
 
 .titan-cabinet-title {
   font-family: var(--titan-display);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--titan-forge-gold);
   letter-spacing: 0.06em;
   text-align: center;
   flex: 1;
   white-space: nowrap;
+}
+
+@media (min-width: 600px) {
+  .titan-cabinet-title { font-size: 0.95rem; }
+}
+
+@media (min-width: 800px) {
+  .titan-cabinet-title { font-size: 1.05rem; }
 }
 
 .titan-cabinet-menu-btn {
@@ -226,8 +247,8 @@
 
 .titan-reel-col {
   --reel-rows: 3;
-  --reel-gap: 4px;
-  --reel-cell: min(62px, calc((100vw - 100px) / 6));
+  --reel-gap: 5px;
+  --reel-cell: min(72px, calc((100vw - 100px) / 6));
   --reel-viewport-height: calc(var(--reel-rows) * var(--reel-cell) + (var(--reel-rows) - 1) * var(--reel-gap));
   display: flex;
   flex-direction: column;
@@ -240,6 +261,20 @@
   flex: 0 0 auto;
   min-height: var(--reel-viewport-height);
   justify-content: center;
+}
+
+@media (min-width: 600px) {
+  .titan-reel-col {
+    --reel-cell: min(82px, calc((100vw - 120px) / 6));
+    --reel-gap: 5px;
+  }
+}
+
+@media (min-width: 800px) {
+  .titan-reel-col {
+    --reel-cell: min(92px, calc((100vw - 140px) / 6));
+    --reel-gap: 6px;
+  }
 }
 
 .titan-reel-col.reel-locked {
@@ -533,8 +568,8 @@
 
 /* Spin Button */
 .titan-spin-btn {
-  width: 58px;
-  height: 58px;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -544,6 +579,20 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 0 18px rgba(212, 168, 67, 0.25);
+}
+
+@media (min-width: 600px) {
+  .titan-spin-btn {
+    width: 68px;
+    height: 68px;
+  }
+}
+
+@media (min-width: 800px) {
+  .titan-spin-btn {
+    width: 76px;
+    height: 76px;
+  }
 }
 
 .titan-spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
