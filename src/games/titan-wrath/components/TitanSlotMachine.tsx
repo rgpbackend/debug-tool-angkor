@@ -2,7 +2,6 @@ import { useCallback, useRef, useState, type ReactNode } from "react";
 import type { GameSymbol, JackpotPoolsByTier, ServerPayline } from "../../../ws/protocol";
 import type { TitanPaylineWin, TitanWildSpinInfo } from "../titan-protocol";
 import type { SpinPhase } from "../hooks/useSpinPhase";
-import { usePaylineCycle } from "../hooks/usePaylineCycle";
 import TitanReelGrid from "./TitanReelGrid";
 import TitanPaylineOverlay from "./TitanPaylineOverlay";
 import TitanWildExpansion from "./TitanWildExpansion";
@@ -73,13 +72,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   // Paylines show only after reels have fully stopped (phase past "spinning")
   const paylinesReady = phase !== "spinning" && props.paylineWins.length > 0;
 
-  // Cycle during dedicated paylines phase; show static last win during other phases
-  const paylinesCycling = paylinesReady && (phase === "paylines");
-
-  const { currentWin } = usePaylineCycle(props.paylineWins, paylinesCycling);
-
-  // Current payline to display (cycling during phase, static last one after)
-  const displayPayline = paylinesReady ? currentWin ?? props.paylineWins[props.paylineWins.length - 1] : null;
 
   const onPresentationChangeRef = useRef(props.onPresentationChange);
   onPresentationChangeRef.current = props.onPresentationChange;
@@ -102,19 +94,11 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
     if (showResult && props.totalWin !== null && props.totalWin > 0) {
       return <span className="titan-win-amount" key={props.totalWin}>${props.totalWin.toFixed(2)}</span>;
     }
-    // Payline phases: show cycling payline amount
-    if ((showPaylines || showWild) && currentWin !== null) {
-      return <span className="titan-display-amount">${currentWin.winAmount.toFixed(2)}</span>;
-    }
-    // Idle with wins: show last payline amount dimmed
-    if (phase === "idle" && displayPayline !== null) {
-      return <span className="titan-display-amount titan-display-amount--idle">${displayPayline.winAmount.toFixed(2)}</span>;
-    }
     // Busy — ellipsis
     if (isBusy) {
       return <span className="titan-display-muted">…</span>;
     }
-    // Idle, no wins
+    // Idle
     return <span className="titan-display-muted">Win up to 2100x Bet</span>;
   };
 

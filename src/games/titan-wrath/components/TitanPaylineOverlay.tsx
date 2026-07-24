@@ -36,7 +36,6 @@ const PAYLINE_PATHS: Record<string, string> = {
 interface TitanPaylineOverlayProps {
   paylines: ServerPayline[];
   paylineWins: TitanPaylineWin[];
-  /** True when reels have stopped and effects are running or persisting */
   ready: boolean;
 }
 
@@ -50,6 +49,13 @@ export default function TitanPaylineOverlay({
   if (!ready || paylineWins.length === 0 || !currentWin) return null;
 
   const highlightId = currentWin.paylineId;
+  const activePayline = paylines.find((p) => p.id === highlightId);
+
+  // Position the win amount text at the middle column near the payline path
+  const labelCol = 2; // middle column
+  const labelRow = activePayline?.rows?.[labelCol] ?? 1;
+  const labelX = colCenter(labelCol);
+  const labelY = rowCenter(labelRow) + 28; // offset below the path
 
   return (
     <svg
@@ -78,6 +84,34 @@ export default function TitanPaylineOverlay({
             </g>
           );
         })}
+
+      {/* Win amount label on the grid */}
+      <g>
+        <rect
+          x={labelX - 44}
+          y={labelY - 14}
+          width={88}
+          height={28}
+          rx={6}
+          fill="var(--titan-obsidian)"
+          fillOpacity={0.85}
+          stroke="var(--titan-forge-gold)"
+          strokeWidth={1}
+          strokeOpacity={0.5}
+        />
+        <text
+          x={labelX}
+          y={labelY + 4}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="var(--titan-forge-gold)"
+          fontFamily="var(--titan-display)"
+          fontSize={16}
+          fontWeight={700}
+        >
+          ${currentWin.winAmount.toFixed(2)}
+        </text>
+      </g>
     </svg>
   );
 }
