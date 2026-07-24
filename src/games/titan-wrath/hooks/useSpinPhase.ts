@@ -9,10 +9,10 @@ export type SpinPhase =
   | "result";
 
 const PHASE_TIMINGS: Record<Exclude<SpinPhase, "idle" | "spinning">, number> = {
-  reveal: 200,
-  wild_expand: 1200,
-  paylines: 1200,
-  result: 1500,
+  reveal: 120,
+  wild_expand: 700,
+  paylines: 700,
+  result: 1000,
 };
 
 interface UseSpinPhaseArgs {
@@ -56,9 +56,7 @@ export function useSpinPhase({
     if (readyForEffects && phase === "spinning" && !effectsStartedRef.current) {
       effectsStartedRef.current = true;
       clearTimer();
-      timerRef.current = window.setTimeout(() => {
-        setPhase("reveal");
-      }, 200);
+      setPhase("reveal");
     }
     return clearTimer;
   }, [readyForEffects, phase, clearTimer]);

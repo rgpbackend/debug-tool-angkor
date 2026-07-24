@@ -142,7 +142,7 @@ export default function GameScreen({
     if (viewSpin.round.state === "RESPIN" && spinPhase === "idle" && canSpin) {
       const timer = window.setTimeout(() => {
         void executeSpin();
-      }, 800);
+      }, 500);
       return () => window.clearTimeout(timer);
     }
   }, [viewSpin?.round.state, spinPhase, canSpin, executeSpin]);

@@ -1,20 +1,20 @@
 export const REEL_SPIN = {
   /** Minimum time all reels spin before the first column can stop. */
-  minSpinMs: 720,
+  minSpinMs: 500,
   /** Delay between each reel stop trigger (left → right). */
-  stopIntervalMs: 420,
+  stopIntervalMs: 250,
   /** Deceleration duration for a single reel landing. */
-  stopDurationMs: 860,
+  stopDurationMs: 650,
   /** Symbols in one seamless loop segment (duplicated in the strip). */
   loopSegmentLength: 16,
   /** Symbols after the result for decel headroom. */
   tailLength: 4,
   /** Time to ease from rest into cruise spin speed. */
-  spinRampUpMs: 480,
-  /** Peak scroll speed during the spin loop (px/s) — no sustained “blur” phase. */
-  spinCruiseSpeedPxPerSec: 620,
+  spinRampUpMs: 350,
+  /** Peak scroll speed during the spin loop (px/s). */
+  spinCruiseSpeedPxPerSec: 580,
   /** Brief settle after a reel lands. */
-  bounceMs: 220,
+  bounceMs: 180,
 } as const;
 
 export const SPIN_STRIP_SYMBOLS = [
