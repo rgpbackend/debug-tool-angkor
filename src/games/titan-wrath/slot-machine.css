@@ -795,17 +795,87 @@
   box-sizing: border-box;
 }
 
-.titan-joining {
+/* --- Joining Screen --- */
+.titan-screen--joining {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 35%, rgba(232, 69, 45, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 60%, rgba(212, 168, 67, 0.04) 0%, transparent 60%),
+    var(--titan-obsidian);
+}
+
+.titan-joining-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.titan-joining-emblem {
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 24px rgba(240, 192, 96, 0.5));
+  animation: titan-emblem-float 3s ease-in-out infinite;
+}
+
+@keyframes titan-emblem-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.titan-joining-title {
   font-family: var(--titan-display);
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: var(--titan-forge-gold);
-  animation: pulse-text 1.5s ease-in-out infinite;
+  margin: 12px 0 0;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 32px rgba(212, 168, 67, 0.35);
+}
+
+/* Forge loading bar — the signature element */
+.titan-joining-forge {
+  width: 180px;
+  height: 4px;
+  margin-top: 28px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.titan-joining-forge-bar {
+  width: 40%;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--titan-wrath-vermilion) 20%,
+    var(--titan-forge-gold) 50%,
+    var(--titan-divine-amber) 80%,
+    transparent 100%
+  );
+  animation: titan-forge-slide 1.6s ease-in-out infinite;
+}
+
+@keyframes titan-forge-slide {
+  0% { transform: translateX(-100%); opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { transform: translateX(350%); opacity: 0; }
+}
+
+.titan-joining-status {
+  font-family: var(--titan-body);
+  font-size: 0.85rem;
+  color: var(--titan-ash);
+  margin: 16px 0 0;
+  letter-spacing: 0.03em;
 }
 
 .titan-joining-actions {
   display: flex;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 @keyframes pulse-text {

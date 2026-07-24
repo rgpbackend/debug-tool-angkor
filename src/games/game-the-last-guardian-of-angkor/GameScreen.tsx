@@ -160,15 +160,26 @@ export default function GameScreen({
 
   if (joining) {
     return (
-      <div className="angkor-screen">
-        <p className="angkor-joining" role="status">Joining The Last Guardian of Angkor…</p>
-        <div className="angkor-joining-actions">
-          <button type="button" className="lobby-btn" onClick={onBackToLobby}>
-            ← Lobby
-          </button>
-          <button type="button" className="logout-btn" onClick={onLogout}>
-            Log out
-          </button>
+      <div className="angkor-screen angkor-screen--joining">
+        <div className="angkor-joining-card">
+          <div className="angkor-joining-sigil">
+            <div className="angkor-joining-sigil-ring" />
+            <span className="angkor-joining-sigil-icon">🏛️</span>
+          </div>
+          <h1 className="angkor-joining-title">The Last Guardian</h1>
+          <p className="angkor-joining-sub">of Angkor</p>
+          <div className="angkor-joining-pulse">
+            <div className="angkor-joining-pulse-dot" />
+          </div>
+          <p className="angkor-joining-status" role="status">Entering the temple…</p>
+          <div className="angkor-joining-actions">
+            <button type="button" className="lobby-btn" onClick={onBackToLobby}>
+              ← Lobby
+            </button>
+            <button type="button" className="logout-btn" onClick={onLogout}>
+              Log out
+            </button>
+          </div>
         </div>
       </div>
     );

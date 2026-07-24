@@ -1521,49 +1521,128 @@
 }
 
 /* --- Joining screen --- */
-.angkor-screen {
-  flex: 1;
+.angkor-screen--joining {
+  background:
+    radial-gradient(ellipse 50% 45% at 50% 40%, rgba(94, 234, 212, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 35% at 50% 55%, rgba(196, 164, 74, 0.05) 0%, transparent 60%),
+    color-mix(in srgb, var(--slot-stone, #1A1814) 92%, #000);
+}
+
+.angkor-joining-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* Guardian sigil — the signature element */
+.angkor-joining-sigil {
+  position: relative;
+  width: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100svh;
-  background: radial-gradient(
-    ellipse 120% 80% at 50% -20%,
-    color-mix(in srgb, var(--slot-gold, #c4a44a) 6%, transparent),
-    transparent 58%
-  ),
-  color-mix(in srgb, var(--bg) 90%, var(--code-bg));
 }
 
-.angkor-joining {
+.angkor-joining-sigil-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(94, 234, 212, 0.2);
+  animation: angkor-sigil-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes angkor-sigil-pulse {
+  0%, 100% {
+    transform: scale(1);
+    border-color: rgba(94, 234, 212, 0.15);
+    box-shadow: 0 0 0 0 rgba(94, 234, 212, 0);
+  }
+  50% {
+    transform: scale(1.12);
+    border-color: rgba(94, 234, 212, 0.45);
+    box-shadow: 0 0 20px 4px rgba(94, 234, 212, 0.12);
+  }
+}
+
+.angkor-joining-sigil-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(94, 234, 212, 0.35));
+}
+
+.angkor-joining-title {
   font-family: var(--mono);
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--text-h);
-  animation: pulse-text 1.5s ease-in-out infinite;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--slot-gold, #c4a44a) 85%, #f5e6c8);
+  margin: 16px 0 0;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 24px rgba(196, 164, 74, 0.25);
+}
+
+.angkor-joining-sub {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--slot-gold, #c4a44a) 55%, var(--muted, #888));
+  margin: 4px 0 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Guardian pulse dots */
+.angkor-joining-pulse {
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.angkor-joining-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--slot-guardian, #5EEAD4);
+  animation: angkor-dot-breathe 1.4s ease-in-out infinite;
+  box-shadow: 0 0 10px 2px rgba(94, 234, 212, 0.4);
+}
+
+@keyframes angkor-dot-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.8); opacity: 1; }
+}
+
+.angkor-joining-status {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 14px 0 0;
+  letter-spacing: 0.04em;
 }
 
 .angkor-joining-actions {
   display: flex;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 .angkor-joining-actions button {
   padding: 8px 18px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.3);
-  color: var(--text-h);
-  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--slot-stone-light, #999) 70%, #fff);
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .angkor-joining-actions button:hover {
-  border-color: var(--accent-border);
-  color: var(--accent);
+  border-color: var(--slot-gold, #c4a44a);
+  color: var(--slot-gold, #c4a44a);
 }
 
 @keyframes pulse-text {

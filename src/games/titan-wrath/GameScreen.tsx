@@ -159,15 +159,22 @@ export default function GameScreen({
 
   if (joining) {
     return (
-      <div className="titan-screen">
-        <p className="titan-joining" role="status">Joining Titan&apos;s Wrath…</p>
-        <div className="titan-joining-actions">
-          <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
-            ← Lobby
-          </button>
-          <button type="button" className="titan-logout-btn" onClick={onLogout}>
-            Log out
-          </button>
+      <div className="titan-screen titan-screen--joining">
+        <div className="titan-joining-card">
+          <div className="titan-joining-emblem">⚡</div>
+          <h1 className="titan-joining-title">Titan&apos;s Wrath</h1>
+          <div className="titan-joining-forge">
+            <div className="titan-joining-forge-bar" />
+          </div>
+          <p className="titan-joining-status" role="status">Forging connection…</p>
+          <div className="titan-joining-actions">
+            <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
+              ← Lobby
+            </button>
+            <button type="button" className="titan-logout-btn" onClick={onLogout}>
+              Log out
+            </button>
+          </div>
         </div>
       </div>
     );
