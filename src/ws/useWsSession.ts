@@ -489,9 +489,16 @@ export function useWsSession(
 
   useEffect(
     () => () => {
+      sessionEndingRef.current = true;
       stopHeartbeat();
+      detachDisconnectListener();
+      detachStompListener();
+      // Close WebSocket so stale disconnect events don't trigger
+      // logout after the user already navigated back to lobby.
+      clientRef.current?.close();
+      clientRef.current = null;
     },
-    [stopHeartbeat],
+    [stopHeartbeat, detachDisconnectListener, detachStompListener],
   );
 
   return {

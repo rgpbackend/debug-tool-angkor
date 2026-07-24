@@ -39,13 +39,17 @@ export function useTitanSession(
   wsAccessToken: string,
   callbacks: WsSessionCallbacks,
 ) {
+  const wrappedCallbacks: WsSessionCallbacks = {
+    onTokenBan: () => { console.error("[TITAN] onTokenBan → logout"); callbacks.onTokenBan(); },
+    onConnectionLost: (msg: string) => { console.error("[TITAN] onConnectionLost:", msg); callbacks.onConnectionLost(msg); },
+  };
   const ws = useWsSession(
     wsUrl,
     TITAN_GAME_ROUTE,
     "AGENCY_001",
     TITAN_JACKPOT_TIERS,
     wsAccessToken,
-    callbacks,
+    wrappedCallbacks,
     parseTitanMessage,
   );
 

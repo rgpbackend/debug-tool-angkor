@@ -86,7 +86,11 @@ export function useGameSession(
   balance: string | null,
   depositBusy: boolean,
 ) {
-  const ws = useWsSession(wsUrl, gameId, agentId, jackpotTierInfo, wsAccessToken, callbacks, parseAngkorMessage);
+  const wrappedCallbacks: WsSessionCallbacks = {
+    onTokenBan: () => { console.error("[ANGKOR] onTokenBan → logout"); callbacks.onTokenBan(); },
+    onConnectionLost: (msg: string) => { console.error("[ANGKOR] onConnectionLost:", msg); callbacks.onConnectionLost(msg); },
+  };
+  const ws = useWsSession(wsUrl, gameId, agentId, jackpotTierInfo, wsAccessToken, wrappedCallbacks, parseAngkorMessage);
 
   // --- game-specific state ---
   const [bet, setBet] = useState("1");
