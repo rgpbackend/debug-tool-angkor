@@ -115,23 +115,23 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
 
       {/* Grid Area — the hero */}
       <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
-        <TitanReelGrid
-          patternGrid={props.patternGrid}
-          lockedReels={props.lockedReels}
-          spinning={spinning}
-          onPresentationChange={handlePresentationChange}
-        />
-
-        <TitanPaylineOverlay
-          paylines={props.serverPaylines}
-          paylineWins={props.paylineWins}
-          visible={showPaylines}
-        />
-
-        <TitanWildExpansion
-          wildInfo={showWild ? props.wildInfo : undefined}
-          onComplete={handleWildDone}
-        />
+        <div className="titan-reel-stage">
+          <TitanReelGrid
+            patternGrid={props.patternGrid}
+            lockedReels={props.lockedReels}
+            spinning={spinning}
+            onPresentationChange={handlePresentationChange}
+          />
+          <TitanPaylineOverlay
+            paylines={props.serverPaylines}
+            paylineWins={props.paylineWins}
+            visible={showPaylines}
+          />
+          <TitanWildExpansion
+            wildInfo={showWild ? props.wildInfo : undefined}
+            onComplete={handleWildDone}
+          />
+        </div>
       </div>
 
       {/* Display — show win amount or idle message */}

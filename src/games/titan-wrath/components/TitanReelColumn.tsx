@@ -30,17 +30,19 @@ type TitanReelColumnProps = {
 };
 
 function renderCell(sym: string, reelIndex: number, rowIndex: number) {
+  const displaySym = sym || "·";
   return (
-    <div key={`r${reelIndex}-row${rowIndex}`} className={`cell titan-symbol-cell ${SYMBOL_CLASS[sym] ?? ""}`}>
-      <span className="titan-symbol-text">{sym}</span>
+    <div key={`r${reelIndex}-row${rowIndex}`} className={`cell titan-symbol-cell ${sym ? (SYMBOL_CLASS[sym] ?? "") : "cell--empty"}`}>
+      <span className="titan-symbol-text">{displaySym}</span>
     </div>
   );
 }
 
 function renderMotionCell(sym: string, reelIndex: number, stripIndex: number) {
+  const displaySym = sym || "·";
   return (
-    <div key={`r${reelIndex}-m${stripIndex}`} className={`cell titan-symbol-cell cell--motion ${SYMBOL_CLASS[sym] ?? ""}`}>
-      <span className="titan-symbol-text">{sym}</span>
+    <div key={`r${reelIndex}-m${stripIndex}`} className={`cell titan-symbol-cell cell--motion ${sym ? (SYMBOL_CLASS[sym] ?? "") : "cell--empty"}`}>
+      <span className="titan-symbol-text">{displaySym}</span>
     </div>
   );
 }

@@ -1,16 +1,23 @@
 import type { TitanPaylineWin } from "../titan-protocol";
 import type { ServerPayline } from "../../../ws/protocol";
 
-const CELL_W = 70;
-const CELL_H = 70;
+// Grid units: 5 columns × 3 rows, cell centers at (c+0.5, r+0.5)
+const COLS = 5;
+const ROWS = 3;
+const UNIT_W = 100;
+const UNIT_H = 100;
+const SVG_W = COLS * UNIT_W;
+const SVG_H = ROWS * UNIT_H;
+
+function colCenter(col: number) { return col * UNIT_W + UNIT_W / 2; }
+function rowCenter(row: number) { return row * UNIT_H + UNIT_H / 2; }
 
 function makePath(rows: number[]): string {
-  const pts = rows.map((row, col) => {
-    const x = col * CELL_W + 32;
-    const y = row * CELL_H + 32;
+  return rows.map((row, col) => {
+    const x = colCenter(col);
+    const y = rowCenter(row);
     return `${col === 0 ? "M" : "L"} ${x} ${y}`;
-  });
-  return pts.join(" ");
+  }).join(" ");
 }
 
 const PAYLINE_PATHS: Record<string, string> = {
@@ -44,8 +51,8 @@ export default function TitanPaylineOverlay({
   return (
     <svg
       className="titan-payline-overlay"
-      viewBox={`0 0 ${CELL_W * 5 - 6} ${CELL_H * 3 - 6}`}
-      preserveAspectRatio="xMidYMid meet"
+      viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+      preserveAspectRatio="none"
     >
       {paylines
         .filter((p) => winIds.has(p.id))
@@ -59,20 +66,21 @@ export default function TitanPaylineOverlay({
                 d={pathData}
                 fill="none"
                 stroke="var(--titan-divine-amber)"
-                strokeWidth={2.5}
+                strokeWidth={3}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 className={`payline-glow${direction === -1 ? " payline-rtl" : ""}`}
               />
               {win && (
                 <text
-                  x={CELL_W * 2.5 - 3}
-                  y={p.rows[2] * CELL_H + 28}
+                  x={colCenter(2)}
+                  y={rowCenter(p.rows[2]) + 4}
                   textAnchor="middle"
+                  dominantBaseline="middle"
                   className="payline-win-text"
                   fill="var(--titan-forge-gold)"
                   fontFamily="var(--titan-display)"
-                  fontSize={14}
+                  fontSize={18}
                   fontWeight={700}
                 >
                   ${win.winAmount.toFixed(2)}
