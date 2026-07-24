@@ -5,7 +5,6 @@ import type { SpinPhase } from "../hooks/useSpinPhase";
 import TitanReelGrid from "./TitanReelGrid";
 import TitanPaylineOverlay from "./TitanPaylineOverlay";
 import TitanWildExpansion from "./TitanWildExpansion";
-import TitanDisplayBox from "./TitanDisplayBox";
 import TitanJackpotBar from "./TitanJackpotBar";
 import TitanControls from "./TitanControls";
 import PaytableModal from "./PaytableModal";
@@ -81,30 +80,40 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
     props.wildAnimDone();
   }, [props.wildAnimDone]);
 
+  const formattedBalance = props.balance !== null
+    ? `$${Number(props.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : null;
+
   return (
     <div className="titan-slot-machine">
-      {/* Toolbar */}
-      {props.toolbarSlot && (
-        <div className="titan-toolbar">{props.toolbarSlot}</div>
-      )}
+      {/* Header — Lobby/Logout + Title + Menu */}
+      <header className="titan-cabinet-header">
+        <div className="titan-cabinet-toolbar">
+          {props.toolbarSlot}
+        </div>
+        <span className="titan-cabinet-title">⚡ Titan&apos;s Wrath</span>
+        <button className="titan-cabinet-menu-btn" onClick={() => setMenuOpen(true)} aria-label="Menu">
+          ☰
+        </button>
+      </header>
 
-      {/* Error */}
+      {/* Error banner */}
       {props.error && <div className="titan-error-banner">{props.error}</div>}
 
-      {/* Balance */}
-      {props.balance !== null && (
-        <div className="titan-balance-row">
-          <span className="balance-label">BALANCE</span>
-          <span className="balance-amount">
-            ${Number(props.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-      )}
+      {/* Status row — Balance */}
+      <div className="titan-cabinet-status">
+        {formattedBalance && (
+          <>
+            <span className="titan-status-label">Balance</span>
+            <span className="titan-status-value">{formattedBalance}</span>
+          </>
+        )}
+      </div>
 
       {/* Jackpot Bar */}
       <TitanJackpotBar poolsByTier={props.jackpotPoolsByTier} />
 
-      {/* Grid Area */}
+      {/* Grid Area — the hero */}
       <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
         <TitanReelGrid
           patternGrid={props.patternGrid}
@@ -112,7 +121,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           spinning={spinning}
           onPresentationChange={handlePresentationChange}
         />
-
 
         <TitanPaylineOverlay
           paylines={props.serverPaylines}
@@ -124,14 +132,20 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           wildInfo={showWild ? props.wildInfo : undefined}
           onComplete={handleWildDone}
         />
-
       </div>
 
-      {/* Display Box */}
-      <TitanDisplayBox
-        spinning={isBusy}
-        totalWin={showResult ? props.totalWin : null}
-      />
+      {/* Display — show win amount or idle message */}
+      <div className={`titan-cabinet-display${showResult && props.totalWin !== null && props.totalWin > 0 ? " display-win" : ""}`}>
+        {showResult && props.totalWin !== null && props.totalWin > 0 ? (
+          <span className="titan-win-amount" key={props.totalWin}>
+            ${props.totalWin.toFixed(2)}
+          </span>
+        ) : isBusy ? (
+          <span className="titan-display-muted">…</span>
+        ) : (
+          <span className="titan-display-muted">Win up to 2100x Bet</span>
+        )}
+      </div>
 
       {/* Controls */}
       <TitanControls
@@ -150,11 +164,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         superBetToggleable={props.superBetToggleable}
         onSuperBetToggle={props.onSuperBetToggle}
       />
-
-      {/* Menu button (floating) */}
-      <button className="titan-menu-btn" onClick={() => setMenuOpen(true)}>
-        ☰
-      </button>
 
       {/* Modals */}
       <PaytableModal

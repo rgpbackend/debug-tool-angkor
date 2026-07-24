@@ -1,5 +1,5 @@
 /* ============================================================
-   Titan's Wrath — Slot Machine Styles
+   Titan's Wrath — Slot Machine Styles (Forge Cabinet)
    ============================================================ */
 
 /* --- Design Tokens --- */
@@ -15,22 +15,219 @@
   --titan-body: Inter, system-ui, -apple-system, sans-serif;
 }
 
-/* --- Reel Grid --- */
+/* ============================================================
+   Screen
+   ============================================================ */
+
+.titan-screen {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--titan-obsidian);
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   Cabinet — the slot machine container
+   ============================================================ */
+
+.titan-slot-machine {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #120F0D 0%, var(--titan-obsidian) 100%);
+  border: 1px solid rgba(212, 168, 67, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 0 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(212, 168, 67, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+
+.titan-cabinet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(212, 168, 67, 0.08);
+  gap: 10px;
+}
+
+.titan-cabinet-toolbar {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.titan-cabinet-title {
+  font-family: var(--titan-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+  letter-spacing: 0.06em;
+  text-align: center;
+  flex: 1;
+  white-space: nowrap;
+}
+
+.titan-cabinet-menu-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--titan-ash);
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.titan-cabinet-menu-btn:hover {
+  border-color: var(--titan-forge-gold);
+  color: var(--titan-smoke);
+}
+
+/* ============================================================
+   Status Row (Balance)
+   ============================================================ */
+
+.titan-cabinet-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.titan-status-label {
+  font-family: var(--titan-display);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--titan-ash);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.titan-status-value {
+  font-family: var(--titan-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--titan-forge-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Error Banner
+   ============================================================ */
+
+.titan-error-banner {
+  padding: 7px 14px;
+  background: rgba(232, 69, 45, 0.1);
+  border-bottom: 1px solid rgba(232, 69, 45, 0.2);
+  color: var(--titan-wrath-vermilion);
+  font-family: var(--titan-body);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+/* ============================================================
+   Jackpot Bar
+   ============================================================ */
+
+.titan-jackpot-bar {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.jackpot-tier {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.jackpot-tier:last-child {
+  border-right: none;
+}
+
+.tier-label {
+  display: block;
+  font-family: var(--titan-display);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--titan-ash);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.tier-amount {
+  display: block;
+  font-family: var(--titan-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--titan-smoke);
+  margin-top: 1px;
+}
+
+.tier-grand .tier-label,
+.tier-major .tier-label {
+  color: var(--titan-forge-gold);
+}
+
+.tier-grand .tier-amount,
+.tier-major .tier-amount {
+  color: var(--titan-forge-gold);
+}
+
+/* ============================================================
+   Grid Area — the hero
+   ============================================================ */
+
+.titan-grid-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(26, 20, 16, 0.6) 0%, var(--titan-obsidian) 100%);
+}
+
+/* ============================================================
+   Reel Grid
+   ============================================================ */
+
 .titan-reel-grid {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   justify-content: center;
-  padding: 12px;
-  background: var(--titan-obsidian);
-  border-radius: 8px;
   position: relative;
-  overflow: hidden;
+  z-index: 1;
 }
 
 .titan-reel-col {
   --reel-rows: 3;
   --reel-gap: 4px;
-  --reel-cell: min(64px, calc((100vw - 80px) / 6));
+  --reel-cell: min(62px, calc((100vw - 100px) / 6));
   --reel-viewport-height: calc(var(--reel-rows) * var(--reel-cell) + (var(--reel-rows) - 1) * var(--reel-gap));
   display: flex;
   flex-direction: column;
@@ -67,44 +264,37 @@
 .reel-strip {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   will-change: transform;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
 }
 
-.titan-symbol-cell.cell--motion {
-  opacity: 0.94;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 1px 4px rgb(0 0 0 / 18%);
-}
+/* ============================================================
+   Symbol Cells
+   ============================================================ */
 
-.titan-reel-col.reel-bounce .reel-viewport {
-  animation: slot-reel-bounce 220ms cubic-bezier(0.25, 0.9, 0.35, 1);
-}
-
-@keyframes slot-reel-bounce {
-  0% { transform: translateY(0); }
-  45% { transform: translateY(2%); }
-  100% { transform: translateY(0); }
-}
-
-/* --- Symbol Cells --- */
 .titan-symbol-cell {
-  width: var(--reel-cell, 64px);
-  height: var(--reel-cell, 64px);
+  width: var(--reel-cell, 62px);
+  height: var(--reel-cell, 62px);
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
   background: var(--titan-ember);
-  border: 1px solid rgba(138, 133, 128, 0.2);
+  border: 1px solid rgba(138, 133, 128, 0.15);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.titan-symbol-cell.cell--motion {
+  opacity: 0.94;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 1px 4px rgb(0 0 0 / 18%);
 }
 
 .titan-symbol-text {
   font-family: var(--titan-display);
-  font-size: clamp(0.9rem, calc(var(--reel-cell, 64px) * 0.38), 1.5rem);
+  font-size: clamp(0.85rem, calc(var(--reel-cell, 62px) * 0.36), 1.4rem);
   font-weight: 700;
   user-select: none;
 }
@@ -127,13 +317,26 @@
   background: linear-gradient(135deg, rgba(232, 69, 45, 0.15), rgba(212, 168, 67, 0.1));
 }
 
-/* --- Payline Overlay --- */
+.titan-reel-col.reel-bounce .reel-viewport {
+  animation: slot-reel-bounce 220ms cubic-bezier(0.25, 0.9, 0.35, 1);
+}
+
+@keyframes slot-reel-bounce {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(2%); }
+  100% { transform: translateY(0); }
+}
+
+/* ============================================================
+   Payline Overlay
+   ============================================================ */
+
 .titan-payline-overlay {
   position: absolute;
-  top: 12px;
+  top: 10px;
   left: 12px;
   width: calc(100% - 24px);
-  height: calc(100% - 24px);
+  height: calc(100% - 20px);
   pointer-events: none;
   z-index: 10;
 }
@@ -158,7 +361,10 @@
   stroke-width: 3px;
 }
 
-/* --- Wild Expansion --- */
+/* ============================================================
+   Wild Expansion
+   ============================================================ */
+
 .titan-wild-expansion {
   position: absolute;
   inset: 0;
@@ -168,8 +374,8 @@
 
 .wild-fire-burst {
   position: absolute;
-  top: 12px;
-  height: calc(100% - 24px);
+  top: 10px;
+  height: calc(100% - 20px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -197,38 +403,37 @@
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* --- Display Box --- */
-.titan-display-box {
-  background: #FFFFFF;
-  border-radius: 6px;
-  padding: 10px 16px;
+/* ============================================================
+   Display
+   ============================================================ */
+
+.titan-cabinet-display {
+  padding: 8px 16px;
   text-align: center;
-  min-height: 48px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.titan-display-box .titan-usp-text {
+.titan-display-muted {
   font-family: var(--titan-body);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: var(--titan-ash);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.titan-display-box.display-win {
-  background: linear-gradient(135deg, #FFF8E1, #FFF3CD);
+.titan-cabinet-display.display-win {
+  background: linear-gradient(90deg, rgba(212, 168, 67, 0.08), rgba(240, 192, 96, 0.04), rgba(212, 168, 67, 0.08));
 }
 
-.titan-display-box .titan-win-amount {
+.titan-win-amount {
   font-family: var(--titan-display);
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--titan-forge-gold);
-  animation: win-pop-in 0.3s ease-out;
+  animation: win-pop-in 0.35s ease-out;
 }
 
 @keyframes win-pop-in {
@@ -236,62 +441,18 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* --- Jackpot Bar --- */
-.titan-jackpot-bar {
-  display: flex;
-  gap: 4px;
-  padding: 8px 12px;
-  background: var(--titan-ember);
-  border-radius: 6px 6px 0 0;
-}
+/* ============================================================
+   Controls
+   ============================================================ */
 
-.jackpot-tier {
-  flex: 1;
-  text-align: center;
-  padding: 6px 4px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.tier-label {
-  display: block;
-  font-family: var(--titan-display);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--titan-ash);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.tier-amount {
-  display: block;
-  font-family: var(--titan-body);
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--titan-smoke);
-  margin-top: 2px;
-}
-
-.tier-grand .tier-label,
-.tier-major .tier-label {
-  color: var(--titan-forge-gold);
-}
-
-.tier-grand .tier-amount,
-.tier-major .tier-amount {
-  color: var(--titan-forge-gold);
-}
-
-
-/* --- Controls --- */
 .titan-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--titan-ember);
-  border-radius: 0 0 6px 6px;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 /* Super Bet */
@@ -299,10 +460,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 12px;
+  padding: 7px 10px;
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--titan-ash);
-  border-radius: 8px;
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 7px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -316,39 +477,39 @@
 
 .super-bet-label {
   font-family: var(--titan-display);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--titan-ash);
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
 }
 
 .super-bet-on .super-bet-label { color: var(--titan-wrath-vermilion); }
 
 .super-bet-badge {
   font-family: var(--titan-body);
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   color: var(--titan-forge-gold);
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 /* Bet Controls */
 .titan-bet-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .bet-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--titan-ash);
+  border: 1px solid rgba(138, 133, 128, 0.25);
   border-radius: 50%;
   color: var(--titan-smoke);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -357,13 +518,14 @@
 .bet-btn:not(:disabled):hover { border-color: var(--titan-forge-gold); color: var(--titan-forge-gold); }
 
 .bet-display {
-  padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid var(--titan-ash);
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(138, 133, 128, 0.2);
   border-radius: 6px;
   color: var(--titan-smoke);
   font-family: var(--titan-body);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
 }
 
@@ -371,76 +533,75 @@
 
 /* Spin Button */
 .titan-spin-btn {
-  width: 64px;
-  height: 64px;
+  width: 58px;
+  height: 58px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   border: 3px solid var(--titan-forge-gold);
-  background: linear-gradient(135deg, var(--titan-ember), var(--titan-obsidian));
+  background: linear-gradient(135deg, rgba(26, 20, 16, 0.9), rgba(13, 11, 15, 0.9));
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 0 16px rgba(212, 168, 67, 0.3);
+  box-shadow: 0 0 18px rgba(212, 168, 67, 0.25);
 }
 
 .titan-spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .titan-spin-btn:not(:disabled):hover {
-  box-shadow: 0 0 28px rgba(212, 168, 67, 0.6);
-  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(212, 168, 67, 0.5);
+  transform: scale(1.06);
 }
 
 .titan-spin-btn.spin-spinning {
-  border-radius: 8px;
+  border-radius: 10px;
   border-color: var(--titan-wrath-vermilion);
+  box-shadow: 0 0 20px rgba(232, 69, 45, 0.35);
 }
 
 .titan-spin-btn.spin-auto {
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .spin-icon {
-  font-size: 1.75rem;
-  animation: spin-arrows 2s linear infinite;
-}
-
-@keyframes spin-arrows {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  font-size: 1.6rem;
 }
 
 .spin-stop-icon {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   color: var(--titan-wrath-vermilion);
 }
 
 .spin-auto-count {
   font-family: var(--titan-display);
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--titan-forge-gold);
 }
 
 /* Auto Spin Button */
 .titan-auto-btn {
-  padding: 8px 16px;
+  padding: 7px 14px;
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--titan-ash);
-  border-radius: 8px;
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 7px;
   color: var(--titan-smoke);
   font-family: var(--titan-display);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
   cursor: pointer;
 }
 
 .titan-auto-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .titan-auto-btn:not(:disabled):hover { border-color: var(--titan-forge-gold); }
 
-/* --- Autospin Picker --- */
-.autospin-backdrop {
+/* ============================================================
+   Modals (Autospin / Bet Picker / Paytable / Menu)
+   ============================================================ */
+
+.autospin-backdrop,
+.modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
@@ -450,17 +611,21 @@
   z-index: 100;
 }
 
-.autospin-picker {
-  background: var(--titan-ember);
-  border: 1px solid var(--titan-forge-gold);
+.autospin-picker,
+.bet-picker {
+  background: #1A1410;
+  border: 1px solid rgba(212, 168, 67, 0.3);
   border-radius: 12px;
   padding: 24px;
   min-width: 240px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
 }
 
-.autospin-title {
+.autospin-title,
+.bet-picker-title {
   font-family: var(--titan-display);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--titan-forge-gold);
   text-align: center;
   margin: 0 0 16px;
@@ -475,12 +640,13 @@
 .autospin-option {
   padding: 12px;
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--titan-ash);
+  border: 1px solid rgba(138, 133, 128, 0.25);
   border-radius: 6px;
   color: var(--titan-smoke);
   font-family: var(--titan-display);
   font-size: 1rem;
   cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .autospin-option:hover { border-color: var(--titan-forge-gold); color: var(--titan-forge-gold); }
@@ -494,156 +660,46 @@
   border: none;
   color: var(--titan-ash);
   font-family: var(--titan-body);
+  font-size: 0.85rem;
   cursor: pointer;
 }
 
-/* --- Bet Picker --- */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
 .bet-picker {
-  background: var(--titan-ember);
-  border: 1px solid var(--titan-forge-gold);
-  border-radius: 12px;
-  padding: 24px;
   max-width: 320px;
   width: 90%;
-}
-
-.bet-picker-title {
-  font-family: var(--titan-display);
-  font-size: 1.25rem;
-  color: var(--titan-forge-gold);
-  text-align: center;
-  margin: 0 0 16px;
 }
 
 .bet-picker-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  gap: 5px;
 }
 
 .bet-option {
   padding: 8px 4px;
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--titan-ash);
-  border-radius: 4px;
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 5px;
   color: var(--titan-smoke);
   font-size: 0.75rem;
   cursor: pointer;
+  transition: border-color 0.15s;
 }
 
 .bet-option:hover { border-color: var(--titan-forge-gold); }
 .bet-option.bet-selected { border-color: var(--titan-forge-gold); background: rgba(212, 168, 67, 0.15); }
 
-/* --- Slot Machine Container --- */
-.titan-slot-machine {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
-  background: var(--titan-obsidian);
-  border: 2px solid var(--titan-ember);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Fill available height on larger screens */
-@media (min-height: 700px) {
-  .titan-slot-machine {
-    max-height: calc(100svh - 16px);
-  }
-}
-
-.titan-toolbar {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.titan-error-banner {
-  padding: 8px 12px;
-  background: rgba(232, 69, 45, 0.15);
-  border-bottom: 1px solid var(--titan-wrath-vermilion);
-  color: var(--titan-wrath-vermilion);
-  font-family: var(--titan-body);
-  font-size: 0.8rem;
-  text-align: center;
-}
-
-.titan-balance-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.balance-label {
-  font-family: var(--titan-display);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--titan-ash);
-  letter-spacing: 1px;
-}
-
-.balance-amount {
-  font-family: var(--titan-body);
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--titan-smoke);
-}
-
-.titan-grid-area {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Menu button */
-.titan-menu-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--titan-ash);
-  border-radius: 50%;
-  color: var(--titan-smoke);
-  font-size: 1rem;
-  cursor: pointer;
-  z-index: 5;
-}
-
-/* --- Paytable Modal --- */
+/* Paytable Modal */
 .paytable-modal {
-  background: var(--titan-ember);
-  border: 1px solid var(--titan-forge-gold);
+  background: #1A1410;
+  border: 1px solid rgba(212, 168, 67, 0.3);
   border-radius: 12px;
   padding: 20px;
   max-width: 360px;
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
 }
 
 .paytable-header {
@@ -655,7 +711,8 @@
 
 .paytable-title {
   font-family: var(--titan-display);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--titan-forge-gold);
   margin: 0;
 }
@@ -667,7 +724,7 @@
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid var(--titan-ash);
+  border: 1px solid rgba(138, 133, 128, 0.3);
   border-radius: 50%;
   color: var(--titan-smoke);
   cursor: pointer;
@@ -677,26 +734,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 8px;
-  border-bottom: 1px solid rgba(138, 133, 128, 0.15);
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(138, 133, 128, 0.1);
 }
 
 .paytable-symbol {
   font-family: var(--titan-display);
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--titan-forge-gold);
 }
 
 .paytable-payouts {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   font-family: var(--titan-body);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--titan-smoke);
 }
 
 .paytable-wild .paytable-symbol { color: var(--titan-wrath-vermilion); }
+
 .paytable-wild-desc {
   font-family: var(--titan-body);
   font-size: 0.7rem;
@@ -704,7 +762,7 @@
   max-width: 180px;
 }
 
-/* --- Menu Popover --- */
+/* Menu Popover */
 .menu-backdrop {
   position: fixed;
   inset: 0;
@@ -717,12 +775,13 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--titan-ember);
-  border: 1px solid var(--titan-forge-gold);
+  background: #1A1410;
+  border: 1px solid rgba(212, 168, 67, 0.25);
   border-radius: 12px;
-  padding: 8px;
+  padding: 6px;
   min-width: 200px;
   z-index: 101;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
 }
 
 .menu-item {
@@ -730,18 +789,17 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: transparent;
   border: none;
   border-radius: 6px;
   color: var(--titan-smoke);
   font-family: var(--titan-body);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   cursor: pointer;
 }
 
 .menu-item:hover:not(:disabled) { background: rgba(212, 168, 67, 0.1); }
-
 .menu-item:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .menu-icon { font-size: 1.1rem; }
@@ -751,14 +809,17 @@
   color: var(--titan-ash);
 }
 
-/* --- Titan's Gaze (Signature Element) --- */
+/* ============================================================
+   Titan's Gaze — eyes during spinning
+   ============================================================ */
+
 .titan-grid-area[data-spinning]::before,
 .titan-grid-area[data-spinning]::after {
   content: "";
   position: absolute;
-  top: -40px;
-  width: 50px;
-  height: 30px;
+  top: 0;
+  width: 44px;
+  height: 26px;
   background: radial-gradient(ellipse at center,
     var(--titan-forge-gold) 0%,
     var(--titan-wrath-vermilion) 40%,
@@ -771,8 +832,8 @@
   pointer-events: none;
 }
 
-.titan-grid-area[data-spinning]::before { left: calc(50% - 80px); }
-.titan-grid-area[data-spinning]::after  { right: calc(50% - 80px); }
+.titan-grid-area[data-spinning]::before { left: calc(50% - 70px); }
+.titan-grid-area[data-spinning]::after  { right: calc(50% - 70px); }
 
 @keyframes titan-gaze-appear {
   0% { transform: scale(0); opacity: 0; }
@@ -784,18 +845,10 @@
   50% { transform: scale(1.08); opacity: 0.9; }
 }
 
-/* --- Game Screen --- */
-.titan-screen {
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px;
-  background: var(--titan-obsidian);
-  box-sizing: border-box;
-}
+/* ============================================================
+   Joining Screen
+   ============================================================ */
 
-/* --- Joining Screen --- */
 .titan-screen--joining {
   justify-content: center;
   background:
@@ -808,7 +861,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
 }
 
 .titan-joining-emblem {
@@ -833,7 +885,6 @@
   text-shadow: 0 0 32px rgba(212, 168, 67, 0.35);
 }
 
-/* Forge loading bar — the signature element */
 .titan-joining-forge {
   width: 180px;
   height: 4px;
@@ -879,35 +930,37 @@
   margin-top: 28px;
 }
 
-@keyframes pulse-text {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
+/* Toolbar buttons */
 .titan-lobby-btn,
 .titan-logout-btn {
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--titan-ash);
-  border-radius: 4px;
-  color: var(--titan-smoke);
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  color: var(--titan-ash);
   font-family: var(--titan-body);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .titan-lobby-btn:hover,
 .titan-logout-btn:hover {
-  border-color: var(--titan-forge-gold);
+  border-color: rgba(212, 168, 67, 0.4);
   color: var(--titan-forge-gold);
 }
 
-/* --- Reduced motion --- */
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+
 @media (prefers-reduced-motion: reduce) {
   .titan-reel-col.reel-bounce .reel-viewport { animation: none; }
   .symbol-wild .titan-symbol-text { animation: none; }
   .payline-group .payline-glow { animation: none; }
   .wild-fire-burst { animation: none; }
   .wild-fire-text { animation: none; }
-  .spin-icon { animation: none; }
+  .titan-spin-btn .spin-icon { animation: none; }
+  .titan-joining-emblem { animation: none; }
+  .titan-joining-forge-bar { animation: none; }
 }
