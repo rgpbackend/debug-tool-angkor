@@ -2,9 +2,9 @@ import { useCallback, useRef, useState, type ReactNode } from "react";
 import type { GameSymbol, JackpotPoolsByTier, ServerPayline } from "../../../ws/protocol";
 import type { TitanPaylineWin, TitanWildSpinInfo } from "../titan-protocol";
 import type { SpinPhase } from "../hooks/useSpinPhase";
+import { usePaylineCycle } from "../hooks/usePaylineCycle";
 import TitanReelGrid from "./TitanReelGrid";
 import TitanPaylineOverlay from "./TitanPaylineOverlay";
-import PaylineWinInfo from "./PaylineWinInfo";
 import TitanWildExpansion from "./TitanWildExpansion";
 import TitanJackpotBar from "./TitanJackpotBar";
 import TitanControls from "./TitanControls";
@@ -69,6 +69,11 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
 
+  // Paylines active whenever not spinning and there are wins — persist after effects
+  const paylinesActive = !spinning && props.paylineWins.length > 0;
+
+  const { currentWin } = usePaylineCycle(props.paylineWins, paylinesActive);
+
   const onPresentationChangeRef = useRef(props.onPresentationChange);
   onPresentationChangeRef.current = props.onPresentationChange;
 
@@ -84,9 +89,27 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
     ? `$${Number(props.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : null;
 
+  // What to show in the display box
+  const renderDisplay = () => {
+    // Show total win during result phase
+    if (showResult && props.totalWin !== null && props.totalWin > 0) {
+      return <span className="titan-win-amount" key={props.totalWin}>${props.totalWin.toFixed(2)}</span>;
+    }
+    // Show cycling payline win amount whenever there's one
+    if (currentWin !== null) {
+      return <span className="titan-display-amount">${currentWin.winAmount.toFixed(2)}</span>;
+    }
+    // Busy (spinning/reels stopping) — show ellipsis
+    if (isBusy) {
+      return <span className="titan-display-muted">…</span>;
+    }
+    // Idle, no wins
+    return <span className="titan-display-muted">Win up to 2100x Bet</span>;
+  };
+
   return (
     <div className="titan-slot-machine">
-      {/* Header — Lobby/Logout + Title + Menu */}
+      {/* Header */}
       <header className="titan-cabinet-header">
         <div className="titan-cabinet-toolbar">
           {props.toolbarSlot}
@@ -97,10 +120,8 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         </button>
       </header>
 
-      {/* Error banner */}
       {props.error && <div className="titan-error-banner">{props.error}</div>}
 
-      {/* Status row — Balance */}
       <div className="titan-cabinet-status">
         {formattedBalance && (
           <>
@@ -110,10 +131,8 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         )}
       </div>
 
-      {/* Jackpot Bar */}
       <TitanJackpotBar poolsByTier={props.jackpotPoolsByTier} />
 
-      {/* Grid Area — the hero */}
       <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
         <div className="titan-reel-stage">
           <TitanReelGrid
@@ -125,35 +144,19 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           <TitanPaylineOverlay
             paylines={props.serverPaylines}
             paylineWins={props.paylineWins}
-            spinning={spinning}
+            ready={paylinesActive}
           />
           <TitanWildExpansion
             wildInfo={showWild ? props.wildInfo : undefined}
             onComplete={handleWildDone}
           />
         </div>
-        {/* Win info — cycles through multiple wins, persists after spin */}
-        {!spinning && props.paylineWins.length > 0 && (
-          <PaylineWinInfo
-            paylineWins={props.paylineWins}
-          />
-        )}
       </div>
 
-      {/* Display — show win amount or idle message */}
       <div className={`titan-cabinet-display${showResult && props.totalWin !== null && props.totalWin > 0 ? " display-win" : ""}`}>
-        {showResult && props.totalWin !== null && props.totalWin > 0 ? (
-          <span className="titan-win-amount" key={props.totalWin}>
-            ${props.totalWin.toFixed(2)}
-          </span>
-        ) : isBusy ? (
-          <span className="titan-display-muted">…</span>
-        ) : (
-          <span className="titan-display-muted">Win up to 2100x Bet</span>
-        )}
+        {renderDisplay()}
       </div>
 
-      {/* Controls */}
       <TitanControls
         betLevels={props.betLevels}
         selectBetValue={props.selectBetValue}
@@ -171,7 +174,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         onSuperBetToggle={props.onSuperBetToggle}
       />
 
-      {/* Modals */}
       <PaytableModal
         open={paytableOpen}
         symbols={props.symbols}

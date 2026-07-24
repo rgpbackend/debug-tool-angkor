@@ -2,7 +2,6 @@ import { usePaylineCycle } from "../hooks/usePaylineCycle";
 import type { TitanPaylineWin } from "../titan-protocol";
 import type { ServerPayline } from "../../../ws/protocol";
 
-// Grid units: 5 columns × 3 rows, cell centers at (c+0.5, r+0.5)
 const COLS = 5;
 const ROWS = 3;
 const UNIT_W = 100;
@@ -37,19 +36,20 @@ const PAYLINE_PATHS: Record<string, string> = {
 interface TitanPaylineOverlayProps {
   paylines: ServerPayline[];
   paylineWins: TitanPaylineWin[];
-  spinning: boolean;
+  /** True when reels have stopped and effects are running or persisting */
+  ready: boolean;
 }
 
 export default function TitanPaylineOverlay({
   paylines,
   paylineWins,
-  spinning,
+  ready,
 }: TitanPaylineOverlayProps) {
-  const { activeWin } = usePaylineCycle(paylineWins, spinning);
+  const { currentWin } = usePaylineCycle(paylineWins, ready);
 
-  if (spinning || paylineWins.length === 0 || !activeWin) return null;
+  if (!ready || paylineWins.length === 0 || !currentWin) return null;
 
-  const highlightId = activeWin.paylineId;
+  const highlightId = currentWin.paylineId;
 
   return (
     <svg
@@ -65,12 +65,12 @@ export default function TitanPaylineOverlay({
           const d = PAYLINE_PATHS[p.id] ?? makePath(p.rows);
           const dir = win?.direction === "RTL" ? -1 : 1;
           return (
-            <g key={p.id} className="payline-group" opacity={isActive ? 1 : 0.18}>
+            <g key={p.id} className="payline-group" opacity={isActive ? 1 : 0.15}>
               <path
                 d={d}
                 fill="none"
                 stroke="var(--titan-divine-amber)"
-                strokeWidth={isActive ? 3 : 2}
+                strokeWidth={isActive ? 3 : 1.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 className={`payline-glow${dir === -1 ? " payline-rtl" : ""}`}

@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import type { TitanPaylineWin } from "../titan-protocol";
 
-const CYCLE_MS = 600;
+const CYCLE_MS = 700;
 
-export function usePaylineCycle(paylineWins: TitanPaylineWin[], spinning: boolean) {
+export function usePaylineCycle(paylineWins: TitanPaylineWin[], active: boolean) {
   const [activeIdx, setActiveIdx] = useState(0);
   const timerRef = useRef<number | null>(null);
   const prevKeyRef = useRef<string>("");
 
-  // Build a stable key to detect new spin results
   const winsKey = paylineWins.map((w) => `${w.paylineId}:${w.winAmount}`).join(",");
 
-  // Reset when new wins arrive (new spin result)
+  // Reset when new wins arrive
   useEffect(() => {
     if (winsKey !== prevKeyRef.current) {
       prevKeyRef.current = winsKey;
@@ -19,29 +18,19 @@ export function usePaylineCycle(paylineWins: TitanPaylineWin[], spinning: boolea
     }
   }, [winsKey]);
 
-  // Clear when spinning
+  // Reset when deactivated
   useEffect(() => {
-    if (spinning) {
+    if (!active) {
       setActiveIdx(0);
     }
-  }, [spinning]);
+  }, [active]);
 
-  // Cycle through paylines one at a time
+  // Cycle through paylines, looping back to start
   useEffect(() => {
-    if (spinning || paylineWins.length <= 1) return;
+    if (!active || paylineWins.length <= 1) return;
 
     timerRef.current = window.setInterval(() => {
-      setActiveIdx((prev) => {
-        const next = prev + 1;
-        if (next >= paylineWins.length) {
-          if (timerRef.current !== null) {
-            window.clearInterval(timerRef.current);
-            timerRef.current = null;
-          }
-          return prev;
-        }
-        return next;
-      });
+      setActiveIdx((prev) => (prev + 1) % paylineWins.length);
     }, CYCLE_MS);
 
     return () => {
@@ -50,11 +39,11 @@ export function usePaylineCycle(paylineWins: TitanPaylineWin[], spinning: boolea
         timerRef.current = null;
       }
     };
-  }, [spinning, paylineWins.length, winsKey]);
+  }, [active, paylineWins.length, winsKey]);
 
-  const activeWin = spinning || paylineWins.length === 0
-    ? null
-    : paylineWins[Math.min(activeIdx, paylineWins.length - 1)] ?? null;
+  const currentWin = active && paylineWins.length > 0
+    ? paylineWins[activeIdx % paylineWins.length] ?? null
+    : null;
 
-  return { activeIdx, activeWin, total: paylineWins.length };
+  return { activeIdx: active ? activeIdx % Math.max(paylineWins.length, 1) : 0, currentWin, total: paylineWins.length };
 }
