@@ -797,6 +797,7 @@
 
 /* --- Joining Screen --- */
 .titan-screen--joining {
+  justify-content: center;
   background:
     radial-gradient(ellipse 60% 50% at 50% 35%, rgba(232, 69, 45, 0.06) 0%, transparent 70%),
     radial-gradient(ellipse 80% 40% at 50% 60%, rgba(212, 168, 67, 0.04) 0%, transparent 60%),

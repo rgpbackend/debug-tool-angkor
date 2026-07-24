@@ -1521,7 +1521,15 @@
 }
 
 /* --- Joining screen --- */
+.angkor-screen {
+  flex: 1;
+  min-height: 100svh;
+}
+
 .angkor-screen--joining {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background:
     radial-gradient(ellipse 50% 45% at 50% 40%, rgba(94, 234, 212, 0.04) 0%, transparent 70%),
     radial-gradient(ellipse 70% 35% at 50% 55%, rgba(196, 164, 74, 0.05) 0%, transparent 60%),
