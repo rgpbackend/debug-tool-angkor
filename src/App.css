@@ -20,7 +20,6 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  min-height: 100svh;
   background:
     radial-gradient(ellipse 60% 50% at 50% 40%, rgba(196, 164, 74, 0.04) 0%, transparent 60%),
     #0D0B0F;
@@ -211,7 +210,6 @@
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
-  min-height: 100svh;
 }
 
 /* --- Topbar --- */
