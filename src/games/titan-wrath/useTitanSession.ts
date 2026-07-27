@@ -63,6 +63,14 @@ export function useTitanSession(
 
   const error = gameError || ws.error;
 
+  // Resume previous spin from join lastRound
+  useEffect(() => {
+    const lr = ws.lastRound;
+    if (lr && !lastSpin && lr.spin && lr.round && lr.state) {
+      setLastSpin(parseTitanSpinPayload(lr as Record<string, unknown>));
+    }
+  }, [ws.lastRound, lastSpin]);
+
   // --- resolve bet from join betLevels ---
   useEffect(() => {
     if (ws.betLevels.length > 0 && !ws.betLevels.includes(bet)) {
