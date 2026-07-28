@@ -115,11 +115,14 @@ export function useTitanSession(
     spinBusyRef.current = true;
     spinAnimatingRef.current = true;
 
-    // Optimistic: deduct bet from displayed balance immediately
-    const curBal = Number(ws.balance);
-    const betNum = Number(selectBetValue);
-    if (Number.isFinite(curBal) && Number.isFinite(betNum)) {
-      ws.setBalance(String(curBal - betNum));
+    // Optimistic: deduct bet from displayed balance immediately.
+    // Only when WS balance is available (may be null if balance comes from parent).
+    if (ws.balance !== null) {
+      const curBal = Number(ws.balance);
+      const betNum = Number(selectBetValue);
+      if (Number.isFinite(curBal) && Number.isFinite(betNum)) {
+        ws.setBalance(String(curBal - betNum));
+      }
     }
 
     setIsSpinning(true);
