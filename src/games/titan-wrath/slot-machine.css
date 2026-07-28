@@ -357,6 +357,13 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Cells with images — let the PNG art breathe */
+.titan-symbol-cell:has(.titan-symbol-img) {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(212, 168, 67, 0.1);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
 .titan-symbol-cell.cell--motion,
 .titan-reel-grid .cell--motion {
   opacity: 0.94;
@@ -380,6 +387,15 @@
   user-select: none;
 }
 
+.titan-symbol-img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  image-rendering: auto;
+}
+
 .symbol-high .titan-symbol-text { color: var(--titan-forge-gold); }
 .symbol-mid .titan-symbol-text { color: #B8B0A0; }
 .symbol-low .titan-symbol-text { color: #A08060; }
@@ -389,12 +405,23 @@
   animation: wild-flicker 0.5s ease-in-out infinite alternate;
 }
 
-@keyframes wild-flicker {
-  0% { text-shadow: 0 0 6px var(--titan-wrath-vermilion); }
-  100% { text-shadow: 0 0 16px var(--titan-wrath-vermilion), 0 0 24px var(--titan-forge-gold); }
+/* Image-based symbol tints — subtle accent behind the PNG */
+.symbol-high:has(.titan-symbol-img) {
+  box-shadow: inset 0 0 12px rgba(212, 168, 67, 0.12), 0 0 8px rgba(212, 168, 67, 0.06);
+}
+.symbol-wild:has(.titan-symbol-img) {
+  background: linear-gradient(135deg, rgba(232, 69, 45, 0.12), rgba(212, 168, 67, 0.06));
+  box-shadow: inset 0 0 14px rgba(232, 69, 45, 0.15), 0 0 12px rgba(232, 69, 45, 0.1);
+  animation: wild-cell-pulse 1.5s ease-in-out infinite alternate;
 }
 
-.symbol-wild {
+@keyframes wild-cell-pulse {
+  0% { box-shadow: inset 0 0 14px rgba(232, 69, 45, 0.15), 0 0 12px rgba(232, 69, 45, 0.1); }
+  100% { box-shadow: inset 0 0 22px rgba(232, 69, 45, 0.3), 0 0 20px rgba(240, 192, 96, 0.2); }
+}
+
+/* Keep text wild styling for fallback (non-image) cells */
+.symbol-wild:not(:has(.titan-symbol-img)) {
   background: linear-gradient(135deg, rgba(232, 69, 45, 0.15), rgba(212, 168, 67, 0.1));
 }
 
@@ -836,6 +863,14 @@
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--titan-forge-gold);
+  display: flex;
+  align-items: center;
+}
+
+.paytable-symbol-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .paytable-payouts {
@@ -1050,6 +1085,7 @@
 @media (prefers-reduced-motion: reduce) {
   .titan-reel-col.reel-bounce .reel-viewport { animation: none; }
   .symbol-wild .titan-symbol-text { animation: none; }
+  .symbol-wild:has(.titan-symbol-img) { animation: none; }
   .payline-group .payline-glow { animation: none; }
   .wild-fire-burst { animation: none; }
   .wild-fire-text { animation: none; }

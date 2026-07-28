@@ -4,6 +4,7 @@ import {
   buildUnifiedReelStrip,
   type ReelVisualState,
 } from "../lib/reel-spin";
+import { getSymbolImage } from "../assets/symbols";
 
 const SYMBOL_CLASS: Record<string, string> = {
   A: "symbol-high",
@@ -31,18 +32,28 @@ type TitanReelColumnProps = {
 
 function renderCell(sym: string, reelIndex: number, rowIndex: number) {
   const displaySym = sym || "·";
+  const imgSrc = sym ? getSymbolImage(sym) : undefined;
   return (
     <div key={`r${reelIndex}-row${rowIndex}`} className={`cell titan-symbol-cell ${sym ? (SYMBOL_CLASS[sym] ?? "") : "cell--empty"}`}>
-      <span className="titan-symbol-text">{displaySym}</span>
+      {imgSrc ? (
+        <img src={imgSrc} alt={sym} className="titan-symbol-img" />
+      ) : (
+        <span className="titan-symbol-text">{displaySym}</span>
+      )}
     </div>
   );
 }
 
 function renderMotionCell(sym: string, reelIndex: number, stripIndex: number) {
   const displaySym = sym || "·";
+  const imgSrc = sym ? getSymbolImage(sym) : undefined;
   return (
     <div key={`r${reelIndex}-m${stripIndex}`} className={`cell titan-symbol-cell cell--motion ${sym ? (SYMBOL_CLASS[sym] ?? "") : "cell--empty"}`}>
-      <span className="titan-symbol-text">{displaySym}</span>
+      {imgSrc ? (
+        <img src={imgSrc} alt={sym} className="titan-symbol-img" />
+      ) : (
+        <span className="titan-symbol-text">{displaySym}</span>
+      )}
     </div>
   );
 }
