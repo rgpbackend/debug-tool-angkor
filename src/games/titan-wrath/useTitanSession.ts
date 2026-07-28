@@ -127,7 +127,7 @@ export function useTitanSession(
     const curBal = Number(ws.balance);
     const betNum = Number(selectBetValue);
     if (Number.isFinite(curBal) && Number.isFinite(betNum)) {
-      ws.setBalance(String(curBal - betNum));
+      ws.setBalance(String(Math.max(0, curBal - betNum)));
     }
 
     setIsSpinning(true);
