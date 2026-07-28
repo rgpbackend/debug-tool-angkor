@@ -140,7 +140,6 @@ export function useTitanSession(
 
       const poolsFromSpin = parseJackpotPoolsFromPayload(raw);
       if (poolsFromSpin) ws.applyJackpotPools(poolsFromSpin);
-      else void ws.fetchJackpotPools();
 
       spinBusyRef.current = false;
       return parsed;
