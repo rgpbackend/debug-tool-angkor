@@ -43,6 +43,7 @@ export default function GameScreen({
     symbolCatalog,
     serverPaylines,
     jackpotPoolsByTier,
+    endSpinCycle,
   } = session;
 
   // Join on mount
@@ -86,11 +87,13 @@ export default function GameScreen({
   });
 
   // Reset spinResponseReady when phase goes idle (sequence complete)
+  // Also flush any queued WIN balance update now that effects are done
   useEffect(() => {
     if (spinPhase === "idle") {
       setSpinResponseReady(false);
+      endSpinCycle();
     }
-  }, [spinPhase]);
+  }, [spinPhase, endSpinCycle]);
 
   const spinBusy = spinPhase !== "idle";
 

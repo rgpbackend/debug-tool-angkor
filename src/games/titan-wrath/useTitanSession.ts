@@ -61,6 +61,19 @@ export function useTitanSession(
   const [superBetActive, setSuperBetActive] = useState(false);
   const spinBusyRef = useRef(false);
 
+  // Queue WIN balance updates until reel animation + effects complete
+  const spinAnimatingRef = useRef(false);
+  const queuedWinRef = useRef<string | null>(null);
+
+  const flushQueuedWin = useCallback(() => {
+    spinAnimatingRef.current = false;
+    const queued = queuedWinRef.current;
+    if (queued) {
+      queuedWinRef.current = null;
+      ws.setBalance(queued);
+    }
+  }, [ws.setBalance]);
+
   const error = gameError || ws.error;
 
   // Resume previous spin from join lastRound
@@ -99,6 +112,7 @@ export function useTitanSession(
     }
     setGameError(null);
     spinBusyRef.current = true;
+    spinAnimatingRef.current = true;
     setIsSpinning(true);
     try {
       const payloadPromise = client.waitForPayload(isTitanSpinResponse, "titan spin", {
@@ -121,6 +135,7 @@ export function useTitanSession(
     } catch (e) {
       setIsSpinning(false);
       spinBusyRef.current = false;
+      flushQueuedWin(); // apply any queued WIN balance even on error
       const msg = e instanceof Error ? e.message : String(e);
       if (!client.isConnected() || isWsConnectionLost(msg)) {
         callbacks.onConnectionLost(msg);
@@ -133,14 +148,20 @@ export function useTitanSession(
 
   // --- balance push listener (1501) ---
   // Balance arrives as independent server pushes, not inside spin response.
+  // WIN updates are queued during reel animation — flushed when effects complete.
   useEffect(() => {
     const client = ws.clientRef.current;
     if (!client || !ws.sessionReady) return;
     const cleanup = client.addPayloadListener(isTitanBalanceUpdate, (payload) => {
       const bal = payload.balance;
-      if (typeof bal === "number" && Number.isFinite(bal)) {
-        ws.setBalance(String(bal));
+      if (typeof bal !== "number" || !Number.isFinite(bal)) return;
+      const balStr = String(bal);
+      const reason = typeof payload.reason === "string" ? payload.reason : "";
+      if (reason === "WIN" && spinAnimatingRef.current) {
+        queuedWinRef.current = balStr;
+        return;
       }
+      ws.setBalance(balStr);
     });
     return cleanup;
   }, [ws.clientRef, ws.sessionReady, ws.setBalance]);
@@ -156,6 +177,7 @@ export function useTitanSession(
         setGameError(msg);
         setIsSpinning(false);
         spinBusyRef.current = false;
+        flushQueuedWin();
         // Auto-retry hint for lock errors
         if (c === 1310) {
           window.setTimeout(() => { /* UI can prompt retry */ }, 500);
@@ -209,6 +231,7 @@ export function useTitanSession(
     totalWin,
     gameError,
     setGameError,
+    endSpinCycle: flushQueuedWin,
   };
 }
 
