@@ -17,6 +17,7 @@ export const REEL_SPIN = {
   bounceMs: 180,
 } as const;
 
+/** Only symbols with real icon assets — no text fallback in the blur. */
 export const SPIN_STRIP_SYMBOLS = [
   "A",
   "B",
@@ -25,10 +26,7 @@ export const SPIN_STRIP_SYMBOLS = [
   "E",
   "F",
   "G",
-  "H",
-  "I",
   "W",
-  "S",
 ] as const;
 
 export type ReelVisualState = "idle" | "spinning" | "stopping" | "stopped";
