@@ -24,6 +24,7 @@ export function useAutoSpin({
   const activeRef = useRef(active);
   const timerRef = useRef<number | null>(null);
   const prevRoundIdleRef = useRef(roundIdle);
+  const prevActiveRef = useRef(active);
   const onRunRoundRef = useRef(onRunRound);
   const canStartRoundRef = useRef(canStartRound);
 
@@ -58,15 +59,18 @@ export function useAutoSpin({
     }
   }, [active, clearTimer]);
 
+  // Fire when round becomes idle OR auto-spin becomes active while already idle.
   useEffect(() => {
-    const wasIdle = prevRoundIdleRef.current;
+    const becameIdle = roundIdle && !prevRoundIdleRef.current;
+    const becameActive = active && !prevActiveRef.current;
     prevRoundIdleRef.current = roundIdle;
+    prevActiveRef.current = active;
 
-    if (!active || !roundIdle || wasIdle) {
-      return;
+    if (!active || !roundIdle) return;
+
+    if (becameIdle || becameActive) {
+      scheduleNextRound();
     }
-
-    scheduleNextRound();
   }, [roundIdle, active, scheduleNextRound]);
 
   useEffect(() => () => clearTimer(), [clearTimer]);
