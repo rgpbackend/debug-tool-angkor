@@ -78,12 +78,14 @@ export function useTitanSession(
 
   const error = gameError || ws.error;
 
-  // Seed balance from lobby — JOIN does not include balance.
+  // JOIN response may include server balance=0 which overwrites the real
+  // lobby balance. Wait until session is ready, then seed from lobby.
+  // During joining the user sees "Forging connection…" — no flash.
   useEffect(() => {
-    if (initialBalance && ws.balance === null) {
+    if (ws.sessionReady && initialBalance) {
       ws.setBalance(initialBalance);
     }
-  }, [initialBalance, ws.balance, ws.setBalance]);
+  }, [ws.sessionReady, initialBalance, ws.setBalance]);
 
   // Resume previous spin from join lastRound
   useEffect(() => {
