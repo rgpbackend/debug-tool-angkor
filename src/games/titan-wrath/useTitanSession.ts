@@ -61,15 +61,16 @@ export function useTitanSession(
   const [superBetActive, setSuperBetActive] = useState(false);
   const spinBusyRef = useRef(false);
 
-  // Queue WIN balance updates until reel animation + effects complete
+  // Queue ALL balance updates while spin animation is in flight.
+  // On idle, flush the last server balance as source of truth.
   const spinAnimatingRef = useRef(false);
-  const queuedWinRef = useRef<string | null>(null);
+  const queuedBalanceRef = useRef<string | null>(null);
 
-  const flushQueuedWin = useCallback(() => {
+  const flushQueuedBalance = useCallback(() => {
     spinAnimatingRef.current = false;
-    const queued = queuedWinRef.current;
+    const queued = queuedBalanceRef.current;
     if (queued) {
-      queuedWinRef.current = null;
+      queuedBalanceRef.current = null;
       ws.setBalance(queued);
     }
   }, [ws.setBalance]);
@@ -113,6 +114,14 @@ export function useTitanSession(
     setGameError(null);
     spinBusyRef.current = true;
     spinAnimatingRef.current = true;
+
+    // Optimistic: deduct bet from displayed balance immediately
+    const curBal = Number(ws.balance);
+    const betNum = Number(selectBetValue);
+    if (Number.isFinite(curBal) && Number.isFinite(betNum)) {
+      ws.setBalance(String(curBal - betNum));
+    }
+
     setIsSpinning(true);
     try {
       const payloadPromise = client.waitForPayload(isTitanSpinResponse, "titan spin", {
@@ -135,7 +144,7 @@ export function useTitanSession(
     } catch (e) {
       setIsSpinning(false);
       spinBusyRef.current = false;
-      flushQueuedWin(); // apply any queued WIN balance even on error
+      flushQueuedBalance(); // apply queued balance even on error
       const msg = e instanceof Error ? e.message : String(e);
       if (!client.isConnected() || isWsConnectionLost(msg)) {
         callbacks.onConnectionLost(msg);
@@ -147,8 +156,8 @@ export function useTitanSession(
   }, [selectBetValue, superBetActive, ws, callbacks]);
 
   // --- balance push listener (1501) ---
-  // Balance arrives as independent server pushes, not inside spin response.
-  // WIN updates are queued during reel animation — flushed when effects complete.
+  // During spin animation ALL balance updates are queued.
+  // The server balance is the source of truth — flushed when effects complete.
   useEffect(() => {
     const client = ws.clientRef.current;
     if (!client || !ws.sessionReady) return;
@@ -156,9 +165,8 @@ export function useTitanSession(
       const bal = payload.balance;
       if (typeof bal !== "number" || !Number.isFinite(bal)) return;
       const balStr = String(bal);
-      const reason = typeof payload.reason === "string" ? payload.reason : "";
-      if (reason === "WIN" && spinAnimatingRef.current) {
-        queuedWinRef.current = balStr;
+      if (spinAnimatingRef.current) {
+        queuedBalanceRef.current = balStr;
         return;
       }
       ws.setBalance(balStr);
@@ -177,7 +185,7 @@ export function useTitanSession(
         setGameError(msg);
         setIsSpinning(false);
         spinBusyRef.current = false;
-        flushQueuedWin();
+        flushQueuedBalance();
         // Auto-retry hint for lock errors
         if (c === 1310) {
           window.setTimeout(() => { /* UI can prompt retry */ }, 500);
@@ -231,7 +239,7 @@ export function useTitanSession(
     totalWin,
     gameError,
     setGameError,
-    endSpinCycle: flushQueuedWin,
+    endSpinCycle: flushQueuedBalance,
   };
 }
 
