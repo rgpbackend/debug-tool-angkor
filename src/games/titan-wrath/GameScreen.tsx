@@ -22,6 +22,7 @@ export default function GameScreen({
     defaults.wsUrl,
     wsAccessToken,
     { onTokenBan: onLogout, onConnectionLost: onLogout },
+    _parentBalance,
   );
 
   const {

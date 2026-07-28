@@ -38,6 +38,7 @@ export function useTitanSession(
   wsUrl: string,
   wsAccessToken: string,
   callbacks: WsSessionCallbacks,
+  initialBalance?: string | null,
 ) {
   const wrappedCallbacks: WsSessionCallbacks = {
     onTokenBan: () => { console.error("[TITAN] onTokenBan → logout"); callbacks.onTokenBan(); },
@@ -76,6 +77,13 @@ export function useTitanSession(
   }, [ws.setBalance]);
 
   const error = gameError || ws.error;
+
+  // Seed balance from lobby — JOIN does not include balance.
+  useEffect(() => {
+    if (initialBalance && ws.balance === null) {
+      ws.setBalance(initialBalance);
+    }
+  }, [initialBalance, ws.balance, ws.setBalance]);
 
   // Resume previous spin from join lastRound
   useEffect(() => {
@@ -116,13 +124,10 @@ export function useTitanSession(
     spinAnimatingRef.current = true;
 
     // Optimistic: deduct bet from displayed balance immediately.
-    // Only when WS balance is available (may be null if balance comes from parent).
-    if (ws.balance !== null) {
-      const curBal = Number(ws.balance);
-      const betNum = Number(selectBetValue);
-      if (Number.isFinite(curBal) && Number.isFinite(betNum)) {
-        ws.setBalance(String(curBal - betNum));
-      }
+    const curBal = Number(ws.balance);
+    const betNum = Number(selectBetValue);
+    if (Number.isFinite(curBal) && Number.isFinite(betNum)) {
+      ws.setBalance(String(curBal - betNum));
     }
 
     setIsSpinning(true);
