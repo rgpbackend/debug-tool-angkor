@@ -8,12 +8,12 @@ import {
   formatTitanError,
   isTitanRespinPending,
   isTitanRoundEnded,
+  isTitanBalanceUpdate,
   type TitanSpinPayload,
 } from "./titan-protocol";
 import { titanSpinFrame } from "./titan-frames";
 import {
   parseJackpotPoolsFromPayload,
-  readTopLevelBalance,
   type JackpotTierInfo,
 } from "../../ws/protocol";
 
@@ -110,9 +110,6 @@ export function useTitanSession(
       const parsed = parseTitanSpinPayload(raw);
       setIsSpinning(false);
 
-      const bal = readTopLevelBalance(raw);
-      if (bal) ws.setBalance(bal);
-
       setLastSpin(parsed);
 
       const poolsFromSpin = parseJackpotPoolsFromPayload(raw);
@@ -133,6 +130,20 @@ export function useTitanSession(
       return null;
     }
   }, [selectBetValue, superBetActive, ws, callbacks]);
+
+  // --- balance push listener (1501) ---
+  // Balance arrives as independent server pushes, not inside spin response.
+  useEffect(() => {
+    const client = ws.clientRef.current;
+    if (!client || !ws.sessionReady) return;
+    const cleanup = client.addPayloadListener(isTitanBalanceUpdate, (payload) => {
+      const bal = payload.balance;
+      if (typeof bal === "number" && Number.isFinite(bal)) {
+        ws.setBalance(String(bal));
+      }
+    });
+    return cleanup;
+  }, [ws.clientRef, ws.sessionReady, ws.setBalance]);
 
   // --- error listener for spin errors arriving as pushes ---
   useEffect(() => {

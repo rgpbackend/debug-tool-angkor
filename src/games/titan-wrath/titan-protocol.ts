@@ -205,3 +205,25 @@ export function isTitanRespinPending(payload: TitanSpinPayload): boolean {
 export function isTitanRoundEnded(payload: TitanSpinPayload): boolean {
   return payload.round.state === "ENDED";
 }
+
+// ---------------------------------------------------------------------------
+// BALANCE_UPDATE (1501) — server → client push
+// ---------------------------------------------------------------------------
+
+export interface TitanBalanceUpdate {
+  cmd: 1501;
+  c: number;
+  playerId: string;
+  balance: number;
+  reason: "BET" | "WIN";
+}
+
+export function isTitanBalanceUpdate(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    hasCmd(payload, "1501") &&
+    typeof payload.balance === "number" &&
+    typeof payload.reason === "string"
+  );
+}
