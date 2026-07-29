@@ -1,11 +1,12 @@
-import { useCallback, useRef, useState, type ReactNode } from "react";
-import type { GameSymbol, JackpotPoolsByTier, ServerPayline } from "../../../ws/protocol";
-import type { TitanPaylineWin, TitanWildSpinInfo } from "../titan-protocol";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import type { GameSymbol, ServerPayline } from "../../../ws/protocol";
+import type { TitanPaylineWin, TitanWildSpinInfo, TitanJackpotTier, TitanJackpotTriggered } from "../titan-protocol";
 import type { SpinPhase } from "../hooks/useSpinPhase";
 import TitanReelGrid from "./TitanReelGrid";
 import TitanPaylineOverlay from "./TitanPaylineOverlay";
 import TitanWildExpansion from "./TitanWildExpansion";
-import TitanJackpotBar from "./TitanJackpotBar";
+import TitanJackpotMeter from "./TitanJackpotMeter";
+import TitanJackpotCelebration from "./TitanJackpotCelebration";
 import TitanControls from "./TitanControls";
 import PaytableModal from "./PaytableModal";
 import MenuPopover from "./MenuPopover";
@@ -28,9 +29,6 @@ interface TitanSlotMachineProps {
 
   // Display
   totalWin: number | null;
-
-  // Jackpot
-  jackpotPoolsByTier: JackpotPoolsByTier;
 
   // Controls
   betLevels: string[];
@@ -56,6 +54,14 @@ interface TitanSlotMachineProps {
 
   // Toolbar
   toolbarSlot?: ReactNode;
+
+  // Olympus Jackpot
+  tokenPositions: number[];
+  roundId: string;
+  jackpotMeterTokens: number;
+  jackpotMeterTier: TitanJackpotTier | null;
+  lastJackpotWin: TitanJackpotTriggered | null;
+  onDismissJackpot: () => void;
 }
 
 export default function TitanSlotMachine(props: TitanSlotMachineProps) {
@@ -67,6 +73,87 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const showWild = phase === "wild_expand";
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
+
+  // --- Token animation state machine ---
+  // idle → appear → flying → done → idle
+  type TokenFlyState = "idle" | "appear" | "flying" | "done";
+  const [tokenFlyState, setTokenFlyState] = useState<TokenFlyState>("idle");
+  const tokensVisible = phase !== "idle" && phase !== "spinning";
+  const hasTokens = props.tokenPositions.length > 0;
+  const [displayTokenCount, setDisplayTokenCount] = useState(0);
+
+  // Timers stored in refs — never killed by React cleanup during normal transitions.
+  const flyTimerRef = useRef<number | null>(null);
+  const doneTimerRef = useRef<number | null>(null);
+
+  function killTimers() {
+    if (flyTimerRef.current !== null) { window.clearTimeout(flyTimerRef.current); flyTimerRef.current = null; }
+    if (doneTimerRef.current !== null) { window.clearTimeout(doneTimerRef.current); doneTimerRef.current = null; }
+  }
+
+  // Final cleanup on unmount
+  useEffect(() => () => killTimers(), []);
+
+  // Reset on new round
+  const prevRoundIdRef = useRef(props.roundId);
+  useEffect(() => {
+    if (props.roundId && props.roundId !== prevRoundIdRef.current) {
+      prevRoundIdRef.current = props.roundId;
+      killTimers();
+      setDisplayTokenCount(0);
+      setTokenFlyState("idle");
+    }
+  }, [props.roundId]);
+
+  // Main animation sequencer. Only clears timers when interrupted
+  // (tokensVisible → false), NOT on normal state transitions.
+  const prevJackpotTokensRef = useRef(props.jackpotMeterTokens);
+  useEffect(() => {
+    const newTokensArrived = props.jackpotMeterTokens > prevJackpotTokensRef.current;
+    prevJackpotTokensRef.current = props.jackpotMeterTokens;
+
+    if (!tokensVisible || !hasTokens) {
+      // Sequence interrupted or not started
+      if (tokenFlyState !== "idle") killTimers();
+      if (tokenFlyState === "done") setTokenFlyState("idle");
+      return;
+    }
+
+    // New tokens arrived from a respin while previous animation completed → restart
+    if (newTokensArrived && tokenFlyState === "done") {
+      killTimers();
+      setTokenFlyState("idle");
+      return; // re-render with idle → starts new sequence
+    }
+
+    // --- Normal state transitions (no timer cleanup) ---
+
+    if (tokenFlyState === "idle") {
+      setTokenFlyState("appear");
+      flyTimerRef.current = window.setTimeout(() => {
+        flyTimerRef.current = null;
+        setTokenFlyState("flying");
+      }, 700);
+      return;
+    }
+
+    if (tokenFlyState === "flying") {
+      doneTimerRef.current = window.setTimeout(() => {
+        doneTimerRef.current = null;
+        setDisplayTokenCount(props.jackpotMeterTokens);
+        setTokenFlyState("done");
+      }, 500);
+      return;
+    }
+
+    // "appear" or "done" — wait for timer or external change
+  }, [tokensVisible, hasTokens, tokenFlyState, props.jackpotMeterTokens]);
+
+  const tokensFlying = tokenFlyState === "flying";
+  const tokenCountForMeter = (tokenFlyState === "done" || tokenFlyState === "idle")
+    ? displayTokenCount
+    : displayTokenCount;
+  const meterImpact = tokenFlyState === "flying" ? props.tokenPositions.length : 0;
 
   // Paylines show only after reels have fully stopped (phase past "spinning")
   const paylinesReady = phase !== "spinning" && props.paylineWins.length > 0;
@@ -125,7 +212,11 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         )}
       </div>
 
-      <TitanJackpotBar poolsByTier={props.jackpotPoolsByTier} />
+      <TitanJackpotMeter
+        tokenCount={tokenCountForMeter}
+        impactNew={meterImpact}
+        reachedTier={props.jackpotMeterTier}
+      />
 
       <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
         <div className="titan-reel-stage">
@@ -134,6 +225,9 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
             lockedReels={props.lockedReels}
             spinning={spinning}
             onPresentationChange={handlePresentationChange}
+            tokenPositions={props.tokenPositions}
+            tokensVisible={tokensVisible}
+            tokensFlying={tokensFlying}
           />
           <TitanPaylineOverlay
             paylines={props.serverPaylines}
@@ -177,6 +271,13 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         open={menuOpen}
         onOpenPaytable={() => setPaytableOpen(true)}
         onClose={() => setMenuOpen(false)}
+      />
+
+      <TitanJackpotCelebration
+        tier={props.lastJackpotWin?.tier ?? null}
+        prizeAmount={props.lastJackpotWin?.prizeAmount ?? 0}
+        tokenCount={props.lastJackpotWin?.tokenCount ?? 0}
+        onDismiss={props.onDismissJackpot}
       />
     </div>
   );

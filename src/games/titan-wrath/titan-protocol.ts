@@ -39,6 +39,7 @@ export interface TitanSpinPayload {
     superBet: boolean;
     baseBet: number;
     titanWild?: TitanWildSpinInfo;
+    tokenPositions: number[];
   };
   round: {
     roundId: string;
@@ -140,6 +141,11 @@ function parseTitanWildState(raw: unknown): TitanWildState {
   };
 }
 
+function parseTokenPositions(raw: unknown): number[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((v): v is number => typeof v === "number" && v >= 0 && v <= 14);
+}
+
 export function parseTitanSpinPayload(
   payload: Record<string, unknown>,
 ): TitanSpinPayload {
@@ -164,6 +170,7 @@ export function parseTitanSpinPayload(
       superBet: Boolean(spin.superBet),
       baseBet: typeof spin.baseBet === "number" ? spin.baseBet : 0,
       ...(spin.titanWild ? { titanWild: parseTitanWildSpin(spin.titanWild) } : {}),
+      tokenPositions: parseTokenPositions(spin.tokenPositions),
     },
     round: {
       roundId: String(round.roundId ?? ""),
@@ -225,5 +232,31 @@ export function isTitanBalanceUpdate(
     hasCmd(payload, "1501") &&
     typeof payload.balance === "number" &&
     typeof payload.reason === "string"
+  );
+}
+
+// ---------------------------------------------------------------------------
+// JACKPOT_TRIGGERED (1502) — server → client push
+// ---------------------------------------------------------------------------
+
+export type TitanJackpotTier = "MINI" | "MINOR" | "MAJOR" | "GRAND";
+
+export interface TitanJackpotTriggered {
+  cmd: 1502;
+  c: number;
+  tier: TitanJackpotTier;
+  prizeAmount: number;
+  tokenCount: number;
+  playerId: string;
+}
+
+export function isTitanJackpotTriggered(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    hasCmd(payload, "1502") &&
+    typeof payload.tier === "string" &&
+    typeof payload.prizeAmount === "number" &&
+    typeof payload.tokenCount === "number"
   );
 }

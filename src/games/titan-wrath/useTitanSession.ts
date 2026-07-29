@@ -9,7 +9,10 @@ import {
   isTitanRespinPending,
   isTitanRoundEnded,
   isTitanBalanceUpdate,
+  isTitanJackpotTriggered,
   type TitanSpinPayload,
+  type TitanJackpotTier,
+  type TitanJackpotTriggered,
 } from "./titan-protocol";
 import { titanSpinFrame } from "./titan-frames";
 import {
@@ -61,6 +64,11 @@ export function useTitanSession(
   const [gameError, setGameError] = useState<string | null>(null);
   const [superBetActive, setSuperBetActive] = useState(false);
   const spinBusyRef = useRef(false);
+
+  // Olympus Jackpot state
+  const [jackpotMeterTokens, setJackpotMeterTokens] = useState(0);
+  const [lastJackpotWin, setLastJackpotWin] = useState<TitanJackpotTriggered | null>(null);
+  const currentRoundIdRef = useRef<string | null>(null);
 
   // Queue ALL balance updates while spin animation is in flight.
   // On idle, flush the last server balance as source of truth.
@@ -207,6 +215,47 @@ export function useTitanSession(
     return cleanup;
   }, [ws.clientRef, ws.joinGame]);
 
+  // --- jackpot listener (1502) ---
+  useEffect(() => {
+    const client = ws.clientRef.current;
+    if (!client || !ws.sessionReady) return;
+    const cleanup = client.addPayloadListener(isTitanJackpotTriggered, (payload) => {
+      const tier = (payload.tier as TitanJackpotTier) ?? "MINI";
+      const prizeAmount = typeof payload.prizeAmount === "number" ? payload.prizeAmount : 0;
+      const tokenCount = typeof payload.tokenCount === "number" ? payload.tokenCount : 0;
+      setLastJackpotWin({
+        cmd: 1502,
+        c: 0,
+        tier,
+        prizeAmount,
+        tokenCount,
+        playerId: String(payload.playerId ?? ""),
+      });
+    });
+    return cleanup;
+  }, [ws.clientRef, ws.sessionReady]);
+
+  // --- jackpot meter: reset on new round, accumulate tokens ---
+  useEffect(() => {
+    if (!lastSpin) return;
+    const roundId = lastSpin.round.roundId;
+    // New round → reset meter
+    if (roundId !== currentRoundIdRef.current) {
+      currentRoundIdRef.current = roundId;
+      setJackpotMeterTokens(0);
+      setLastJackpotWin(null);
+    }
+    // Accumulate tokens from this spin
+    const tokens = lastSpin.spin.tokenPositions;
+    if (tokens.length > 0) {
+      setJackpotMeterTokens((prev) => prev + tokens.length);
+    }
+  }, [lastSpin]);
+
+  const dismissJackpotCelebration = useCallback(() => {
+    setLastJackpotWin(null);
+  }, []);
+
   // --- view state ---
   const viewSpin = lastSpin;
 
@@ -249,6 +298,10 @@ export function useTitanSession(
     gameError,
     setGameError,
     endSpinCycle: flushQueuedBalance,
+    // Olympus Jackpot
+    jackpotMeterTokens,
+    lastJackpotWin,
+    dismissJackpotCelebration,
   };
 }
 

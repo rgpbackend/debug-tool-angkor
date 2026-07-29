@@ -28,17 +28,46 @@ type TitanReelColumnProps = {
   bouncing: boolean;
   locked: boolean;
   onReelStopped: (reelIndex: number) => void;
+  /** Rows in this column that have a divine token. */
+  tokenRows?: Set<number>;
+  /** Whether to show token indicators. */
+  tokensVisible?: boolean;
+  /** Whether tokens are in fly-to-meter animation. */
+  tokensFlying?: boolean;
 };
 
-function renderCell(sym: string, reelIndex: number, rowIndex: number) {
+function renderCell(
+  sym: string,
+  reelIndex: number,
+  rowIndex: number,
+  hasToken: boolean,
+  isFlying: boolean,
+) {
   const displaySym = sym || "·";
   const imgSrc = sym ? getSymbolImage(sym) : undefined;
+  const cellClass = [
+    "cell",
+    "titan-symbol-cell",
+    sym ? (SYMBOL_CLASS[sym] ?? "") : "cell--empty",
+    hasToken ? "cell-has-token" : "",
+  ].filter(Boolean).join(" ");
+
+  const badgeClass = [
+    "divine-token-badge",
+    isFlying ? "token-flying" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <div key={`r${reelIndex}-row${rowIndex}`} className={`cell titan-symbol-cell ${sym ? (SYMBOL_CLASS[sym] ?? "") : "cell--empty"}`}>
+    <div key={`r${reelIndex}-row${rowIndex}`} className={cellClass}>
       {imgSrc ? (
         <img src={imgSrc} alt={sym} className="titan-symbol-img" />
       ) : (
         <span className="titan-symbol-text">{displaySym}</span>
+      )}
+      {hasToken && (
+        <div className={badgeClass} aria-hidden>
+          <span className="divine-token-icon-inner">⚡</span>
+        </div>
       )}
     </div>
   );
@@ -69,7 +98,11 @@ export default function TitanReelColumn({
   bouncing,
   locked,
   onReelStopped,
+  tokenRows,
+  tokensVisible,
+  tokensFlying = false,
 }: Readonly<TitanReelColumnProps>) {
+  const showTokens = tokensVisible && tokenRows && tokenRows.size > 0;
   const stripResult = reelState === "stopping" ? column : motionResult;
   const motionStrip = useMemo(
     () => buildUnifiedReelStrip(originColumn, loopSegment, stripResult),
@@ -100,7 +133,10 @@ export default function TitanReelColumn({
   if (locked || reelState === "stopped" || reelState === "idle") {
     return (
       <div className={reelColClass} style={reelColStyle}>
-        {column.map((sym, ri) => renderCell(sym, reelIndex, ri))}
+        {column.map((sym, ri) => {
+          const hasToken = showTokens && (tokenRows?.has(ri) ?? false);
+          return renderCell(sym, reelIndex, ri, hasToken, hasToken && tokensFlying);
+        })}
       </div>
     );
   }

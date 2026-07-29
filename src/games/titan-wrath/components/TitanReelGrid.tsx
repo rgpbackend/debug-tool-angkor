@@ -18,6 +18,9 @@ interface TitanReelGridProps {
   lockedReels: number[];
   spinning: boolean;
   onPresentationChange?: (active: boolean) => void;
+  tokenPositions?: number[];
+  tokensVisible?: boolean;
+  tokensFlying?: boolean;
 }
 
 export default function TitanReelGrid({
@@ -25,8 +28,23 @@ export default function TitanReelGrid({
   lockedReels,
   spinning,
   onPresentationChange,
+  tokenPositions = [],
+  tokensVisible = false,
+  tokensFlying = false,
 }: TitanReelGridProps) {
   const reels = useMemo(() => parsePatternGrid(patternGrid), [patternGrid]);
+
+  // Compute token rows per column from flat positions array
+  const tokenRowsByCol = useMemo(() => {
+    const map = new Map<number, Set<number>>();
+    for (const pos of tokenPositions) {
+      const col = pos % REEL_COUNT;
+      const row = Math.floor(pos / REEL_COUNT);
+      if (!map.has(col)) map.set(col, new Set());
+      map.get(col)!.add(row);
+    }
+    return map;
+  }, [tokenPositions]);
 
   const [reelStates, setReelStates] = useState<ReelVisualState[]>(() =>
     initialReelStates(REEL_COUNT),
@@ -207,6 +225,9 @@ export default function TitanReelGrid({
             bouncing={bouncingReel === ci}
             locked={isLocked}
             onReelStopped={handleReelStopped}
+            tokenRows={tokenRowsByCol.get(ci)}
+            tokensVisible={tokensVisible}
+            tokensFlying={tokensFlying}
           />
         );
       })}

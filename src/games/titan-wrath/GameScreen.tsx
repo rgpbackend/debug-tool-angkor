@@ -43,8 +43,10 @@ export default function GameScreen({
     paylineWins,
     symbolCatalog,
     serverPaylines,
-    jackpotPoolsByTier,
     endSpinCycle,
+    jackpotMeterTokens,
+    lastJackpotWin,
+    dismissJackpotCelebration,
   } = session;
 
   // Join on mount
@@ -155,6 +157,17 @@ export default function GameScreen({
   const patternGrid = viewSpin?.spin?.patternGrid ?? "";
   const wildInfo = viewSpin?.spin?.titanWild;
   const currentTotalWin = viewSpin?.round?.totalWin ?? null;
+  const tokenPositions = viewSpin?.spin?.tokenPositions ?? [];
+
+  // Derived jackpot tier (highest reached)
+  const jackpotMeterTier = useMemo(() => {
+    const t = jackpotMeterTokens;
+    if (t >= 6) return "GRAND" as const;
+    if (t >= 5) return "MAJOR" as const;
+    if (t >= 4) return "MINOR" as const;
+    if (t >= 3) return "MINI" as const;
+    return null;
+  }, [jackpotMeterTokens]);
 
   // Use WS balance when available, fall back to agency balance from parent
   const displayBalance = wsBalance ?? _parentBalance ?? null;
@@ -200,7 +213,6 @@ export default function GameScreen({
         wildInfo={wildInfo}
         wildAnimDone={() => {}}
         totalWin={currentTotalWin}
-        jackpotPoolsByTier={jackpotPoolsByTier}
         betLevels={betLevels}
         selectBetValue={selectBetValue}
         onBetChange={session.setBet}
@@ -217,6 +229,12 @@ export default function GameScreen({
         error={error}
         symbols={symbolCatalog}
         balance={displayBalance}
+        tokenPositions={tokenPositions}
+        roundId={viewSpin?.round?.roundId ?? ""}
+        jackpotMeterTokens={jackpotMeterTokens}
+        jackpotMeterTier={jackpotMeterTier}
+        lastJackpotWin={lastJackpotWin}
+        onDismissJackpot={dismissJackpotCelebration}
         toolbarSlot={
           <>
             <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
