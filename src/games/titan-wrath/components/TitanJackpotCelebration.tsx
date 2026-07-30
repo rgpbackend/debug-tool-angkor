@@ -74,7 +74,7 @@ export default function TitanJackpotCelebration({
       setVisible(false);
       // Notify parent AFTER the exit animation so it can reset lastJackpotWin.
       window.setTimeout(() => onDismiss(), 400);
-    }, 5000);
+    }, 1000);
     return () => window.clearTimeout(timer);
     // Only react when tier transitions null → non-null.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,9 +145,6 @@ export default function TitanJackpotCelebration({
             ? "The wrath of Olympus is yours — MAXIMUM JACKPOT!"
             : `${config.multiplier}× base bet · Divine favor bestowed`}
         </span>
-        <button className="celebration-dismiss" onClick={() => { setVisible(false); window.setTimeout(() => onDismiss(), 400); }} type="button">
-          CLAIM REWARD
-        </button>
       </div>
     </div>
   );
