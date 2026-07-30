@@ -149,11 +149,14 @@ export function useTitanSession(
     spinBusyRef.current = true;
     spinAnimatingRef.current = true;
 
-    // Optimistic: deduct bet from displayed balance immediately.
-    const curBal = Number(ws.balance);
-    const betNum = Number(selectBetValue);
-    if (Number.isFinite(curBal) && Number.isFinite(betNum)) {
-      ws.setBalance(String(Math.max(0, curBal - betNum)));
+    // Optimistic: deduct bet only for BASE spins (new round). RESPINs cost 0.
+    const isBaseSpin = !lastSpin || isTitanRoundEnded(lastSpin);
+    if (isBaseSpin) {
+      const curBal = Number(ws.balance);
+      const betNum = Number(selectBetValue);
+      if (Number.isFinite(curBal) && Number.isFinite(betNum)) {
+        ws.setBalance(String(Math.max(0, curBal - betNum)));
+      }
     }
 
     setIsSpinning(true);
