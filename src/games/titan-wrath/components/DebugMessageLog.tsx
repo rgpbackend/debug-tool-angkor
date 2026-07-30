@@ -190,11 +190,6 @@ export default function DebugMessageLog({ clientRef, sessionReady }: DebugMessag
     setExpandedId((prev) => (prev === id ? null : id));
   }, []);
 
-  const clearAll = useCallback(() => {
-    setEntries([]);
-    setExpandedId(null);
-  }, []);
-
   return (
     <>
       <div className="debug-log-container" ref={containerRef} onScroll={handleScroll}>

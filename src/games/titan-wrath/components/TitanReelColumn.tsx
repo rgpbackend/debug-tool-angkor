@@ -102,7 +102,7 @@ export default function TitanReelColumn({
   tokensVisible,
   tokensFlying = false,
 }: Readonly<TitanReelColumnProps>) {
-  const showTokens = tokensVisible && tokenRows && tokenRows.size > 0;
+  const showTokens = !!(tokensVisible && tokenRows && tokenRows.size > 0);
   const stripResult = reelState === "stopping" ? column : motionResult;
   const motionStrip = useMemo(
     () => buildUnifiedReelStrip(originColumn, loopSegment, stripResult),
@@ -134,7 +134,7 @@ export default function TitanReelColumn({
     return (
       <div className={reelColClass} style={reelColStyle}>
         {column.map((sym, ri) => {
-          const hasToken = showTokens && (tokenRows?.has(ri) ?? false);
+          const hasToken = !!(showTokens && (tokenRows?.has(ri) ?? false));
           return renderCell(sym, reelIndex, ri, hasToken, hasToken && tokensFlying);
         })}
       </div>
