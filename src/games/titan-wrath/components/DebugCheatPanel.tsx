@@ -28,9 +28,24 @@ function gridFromPattern(patternGrid: string): string[][] {
   return grid;
 }
 
+/** Convert column-major grid (grid[col][row]) to row-major flat string per backend contract. */
+function toRowMajorFlat(grid: string[][]): string {
+  let flat = "";
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      flat += grid[c]?.[r] ?? "";
+    }
+  }
+  return flat;
+}
+
 export default function DebugCheatPanel({ clientRef, canCheat, lastPatternGrid }: DebugCheatPanelProps) {
   const [cheatGrid, setCheatGrid] = useState<string[][]>(emptyGrid);
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Token cheat state
+  const [tokenCount, setTokenCount] = useState<string>("6");
+  const [tokenStatus, setTokenStatus] = useState<{ text: string; ok: boolean } | null>(null);
 
   const setCell = useCallback((ci: number, ri: number, value: string) => {
     const v = value.slice(-1).toUpperCase();
@@ -58,30 +73,47 @@ export default function DebugCheatPanel({ clientRef, canCheat, lastPatternGrid }
     if (!client?.isConnected()) return;
 
     // Validate all cells filled
-    const reels: string[][] = [];
-    for (let ci = 0; ci < COLS; ci++) {
-      const col: string[] = [];
-      for (let ri = 0; ri < ROWS; ri++) {
-        const sym = cheatGrid[ci]?.[ri] ?? "";
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r < ROWS; r++) {
+        const sym = cheatGrid[c]?.[r] ?? "";
         if (!sym || !VALID_SYMBOLS.has(sym)) {
-          setStatus({ text: `Invalid symbol at reel ${ci + 1}, row ${ri + 1}`, ok: false });
+          setStatus({ text: `Invalid symbol at reel ${c + 1}, row ${r + 1}`, ok: false });
           return;
         }
-        col.push(sym);
       }
-      reels.push(col);
     }
 
+    const grid = toRowMajorFlat(cheatGrid);
     try {
-      client.sendFrame([6, "MiniGame", "yama_01021", { cmd: 2001, reels }]);
-      setStatus({ text: "Cheat sent", ok: true });
+      client.sendFrame([6, "MiniGame", "yama_01021", { cmd: 2001, grid }]);
+      setStatus({ text: "Cheat grid sent", ok: true });
     } catch (e) {
       setStatus({ text: e instanceof Error ? e.message : "Send failed", ok: false });
     }
   }, [cheatGrid, clientRef]);
 
+  const sendTokenCheat = useCallback(() => {
+    const client = clientRef.current;
+    if (!client?.isConnected()) return;
+
+    const n = Number(tokenCount);
+    if (!Number.isInteger(n) || n < 1 || n > 15) {
+      setTokenStatus({ text: "Token count must be 1–15", ok: false });
+      return;
+    }
+
+    try {
+      client.sendFrame([6, "MiniGame", "yama_01021", { cmd: 2002, token: n }]);
+      setTokenStatus({ text: `Force ${n} tokens set`, ok: true });
+    } catch (e) {
+      setTokenStatus({ text: e instanceof Error ? e.message : "Send failed", ok: false });
+    }
+  }, [tokenCount, clientRef]);
+
   return (
     <div className="debug-cheat-panel">
+      {/* Grid cheat */}
+      <div className="debug-cheat-section-label">Grid (cmd 2001)</div>
       <div className="debug-cheat-grid">
         {Array.from({ length: COLS }, (_, ci) => (
           <div key={ci} className="debug-cheat-col">
@@ -111,12 +143,34 @@ export default function DebugCheatPanel({ clientRef, canCheat, lastPatternGrid }
           Clear
         </button>
         <button className="debug-cheat-btn primary" onClick={sendCheat} disabled={!canCheat}>
-          Set Cheat
+          Set Grid
         </button>
       </div>
 
       <div className={`debug-cheat-status${status ? (status.ok ? " success" : " error") : ""}`}>
         {status?.text ?? " "}
+      </div>
+
+      {/* Token cheat */}
+      <div className="debug-cheat-section-label">Divine Tokens (cmd 2002)</div>
+      <div className="debug-cheat-token-row">
+        <input
+          className="debug-cheat-token-input"
+          type="number"
+          min={1}
+          max={15}
+          value={tokenCount}
+          onChange={(e) => { setTokenCount(e.target.value); setTokenStatus(null); }}
+          disabled={!canCheat}
+          aria-label="Forced token count"
+        />
+        <button className="debug-cheat-btn primary" onClick={sendTokenCheat} disabled={!canCheat}>
+          Force Tokens
+        </button>
+      </div>
+
+      <div className={`debug-cheat-status${tokenStatus ? (tokenStatus.ok ? " success" : " error") : ""}`}>
+        {tokenStatus?.text ?? " "}
       </div>
     </div>
   );

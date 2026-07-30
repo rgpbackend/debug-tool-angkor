@@ -1848,6 +1848,52 @@
   color: var(--titan-wrath-vermilion);
 }
 
+.debug-cheat-section-label {
+  font-family: var(--titan-body);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--titan-ash);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 10px 0 4px;
+}
+
+.debug-cheat-section-label:first-child {
+  margin-top: 0;
+}
+
+.debug-cheat-token-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.debug-cheat-token-input {
+  width: 56px;
+  padding: 5px 6px;
+  font-family: var(--titan-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--titan-smoke);
+  background: var(--titan-ember);
+  border: 1px solid rgba(212, 168, 67, 0.12);
+  border-radius: 4px;
+  outline: none;
+  text-align: center;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.debug-cheat-token-input:focus {
+  border-color: var(--titan-forge-gold);
+  box-shadow: 0 0 6px rgba(212, 168, 67, 0.2);
+}
+
+.debug-cheat-token-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ============================================================
    Debug — Message Log
    ============================================================ */

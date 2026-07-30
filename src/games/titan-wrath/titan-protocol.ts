@@ -206,6 +206,7 @@ const TITAN_ERROR_MAP: Record<number, string> = {
   1314: "Missing request data. Please try again.",
   1315: "Session ID missing. Reconnecting…",
   1316: "Round settlement error. Please try again.",
+  1317: "Debug mode is disabled on server.",
 };
 
 export function formatTitanError(c: number, mgs?: string): string {
@@ -260,10 +261,14 @@ export interface TitanJackpotTriggered {
 export function isTitanJackpotTriggered(
   payload: Record<string, unknown>,
 ): boolean {
-  return (
-    hasCmd(payload, "1502") &&
-    typeof payload.tier === "string" &&
-    typeof payload.prizeAmount === "number" &&
-    typeof payload.tokenCount === "number"
-  );
+  if (!hasCmd(payload, "1502")) return false;
+  if (typeof payload.tier !== "string") return false;
+  // prizeAmount + tokenCount may arrive as number (per contract) or string
+  const prizeOk =
+    typeof payload.prizeAmount === "number" ||
+    (typeof payload.prizeAmount === "string" && !isNaN(Number(payload.prizeAmount)));
+  const tokenOk =
+    typeof payload.tokenCount === "number" ||
+    (typeof payload.tokenCount === "string" && !isNaN(Number(payload.tokenCount)));
+  return prizeOk && tokenOk;
 }

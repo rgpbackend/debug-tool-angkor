@@ -145,6 +145,7 @@ export function useTitanSession(
       return null;
     }
     setGameError(null);
+    setLastJackpotWin(null); // dismiss any stale celebration before new spin
     spinBusyRef.current = true;
     spinAnimatingRef.current = true;
 
@@ -236,14 +237,22 @@ export function useTitanSession(
     if (!client || !ws.sessionReady) return;
     const cleanup = client.addPayloadListener(isTitanJackpotTriggered, (payload) => {
       const tier = (payload.tier as TitanJackpotTier) ?? "MINI";
-      const prizeAmount = typeof payload.prizeAmount === "number" ? payload.prizeAmount : 0;
-      const tokenCount = typeof payload.tokenCount === "number" ? payload.tokenCount : 0;
+      const rawPrize = payload.prizeAmount;
+      const rawTokens = payload.tokenCount;
+      const prizeAmount =
+        typeof rawPrize === "number" ? rawPrize
+        : typeof rawPrize === "string" ? Number(rawPrize)
+        : 0;
+      const tokenCount =
+        typeof rawTokens === "number" ? rawTokens
+        : typeof rawTokens === "string" ? Number(rawTokens)
+        : 0;
       setLastJackpotWin({
         cmd: 1502,
         c: 0,
         tier,
-        prizeAmount,
-        tokenCount,
+        prizeAmount: Number.isFinite(prizeAmount) ? prizeAmount : 0,
+        tokenCount: Number.isFinite(tokenCount) ? Math.round(tokenCount) : 0,
         playerId: String(payload.playerId ?? ""),
       });
     });
@@ -254,11 +263,11 @@ export function useTitanSession(
   useEffect(() => {
     if (!lastSpin) return;
     const roundId = lastSpin.round.roundId;
-    // New round → reset meter
+    // New round → reset meter (but NOT lastJackpotWin — the 1502 push
+    // arrives asynchronously and a React batch can override it).
     if (roundId !== currentRoundIdRef.current) {
       currentRoundIdRef.current = roundId;
       setJackpotMeterTokens(0);
-      setLastJackpotWin(null);
     }
     // Accumulate tokens from this spin
     const tokens = lastSpin.spin.tokenPositions;

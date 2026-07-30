@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JackpotTierEntry } from "../../../ws/protocol";
 
 type JackpotTier = "MINI" | "MINOR" | "MAJOR" | "GRAND";
@@ -40,6 +40,11 @@ function sparkStyle(i: number): React.CSSProperties {
   };
 }
 
+/**
+ * Local visibility is decoupled from the parent's `tier` prop so that
+ * React batching / StrictMode double-invocation cannot prematurely
+ * dismiss the overlay before the user sees it.
+ */
 export default function TitanJackpotCelebration({
   tier,
   prizeAmount,
@@ -47,36 +52,69 @@ export default function TitanJackpotCelebration({
   tierConfig,
   onDismiss,
 }: TitanJackpotCelebrationProps) {
-  // Auto-dismiss after 5s
+  const [visible, setVisible] = useState(false);
+
+  // Snapshot the winning tier data when tier first becomes non-null.
+  const snapshotRef = useRef<{
+    tier: JackpotTier;
+    prizeAmount: number;
+    tokenCount: number;
+  } | null>(null);
+
+  // When the parent signals a new jackpot, capture it and start the timer.
   useEffect(() => {
     if (!tier) return;
-    const timer = window.setTimeout(onDismiss, 5000);
+    snapshotRef.current = {
+      tier,
+      prizeAmount,
+      tokenCount: _tokenCount,
+    };
+    setVisible(true);
+    const timer = window.setTimeout(() => {
+      setVisible(false);
+      // Notify parent AFTER the exit animation so it can reset lastJackpotWin.
+      window.setTimeout(() => onDismiss(), 400);
+    }, 5000);
     return () => window.clearTimeout(timer);
-  }, [tier, onDismiss]);
+    // Only react when tier transitions null → non-null.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tier]);
+
+  // Let parent know we're done once visibility transitions to hidden.
+  const prevVisibleRef = useRef(false);
+  useEffect(() => {
+    prevVisibleRef.current = visible;
+  }, [visible]);
 
   const handleBackdrop = useCallback(
     (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) onDismiss();
+      if (e.target === e.currentTarget) {
+        setVisible(false);
+        window.setTimeout(() => onDismiss(), 400);
+      }
     },
     [onDismiss],
   );
 
+  const activeTier = snapshotRef.current?.tier ?? null;
+  const activePrize = snapshotRef.current?.prizeAmount ?? 0;
+
   const config = useMemo(() => {
-    if (!tier) return null;
-    const entry = tierConfig.find((t) => t.tier === tier);
+    if (!activeTier) return null;
+    const entry = tierConfig.find((t) => t.tier === activeTier);
     return {
-      label: TIER_LABELS[tier] ?? `${tier} Jackpot`,
+      label: TIER_LABELS[activeTier] ?? `${activeTier} Jackpot`,
       multiplier: entry?.multiplier ?? 0,
-      cssTier: TIER_CSS[tier] ?? "",
+      cssTier: TIER_CSS[activeTier] ?? "",
     };
-  }, [tier, tierConfig]);
+  }, [activeTier, tierConfig]);
 
   const sparks = useMemo(
     () => Array.from({ length: 18 }, (_, i) => sparkStyle(i)),
     [],
   );
 
-  if (!tier || !config) return null;
+  if (!visible || !activeTier || !config) return null;
 
   return (
     <div className="titan-jackpot-celebration" onClick={handleBackdrop} role="dialog" aria-label={`${config.label} won`}>
@@ -100,14 +138,14 @@ export default function TitanJackpotCelebration({
           {config.label}
         </span>
         <span className={`celebration-prize ${config.cssTier}`}>
-          ${prizeAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ${activePrize.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
         <span className="celebration-sub">
-          {tier === "GRAND"
+          {activeTier === "GRAND"
             ? "The wrath of Olympus is yours — MAXIMUM JACKPOT!"
             : `${config.multiplier}× base bet · Divine favor bestowed`}
         </span>
-        <button className="celebration-dismiss" onClick={onDismiss} type="button">
+        <button className="celebration-dismiss" onClick={() => { setVisible(false); window.setTimeout(() => onDismiss(), 400); }} type="button">
           CLAIM REWARD
         </button>
       </div>
