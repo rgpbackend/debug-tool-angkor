@@ -43,6 +43,13 @@ export interface ServerPayline {
   rows: number[];
 }
 
+/** Jackpot tier entry from JOIN config (e.g. Titan's Wrath Olympus Jackpot). */
+export interface JackpotTierEntry {
+  tier: string;
+  requiredTokens: number;
+  multiplier: number;
+}
+
 /** Minimal shared last-round type — games define their own typed versions. */
 export interface LastRound {
   round?: Record<string, unknown>;
@@ -62,6 +69,8 @@ export interface JoinResponsePayload {
   /** Wallet balance at join time (decimal string, §1.1). */
   balance?: string;
   lastRound: LastRound | null;
+  /** Jackpot tier definitions from server (e.g. Olympus Jackpot). */
+  jackpotTiers?: JackpotTierEntry[];
 }
 
 // --- GET_BALANCE response (cmd 1530, client query) ---
@@ -328,6 +337,9 @@ export function parseJoinResponsePayload(
   // Parse paylines from server response (e.g. Titan's Wrath).
   const paylines = parseServerPaylines(payload.paylines);
 
+  // Parse jackpot tiers from server (e.g. Titan's Wrath Olympus Jackpot).
+  const jackpotTiers = parseJackpotTiers(payload.jackpotTiers);
+
   const lastRound =
     payload.lastRound === null || payload.lastRound === undefined
       ? null
@@ -341,7 +353,26 @@ export function parseJoinResponsePayload(
     ...(paylines?.length ? { paylines } : {}),
     ...(balance ? { balance } : {}),
     lastRound,
+    ...(jackpotTiers?.length ? { jackpotTiers } : {}),
   };
+}
+
+function parseJackpotTiers(raw: unknown): JackpotTierEntry[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const result: JackpotTierEntry[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) continue;
+    const t = item as Record<string, unknown>;
+    if (typeof t.tier !== "string") continue;
+    if (typeof t.requiredTokens !== "number") continue;
+    if (typeof t.multiplier !== "number") continue;
+    result.push({
+      tier: t.tier,
+      requiredTokens: t.requiredTokens,
+      multiplier: t.multiplier,
+    });
+  }
+  return result.length > 0 ? result : undefined;
 }
 
 function parseServerPaylines(raw: unknown): ServerPayline[] | undefined {

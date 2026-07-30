@@ -192,13 +192,20 @@ const TITAN_ERROR_MAP: Record<number, string> = {
   1300: "Server error. Please try again.",
   1301: "Unsupported command.",
   1302: "Invalid request. Check your inputs.",
+  1303: "Grid configuration error. Please try again.",
+  1304: "Payline configuration error. Please try again.",
   1305: "Session expired. Reconnecting…",
+  1306: "Win evaluation error. Please try again.",
   1307: "Insufficient balance. Deposit to continue.",
   1308: "Round not found. Starting new round.",
   1309: "Round already ended. Spin again.",
   1310: "Spin in progress. Please wait…",
   1311: "Invalid bet amount.",
   1312: "Session out of sync. Reconnecting…",
+  1313: "Jackpot meter error. Please try again.",
+  1314: "Missing request data. Please try again.",
+  1315: "Session ID missing. Reconnecting…",
+  1316: "Round settlement error. Please try again.",
 };
 
 export function formatTitanError(c: number, mgs?: string): string {

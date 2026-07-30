@@ -5,6 +5,8 @@ import { useTitanSession } from "./useTitanSession";
 import { readEnvDefaults } from "../../config";
 import type { GameScreenProps } from "../../games";
 import TitanSlotMachine from "./components/TitanSlotMachine";
+import DebugCheatPanel from "./components/DebugCheatPanel";
+import DebugMessageLog from "./components/DebugMessageLog";
 import "./slot-machine.css";
 
 export default function GameScreen({
@@ -26,6 +28,7 @@ export default function GameScreen({
   );
 
   const {
+    clientRef,
     sessionReady,
     joinGame,
     error,
@@ -45,9 +48,13 @@ export default function GameScreen({
     serverPaylines,
     endSpinCycle,
     jackpotMeterTokens,
+    jackpotTierConfig,
     lastJackpotWin,
     dismissJackpotCelebration,
   } = session;
+
+  // Debug panel toggle
+  const [debugOpen, setDebugOpen] = useState(true);
 
   // Join on mount
   useEffect(() => {
@@ -159,15 +166,18 @@ export default function GameScreen({
   const currentTotalWin = viewSpin?.round?.totalWin ?? null;
   const tokenPositions = viewSpin?.spin?.tokenPositions ?? [];
 
-  // Derived jackpot tier (highest reached)
+  // Derived jackpot tier (highest reached) — driven by server config with fallback.
   const jackpotMeterTier = useMemo(() => {
-    const t = jackpotMeterTokens;
-    if (t >= 6) return "GRAND" as const;
-    if (t >= 5) return "MAJOR" as const;
-    if (t >= 4) return "MINOR" as const;
-    if (t >= 3) return "MINI" as const;
-    return null;
-  }, [jackpotMeterTokens]);
+    let best: { tier: string; requiredTokens: number } | null = null;
+    for (const t of jackpotTierConfig) {
+      if (jackpotMeterTokens >= t.requiredTokens) {
+        if (!best || t.requiredTokens > best.requiredTokens) {
+          best = t;
+        }
+      }
+    }
+    return best?.tier ?? null;
+  }, [jackpotMeterTokens, jackpotTierConfig]);
 
   // Use WS balance when available, fall back to agency balance from parent
   const displayBalance = wsBalance ?? _parentBalance ?? null;
@@ -202,50 +212,88 @@ export default function GameScreen({
 
   return (
     <div className="titan-screen">
-      <TitanSlotMachine
-        patternGrid={patternGrid}
-        lockedReels={lockedReels}
-        spinPhase={spinPhase}
-        isSpinning={isSpinning}
-        onPresentationChange={setReelsAnimating}
-        serverPaylines={serverPaylines}
-        paylineWins={paylineWins}
-        wildInfo={wildInfo}
-        wildAnimDone={() => {}}
-        totalWin={currentTotalWin}
-        betLevels={betLevels}
-        selectBetValue={selectBetValue}
-        onBetChange={session.setBet}
-        betDisabled={betDisabled}
-        canSpin={canSpin && !autoSpinActive}
-        onSpin={() => void executeSpin()}
-        autoSpinActive={autoSpinActive}
-        autoSpinCount={autoSpinRemaining}
-        onAutoSpinStart={startAutoSpin}
-        onAutoSpinStop={stopAutoSpin}
-        superBetActive={superBetActive}
-        superBetToggleable={superBetToggleable}
-        onSuperBetToggle={setSuperBetActive}
-        error={error}
-        symbols={symbolCatalog}
-        balance={displayBalance}
-        tokenPositions={tokenPositions}
-        roundId={viewSpin?.round?.roundId ?? ""}
-        jackpotMeterTokens={jackpotMeterTokens}
-        jackpotMeterTier={jackpotMeterTier}
-        lastJackpotWin={lastJackpotWin}
-        onDismissJackpot={dismissJackpotCelebration}
-        toolbarSlot={
-          <>
-            <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
-              ← Lobby
-            </button>
-            <button type="button" className="titan-logout-btn" onClick={onLogout}>
-              Log out
-            </button>
-          </>
-        }
-      />
+      {/* Game panel — left side */}
+      <div className="titan-game-panel">
+        <TitanSlotMachine
+          patternGrid={patternGrid}
+          lockedReels={lockedReels}
+          spinPhase={spinPhase}
+          isSpinning={isSpinning}
+          onPresentationChange={setReelsAnimating}
+          serverPaylines={serverPaylines}
+          paylineWins={paylineWins}
+          wildInfo={wildInfo}
+          wildAnimDone={() => {}}
+          totalWin={currentTotalWin}
+          betLevels={betLevels}
+          selectBetValue={selectBetValue}
+          onBetChange={session.setBet}
+          betDisabled={betDisabled}
+          canSpin={canSpin && !autoSpinActive}
+          onSpin={() => void executeSpin()}
+          autoSpinActive={autoSpinActive}
+          autoSpinCount={autoSpinRemaining}
+          onAutoSpinStart={startAutoSpin}
+          onAutoSpinStop={stopAutoSpin}
+          superBetActive={superBetActive}
+          superBetToggleable={superBetToggleable}
+          onSuperBetToggle={setSuperBetActive}
+          error={error}
+          symbols={symbolCatalog}
+          balance={displayBalance}
+          tokenPositions={tokenPositions}
+          roundId={viewSpin?.round?.roundId ?? ""}
+          jackpotMeterTokens={jackpotMeterTokens}
+          jackpotMeterTier={jackpotMeterTier}
+          jackpotTierConfig={jackpotTierConfig}
+          lastJackpotWin={lastJackpotWin}
+          onDismissJackpot={dismissJackpotCelebration}
+          toolbarSlot={
+            <>
+              <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
+                ← Lobby
+              </button>
+              <button type="button" className="titan-logout-btn" onClick={onLogout}>
+                Log out
+              </button>
+            </>
+          }
+        />
+      </div>
+
+      {/* Debug panel — right side */}
+      <div className={`titan-debug-panel${debugOpen ? "" : " collapsed"}`}>
+        <button
+          className="titan-debug-toggle"
+          onClick={() => setDebugOpen((v) => !v)}
+          aria-label={debugOpen ? "Collapse debug panel" : "Expand debug panel"}
+        >
+          {debugOpen ? "▶" : "◀"}
+        </button>
+
+        {/* Cheat section */}
+        <div className="titan-debug-section">
+          <div className="titan-debug-section-header">
+            <span>Cheat Symbols</span>
+          </div>
+          <DebugCheatPanel
+            clientRef={clientRef}
+            canCheat={canSpin && !isSpinning && sessionReady}
+            lastPatternGrid={viewSpin?.spin?.patternGrid ?? ""}
+          />
+        </div>
+
+        {/* Message log section */}
+        <div className="titan-debug-section">
+          <div className="titan-debug-section-header">
+            <span>Message Log</span>
+          </div>
+          <DebugMessageLog
+            clientRef={clientRef}
+            sessionReady={sessionReady}
+          />
+        </div>
+      </div>
     </div>
   );
 }

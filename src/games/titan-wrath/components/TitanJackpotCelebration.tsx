@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
+import type { JackpotTierEntry } from "../../../ws/protocol";
 
 type JackpotTier = "MINI" | "MINOR" | "MAJOR" | "GRAND";
 
@@ -6,14 +7,22 @@ interface TitanJackpotCelebrationProps {
   tier: JackpotTier | null;
   prizeAmount: number;
   tokenCount: number;
+  tierConfig: JackpotTierEntry[];
   onDismiss: () => void;
 }
 
-const TIER_CONFIG: Record<JackpotTier, { label: string; multiplier: number; cssTier: string }> = {
-  MINI:  { label: "Mini Jackpot",  multiplier: 10,   cssTier: "tier-mini" },
-  MINOR: { label: "Minor Jackpot", multiplier: 50,   cssTier: "tier-minor" },
-  MAJOR: { label: "Major Jackpot", multiplier: 200,  cssTier: "tier-major" },
-  GRAND: { label: "Grand Jackpot", multiplier: 1000, cssTier: "tier-grand" },
+const TIER_LABELS: Record<string, string> = {
+  MINI: "Mini Jackpot",
+  MINOR: "Minor Jackpot",
+  MAJOR: "Major Jackpot",
+  GRAND: "Grand Jackpot",
+};
+
+const TIER_CSS: Record<string, string> = {
+  MINI: "tier-mini",
+  MINOR: "tier-minor",
+  MAJOR: "tier-major",
+  GRAND: "tier-grand",
 };
 
 /** Generate random spark positions — deterministic per render so they don't jump. */
@@ -35,6 +44,7 @@ export default function TitanJackpotCelebration({
   tier,
   prizeAmount,
   tokenCount: _tokenCount,
+  tierConfig,
   onDismiss,
 }: TitanJackpotCelebrationProps) {
   // Auto-dismiss after 5s
@@ -51,7 +61,15 @@ export default function TitanJackpotCelebration({
     [onDismiss],
   );
 
-  const config = tier ? TIER_CONFIG[tier] : null;
+  const config = useMemo(() => {
+    if (!tier) return null;
+    const entry = tierConfig.find((t) => t.tier === tier);
+    return {
+      label: TIER_LABELS[tier] ?? `${tier} Jackpot`,
+      multiplier: entry?.multiplier ?? 0,
+      cssTier: TIER_CSS[tier] ?? "",
+    };
+  }, [tier, tierConfig]);
 
   const sparks = useMemo(
     () => Array.from({ length: 18 }, (_, i) => sparkStyle(i)),

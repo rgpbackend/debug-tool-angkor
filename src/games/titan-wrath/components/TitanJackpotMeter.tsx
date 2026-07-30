@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { JackpotTierEntry } from "../../../ws/protocol";
 
-/** Token thresholds for each jackpot tier. */
-export const JACKPOT_TIER_THRESHOLDS: { tier: string; tokens: number; cssClass: string }[] = [
-  { tier: "MINI",  tokens: 3, cssClass: "tier-label-mini" },
-  { tier: "MINOR", tokens: 4, cssClass: "tier-label-minor" },
-  { tier: "MAJOR", tokens: 5, cssClass: "tier-label-major" },
-  { tier: "GRAND", tokens: 6, cssClass: "tier-label-grand" },
-];
-
-const MAX_TOKENS = 6;
+const TIER_CSS: Record<string, string> = {
+  MINI: "tier-label-mini",
+  MINOR: "tier-label-minor",
+  MAJOR: "tier-label-major",
+  GRAND: "tier-label-grand",
+};
 
 interface TitanJackpotMeterProps {
   /** Current token count to display. */
@@ -17,12 +15,33 @@ interface TitanJackpotMeterProps {
   impactNew?: number;
   /** Highest tier reached so far (if any). */
   reachedTier: string | null;
+  /** Tier definitions from server JOIN (sorted by requiredTokens asc). */
+  tierConfig: JackpotTierEntry[];
+  /** Current base bet for prize calculation (prize = multiplier × baseBet). */
+  baseBet: number;
 }
 
-export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTier }: TitanJackpotMeterProps) {
+export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTier, tierConfig, baseBet }: TitanJackpotMeterProps) {
   const [flash, setFlash] = useState(false);
   const [impact, setImpact] = useState(false);
   const prevCount = useRef(tokenCount);
+
+  // Derive max tokens from tier config (highest requiredTokens).
+  const maxTokens = useMemo(
+    () => tierConfig.reduce((max, t) => Math.max(max, t.requiredTokens), 0),
+    [tierConfig],
+  );
+
+  // Build tier marker data from config.
+  const tierMarkers = useMemo(
+    () =>
+      tierConfig.map((t) => ({
+        tier: t.tier,
+        tokens: t.requiredTokens,
+        cssClass: TIER_CSS[t.tier] ?? "",
+      })),
+    [tierConfig],
+  );
 
   // Flash when tokenCount changes (meter just updated)
   useEffect(() => {
@@ -44,10 +63,10 @@ export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTi
     }
   }, [impactNew]);
 
-  const fillPct = Math.min(100, (tokenCount / MAX_TOKENS) * 100);
+  const fillPct = maxTokens > 0 ? Math.min(100, (tokenCount / maxTokens) * 100) : 0;
 
   return (
-    <div className="titan-jackpot-meter" aria-label={`Jackpot meter: ${tokenCount} of ${MAX_TOKENS} tokens`}>
+    <div className="titan-jackpot-meter" aria-label={`Jackpot meter: ${tokenCount} of ${maxTokens} tokens`}>
       {/* Label row */}
       <div className="jackpot-meter-label">
         <span className="jackpot-meter-label-rule" />
@@ -72,7 +91,7 @@ export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTi
         )}
 
         <div className="jackpot-meter-tiers">
-          {JACKPOT_TIER_THRESHOLDS.map((t) => {
+          {tierMarkers.map((t) => {
             const reached = tokenCount >= t.tokens;
             return (
               <div
@@ -93,16 +112,23 @@ export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTi
         </div>
       </div>
 
-      {/* Tier labels below */}
+      {/* Tier labels below — name + prize amount */}
       <div className="jackpot-meter-tier-labels">
-        {JACKPOT_TIER_THRESHOLDS.map((t) => {
+        {tierMarkers.map((t) => {
           const reached = tokenCount >= t.tokens || reachedTier === t.tier;
+          const entry = tierConfig.find((e) => e.tier === t.tier);
+          const prize = entry ? entry.multiplier * baseBet : 0;
           return (
             <span
               key={t.tier}
               className={`jackpot-meter-tier-label ${t.cssClass}${reached ? " tier-reached" : ""}`}
             >
-              {t.tier}
+              <span className="tier-label-name">{t.tier}</span>
+              <span className="tier-label-prize">
+                {prize < 1_000_000
+                  ? `$${prize.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : `$${(prize / 1_000_000).toFixed(1)}M`}
+              </span>
             </span>
           );
         })}

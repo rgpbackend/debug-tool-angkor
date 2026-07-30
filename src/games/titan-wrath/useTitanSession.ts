@@ -18,6 +18,7 @@ import { titanSpinFrame } from "./titan-frames";
 import {
   parseJackpotPoolsFromPayload,
   type JackpotTierInfo,
+  type JackpotTierEntry,
 } from "../../ws/protocol";
 
 const WS_CONNECTION_LOST_RE =
@@ -33,6 +34,20 @@ const TITAN_JACKPOT_TIERS: JackpotTierInfo[] = [
   { key: "MAJOR", isStatic: false },
   { key: "GRAND", isStatic: false },
 ];
+
+/** Fallback jackpot tier definitions when server doesn't provide them. */
+const FALLBACK_JACKPOT_TIERS: JackpotTierEntry[] = [
+  { tier: "MINI",  requiredTokens: 3, multiplier: 10 },
+  { tier: "MINOR", requiredTokens: 4, multiplier: 50 },
+  { tier: "MAJOR", requiredTokens: 5, multiplier: 200 },
+  { tier: "GRAND", requiredTokens: 6, multiplier: 1000 },
+];
+
+/** Derive active jackpot tier config from server JOIN or fallback. */
+function resolveJackpotTiers(serverTiers: JackpotTierEntry[]): JackpotTierEntry[] {
+  if (serverTiers.length > 0) return serverTiers;
+  return FALLBACK_JACKPOT_TIERS;
+}
 
 // Server route from backend contract — used as the WS game route.
 const TITAN_GAME_ROUTE = "yama_01021";
@@ -208,7 +223,7 @@ export function useTitanSession(
           window.setTimeout(() => { /* UI can prompt retry */ }, 500);
         }
         // Auto re-join for session/state errors
-        if (c === 1305 || c === 1312) {
+        if (c === 1305 || c === 1312 || c === 1315) {
           void ws.joinGame();
         }
     });
@@ -252,6 +267,12 @@ export function useTitanSession(
     }
   }, [lastSpin]);
 
+  // Dynamic jackpot tier config — server JOIN overrides hardcoded fallback.
+  const jackpotTierConfig = useMemo(
+    () => resolveJackpotTiers(ws.jackpotTiers),
+    [ws.jackpotTiers],
+  );
+
   const dismissJackpotCelebration = useCallback(() => {
     setLastJackpotWin(null);
   }, []);
@@ -269,6 +290,7 @@ export function useTitanSession(
 
   return {
     // from ws
+    clientRef: ws.clientRef,
     phase: ws.phase,
     sessionReady: ws.sessionReady,
     gameScreenActive: ws.gameScreenActive,
@@ -300,6 +322,7 @@ export function useTitanSession(
     endSpinCycle: flushQueuedBalance,
     // Olympus Jackpot
     jackpotMeterTokens,
+    jackpotTierConfig,
     lastJackpotWin,
     dismissJackpotCelebration,
   };

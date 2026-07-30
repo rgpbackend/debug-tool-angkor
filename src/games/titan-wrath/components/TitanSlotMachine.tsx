@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import type { GameSymbol, ServerPayline } from "../../../ws/protocol";
+import type { GameSymbol, ServerPayline, JackpotTierEntry } from "../../../ws/protocol";
 import type { TitanPaylineWin, TitanWildSpinInfo, TitanJackpotTier, TitanJackpotTriggered } from "../titan-protocol";
 import type { SpinPhase } from "../hooks/useSpinPhase";
 import TitanReelGrid from "./TitanReelGrid";
@@ -9,7 +9,6 @@ import TitanJackpotMeter from "./TitanJackpotMeter";
 import TitanJackpotCelebration from "./TitanJackpotCelebration";
 import TitanControls from "./TitanControls";
 import PaytableModal from "./PaytableModal";
-import MenuPopover from "./MenuPopover";
 
 interface TitanSlotMachineProps {
   // Grid
@@ -60,13 +59,13 @@ interface TitanSlotMachineProps {
   roundId: string;
   jackpotMeterTokens: number;
   jackpotMeterTier: TitanJackpotTier | null;
+  jackpotTierConfig: JackpotTierEntry[];
   lastJackpotWin: TitanJackpotTriggered | null;
   onDismissJackpot: () => void;
 }
 
 export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const [paytableOpen, setPaytableOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const phase = props.spinPhase;
   const spinning = props.isSpinning;
@@ -196,9 +195,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           {props.toolbarSlot}
         </div>
         <span className="titan-cabinet-title">⚡ Titan&apos;s Wrath</span>
-        <button className="titan-cabinet-menu-btn" onClick={() => setMenuOpen(true)} aria-label="Menu">
-          ☰
-        </button>
       </header>
 
       {props.error && <div className="titan-error-banner">{props.error}</div>}
@@ -216,6 +212,8 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         tokenCount={tokenCountForMeter}
         impactNew={meterImpact}
         reachedTier={props.jackpotMeterTier}
+        tierConfig={props.jackpotTierConfig}
+        baseBet={Number(props.selectBetValue) || 0}
       />
 
       <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
@@ -267,16 +265,11 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         symbols={props.symbols}
         onClose={() => setPaytableOpen(false)}
       />
-      <MenuPopover
-        open={menuOpen}
-        onOpenPaytable={() => setPaytableOpen(true)}
-        onClose={() => setMenuOpen(false)}
-      />
-
       <TitanJackpotCelebration
         tier={props.lastJackpotWin?.tier ?? null}
         prizeAmount={props.lastJackpotWin?.prizeAmount ?? 0}
         tokenCount={props.lastJackpotWin?.tokenCount ?? 0}
+        tierConfig={props.jackpotTierConfig}
         onDismiss={props.onDismissJackpot}
       />
     </div>

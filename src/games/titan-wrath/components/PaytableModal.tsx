@@ -48,6 +48,40 @@ export default function PaytableModal({ open, symbols, onClose }: PaytableModalP
             );
           })}
         </div>
+
+        {/* Multiplier Rules */}
+        <div className="paytable-rules">
+          <h3 className="paytable-rules-title">Multiplier Rules</h3>
+
+          <div className="paytable-rule">
+            <span className="paytable-rule-icon">⚡</span>
+            <div>
+              <strong>Titan's Wrath</strong>
+              <p>Any <strong>5-of-a-kind</strong> win is multiplied by <strong>×4</strong>, regardless of Wild columns. This is the highest-priority multiplier.</p>
+            </div>
+          </div>
+
+          <div className="paytable-rule">
+            <span className="paytable-rule-icon">🔥</span>
+            <div>
+              <strong>Titan Multiplier</strong>
+              <p>When a payline passes through expanded Wild columns on a 3 or 4-of-a-kind win:</p>
+              <ul className="paytable-rule-list">
+                <li>3 matching, 1 Wild column → <strong>×2</strong></li>
+                <li>4 matching, 1 Wild column → <strong>×2</strong></li>
+                <li>4 matching, 2 Wild columns → <strong>×3</strong></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="paytable-rule">
+            <span className="paytable-rule-icon">🏺</span>
+            <div>
+              <strong>Olympus Jackpot</strong>
+              <p>Divine Tokens randomly appear on the grid. Collect them in the Jackpot Meter to win multiplier prizes at round end.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -17,6 +17,10 @@ export interface BrowserWsClientOptions {
   timeoutMs: number;
   /** Game-specific inbound message parser. */
   parseMessage: ParseMessageFn;
+  /** Called for every successfully parsed inbound payload. */
+  onInbound?: (payload: Record<string, unknown>) => void;
+  /** Called for every outbound frame before it is sent. */
+  onOutbound?: (frame: WsOutboundFrame) => void;
 }
 
 type PayloadMatcher = (payload: Record<string, unknown>) => boolean;
@@ -46,7 +50,7 @@ export class BrowserWsClient {
   private closingIntentionally = false;
 
   private readonly endpoint: string;
-  private readonly options: BrowserWsClientOptions;
+  readonly options: BrowserWsClientOptions;
 
   constructor(endpoint: string, options: BrowserWsClientOptions) {
     this.endpoint = endpoint;
@@ -90,6 +94,7 @@ export class BrowserWsClient {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       throw new Error("WS is not connected");
     }
+    this.options.onOutbound?.(frame);
     this.socket.send(JSON.stringify(frame));
   }
 
@@ -235,6 +240,7 @@ export class BrowserWsClient {
             this.dispatchStompError(message.code);
             return;
           }
+          this.options.onInbound?.(message.payload);
           for (const { matcher, handler } of this.payloadListeners) {
             if (matcher(message.payload)) {
               handler(message.payload);

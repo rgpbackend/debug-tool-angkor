@@ -31,6 +31,7 @@ import {
   type GameSymbol,
   type LastRound,
   type ServerPayline,
+  type JackpotTierEntry,
 } from "./protocol";
 import { isTokenBannedStompError } from "./stomp-errors";
 import type { GamePhase } from "./game-phase";
@@ -85,6 +86,7 @@ export function useWsSession(
   const [symbolCatalog, setSymbolCatalog] = useState<GameSymbol[]>([]);
   const [betLevels, setBetLevels] = useState<string[]>([]);
   const [serverPaylines, setServerPaylines] = useState<ServerPayline[]>([]);
+  const [jackpotTiers, setJackpotTiers] = useState<JackpotTierEntry[]>([]);
   const [lastRound, setLastRound] = useState<LastRound | null>(null);
   const [jackpotPoolsByTier, setJackpotPoolsByTier] =
     useState<JackpotPoolsByTier>(() =>
@@ -241,6 +243,7 @@ export function useWsSession(
       setJackpotWinnersRefreshToken(0);
       setBetLevels([]);
       setServerPaylines([]);
+      setJackpotTiers([]);
       setSymbolCatalog([]);
       setBalance(null);
       joinInFlightRef.current = false;
@@ -424,6 +427,11 @@ export function useWsSession(
         setServerPaylines(joinPayload.paylines);
       }
 
+      // Store jackpot tier definitions from server (Olympus Jackpot, etc.)
+      if (joinPayload.jackpotTiers?.length) {
+        setJackpotTiers(joinPayload.jackpotTiers);
+      }
+
       const joinBalance =
         joinPayload.balance ?? readTopLevelBalance(rawJoinPayload);
       if (joinBalance) {
@@ -512,6 +520,7 @@ export function useWsSession(
     symbolCatalog,
     betLevels,
     serverPaylines,
+    jackpotTiers,
     lastRound,
     jackpotPoolsByTier,
     jackpotPoolsLoading,
