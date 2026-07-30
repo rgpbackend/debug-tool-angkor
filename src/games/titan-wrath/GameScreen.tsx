@@ -2,9 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAutoSpin } from "./hooks/useAutoSpin";
 import { useSpinPhase } from "./hooks/useSpinPhase";
 import { useTitanSession } from "./useTitanSession";
+import type { TitanJackpotTier } from "./titan-protocol";
 import { readEnvDefaults } from "../../config";
 import type { GameScreenProps } from "../../games";
 import TitanSlotMachine from "./components/TitanSlotMachine";
+import GameHistoryModal from "./components/GameHistoryModal";
+import JackpotHistoryModal from "./components/JackpotHistoryModal";
 import DebugCheatPanel from "./components/DebugCheatPanel";
 import DebugMessageLog from "./components/DebugMessageLog";
 import "./slot-machine.css";
@@ -51,10 +54,18 @@ export default function GameScreen({
     jackpotTierConfig,
     lastJackpotWin,
     dismissJackpotCelebration,
+    fetchHistoryList,
+    fetchHistoryDetail,
+    fetchJackpotWinHistory,
   } = session;
 
   // Debug panel toggle
   const [debugOpen, setDebugOpen] = useState(true);
+
+  // History modals
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [jackpotHistoryOpen, setJackpotHistoryOpen] = useState(false);
+  const canQueryHistory = sessionReady && !isSpinning;
 
   // Join on mount
   useEffect(() => {
@@ -167,7 +178,7 @@ export default function GameScreen({
   const tokenPositions = viewSpin?.spin?.tokenPositions ?? [];
 
   // Derived jackpot tier (highest reached) — driven by server config with fallback.
-  const jackpotMeterTier = useMemo(() => {
+  const jackpotMeterTier = useMemo((): TitanJackpotTier | null => {
     let best: { tier: string; requiredTokens: number } | null = null;
     for (const t of jackpotTierConfig) {
       if (jackpotMeterTokens >= t.requiredTokens) {
@@ -176,7 +187,7 @@ export default function GameScreen({
         }
       }
     }
-    return best?.tier ?? null;
+    return (best?.tier as TitanJackpotTier) ?? null;
   }, [jackpotMeterTokens, jackpotTierConfig]);
 
   // Use WS balance when available, fall back to agency balance from parent
@@ -248,6 +259,8 @@ export default function GameScreen({
           jackpotTierConfig={jackpotTierConfig}
           lastJackpotWin={lastJackpotWin}
           onDismissJackpot={dismissJackpotCelebration}
+          onOpenHistory={() => setHistoryOpen(true)}
+          onOpenJackpotWinners={() => setJackpotHistoryOpen(true)}
           toolbarSlot={
             <>
               <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
@@ -294,6 +307,21 @@ export default function GameScreen({
           />
         </div>
       </div>
+
+      {/* History modals */}
+      <GameHistoryModal
+        open={historyOpen}
+        canQuery={canQueryHistory}
+        onClose={() => setHistoryOpen(false)}
+        onFetchList={fetchHistoryList}
+        onFetchDetail={fetchHistoryDetail}
+      />
+      <JackpotHistoryModal
+        open={jackpotHistoryOpen}
+        canQuery={canQueryHistory}
+        onClose={() => setJackpotHistoryOpen(false)}
+        onFetch={fetchJackpotWinHistory}
+      />
     </div>
   );
 }

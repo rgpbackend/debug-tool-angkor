@@ -8,3 +8,18 @@ export function titanSpinFrame(
 ): WsOutboundFrame {
   return [6, "MiniGame", TITAN_ROUTE, { cmd: 1500, betAmount, superBet }];
 }
+
+export function titanHistoryListFrame(): WsOutboundFrame {
+  return [6, "MiniGame", TITAN_ROUTE, { cmd: 1503 }];
+}
+
+export function titanHistoryDetailFrame(
+  roundId: string,
+  spinIndex: number,
+): WsOutboundFrame {
+  return [6, "MiniGame", TITAN_ROUTE, { cmd: 1504, roundId, spinIndex }];
+}
+
+export function titanJackpotWinHistoryFrame(): WsOutboundFrame {
+  return [6, "MiniGame", TITAN_ROUTE, { cmd: 1505 }];
+}

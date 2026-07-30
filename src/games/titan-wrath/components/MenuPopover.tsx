@@ -1,10 +1,12 @@
 interface MenuPopoverProps {
   open: boolean;
   onOpenPaytable: () => void;
+  onOpenHistory: () => void;
+  onOpenJackpotWinners: () => void;
   onClose: () => void;
 }
 
-export default function MenuPopover({ open, onOpenPaytable, onClose }: MenuPopoverProps) {
+export default function MenuPopover({ open, onOpenPaytable, onOpenHistory, onOpenJackpotWinners, onClose }: MenuPopoverProps) {
   if (!open) return null;
 
   const items: { label: string; icon: string; action: () => void; disabled?: boolean }[] = [
@@ -12,7 +14,8 @@ export default function MenuPopover({ open, onOpenPaytable, onClose }: MenuPopov
     { label: "Game Rules", icon: "📖", action: () => {}, disabled: true },
     { label: "Sound", icon: "🔊", action: () => {}, disabled: true },
     { label: "Music", icon: "🎵", action: () => {}, disabled: true },
-    { label: "History", icon: "🕐", action: () => {}, disabled: true },
+    { label: "History", icon: "🕐", action: () => { onOpenHistory(); onClose(); } },
+    { label: "Jackpot Winners", icon: "🏆", action: () => { onOpenJackpotWinners(); onClose(); } },
   ];
 
   return (

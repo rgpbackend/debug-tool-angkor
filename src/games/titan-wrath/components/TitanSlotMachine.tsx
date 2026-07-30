@@ -9,6 +9,7 @@ import TitanJackpotMeter from "./TitanJackpotMeter";
 import TitanJackpotCelebration from "./TitanJackpotCelebration";
 import TitanControls from "./TitanControls";
 import PaytableModal from "./PaytableModal";
+import MenuPopover from "./MenuPopover";
 
 interface TitanSlotMachineProps {
   // Grid
@@ -62,10 +63,14 @@ interface TitanSlotMachineProps {
   jackpotTierConfig: JackpotTierEntry[];
   lastJackpotWin: TitanJackpotTriggered | null;
   onDismissJackpot: () => void;
+  // Menu
+  onOpenHistory: () => void;
+  onOpenJackpotWinners: () => void;
 }
 
 export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const [paytableOpen, setPaytableOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const phase = props.spinPhase;
   const spinning = props.isSpinning;
@@ -195,6 +200,9 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           {props.toolbarSlot}
         </div>
         <span className="titan-cabinet-title">⚡ Titan&apos;s Wrath</span>
+        <button type="button" className="titan-menu-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
+          ☰
+        </button>
       </header>
 
       {props.error && <div className="titan-error-banner">{props.error}</div>}
@@ -264,6 +272,13 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         open={paytableOpen}
         symbols={props.symbols}
         onClose={() => setPaytableOpen(false)}
+      />
+      <MenuPopover
+        open={menuOpen}
+        onOpenPaytable={() => setPaytableOpen(true)}
+        onOpenHistory={props.onOpenHistory}
+        onOpenJackpotWinners={props.onOpenJackpotWinners}
+        onClose={() => setMenuOpen(false)}
       />
       <TitanJackpotCelebration
         tier={props.lastJackpotWin?.tier ?? null}

@@ -10,11 +10,20 @@ import {
   isTitanRoundEnded,
   isTitanBalanceUpdate,
   isTitanJackpotTriggered,
+  isTitanHistoryListPayload,
+  isTitanHistoryDetailPayload,
+  isTitanJackpotWinHistoryPayload,
+  parseTitanHistoryListPayload,
+  parseTitanHistoryDetailPayload,
+  parseTitanJackpotWinHistoryPayload,
   type TitanSpinPayload,
   type TitanJackpotTier,
   type TitanJackpotTriggered,
+  type TitanHistoryListPayload,
+  type TitanHistoryDetailPayload,
+  type TitanJackpotWinHistoryPayload,
 } from "./titan-protocol";
-import { titanSpinFrame } from "./titan-frames";
+import { titanSpinFrame, titanHistoryListFrame, titanHistoryDetailFrame, titanJackpotWinHistoryFrame } from "./titan-frames";
 import {
   parseJackpotPoolsFromPayload,
   type JackpotTierInfo,
@@ -289,6 +298,35 @@ export function useTitanSession(
     setLastJackpotWin(null);
   }, []);
 
+  // --- history fetchers ---
+
+  const fetchHistoryList = useCallback(async (): Promise<TitanHistoryListPayload> => {
+    const client = ws.clientRef.current;
+    if (!client?.isConnected()) throw new Error("Not connected");
+    const pp = client.waitForPayload(isTitanHistoryListPayload, "titan history list");
+    client.sendFrame(titanHistoryListFrame());
+    return parseTitanHistoryListPayload(await pp);
+  }, [ws]);
+
+  const fetchHistoryDetail = useCallback(
+    async (roundId: string, spinIndex: number): Promise<TitanHistoryDetailPayload> => {
+      const client = ws.clientRef.current;
+      if (!client?.isConnected()) throw new Error("Not connected");
+      const pp = client.waitForPayload(isTitanHistoryDetailPayload, "titan history detail");
+      client.sendFrame(titanHistoryDetailFrame(roundId, spinIndex));
+      return parseTitanHistoryDetailPayload(await pp);
+    },
+    [ws],
+  );
+
+  const fetchJackpotWinHistory = useCallback(async (): Promise<TitanJackpotWinHistoryPayload> => {
+    const client = ws.clientRef.current;
+    if (!client?.isConnected()) throw new Error("Not connected");
+    const pp = client.waitForPayload(isTitanJackpotWinHistoryPayload, "titan jackpot win history");
+    client.sendFrame(titanJackpotWinHistoryFrame());
+    return parseTitanJackpotWinHistoryPayload(await pp);
+  }, [ws]);
+
   // --- view state ---
   const viewSpin = lastSpin;
 
@@ -337,6 +375,10 @@ export function useTitanSession(
     jackpotTierConfig,
     lastJackpotWin,
     dismissJackpotCelebration,
+    // history
+    fetchHistoryList,
+    fetchHistoryDetail,
+    fetchJackpotWinHistory,
   };
 }
 

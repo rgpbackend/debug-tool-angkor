@@ -2033,3 +2033,267 @@
   color: var(--titan-ash);
   opacity: 0.5;
 }
+
+/* =================================================================
+   Menu button
+   ================================================================= */
+
+.titan-menu-btn {
+  background: none;
+  border: 1px solid rgba(212, 168, 67, 0.3);
+  border-radius: 6px;
+  color: var(--titan-forge-gold);
+  font-size: 1.2rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.titan-menu-btn:hover {
+  border-color: var(--titan-forge-gold);
+}
+
+/* =================================================================
+   History modal (reuses .paytable-modal + .modal-backdrop)
+   ================================================================= */
+
+.hist-modal {
+  max-width: 640px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.hist-body {
+  color: var(--titan-smoke);
+  font-family: var(--titan-body);
+  font-size: 0.8rem;
+}
+
+/* -- Level 1: spin list -- */
+
+.hist-list-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.hist-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hist-pagination button {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 4px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-body);
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.hist-pagination button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.hist-page-info {
+  font-size: 0.75rem;
+  color: var(--titan-ash);
+}
+
+/* -- Table -- */
+
+.hist-table-wrap {
+  overflow-x: auto;
+}
+.hist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.hist-table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(138, 133, 128, 0.2);
+  color: var(--titan-ash);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+.hist-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(138, 133, 128, 0.08);
+}
+
+/* -- Row styles -- */
+
+.hist-row-clickable {
+  cursor: pointer;
+}
+.hist-row-clickable:hover {
+  background: rgba(212, 168, 67, 0.08);
+}
+.hist-row-sel {
+  background: rgba(212, 168, 67, 0.12);
+}
+.hist-round-id {
+  font-size: 0.7rem;
+}
+
+/* -- Type badges -- */
+
+.hist-type-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.hist-type-BASE {
+  background: rgba(100, 149, 237, 0.2);
+  color: cornflowerblue;
+}
+.hist-type-RESPIN {
+  background: rgba(212, 168, 67, 0.2);
+  color: var(--titan-forge-gold);
+}
+
+/* -- Amounts -- */
+
+.hist-amount {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.hist-profit-pos { color: #4caf50; }
+.hist-profit-neg { color: #e74c3c; }
+.hist-ts { font-size: 0.7rem; }
+
+/* -- Level 2: detail -- */
+
+.hist-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.hist-detail-title {
+  font-family: var(--titan-display);
+  font-size: 0.95rem;
+  color: var(--titan-forge-gold);
+}
+.hist-back-btn {
+  background: none;
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 4px;
+  color: var(--titan-smoke);
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.hist-detail-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.hist-detail-meta p {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+}
+.hist-label {
+  color: var(--titan-ash);
+  margin-right: 6px;
+}
+.hist-label::after { content: ":"; }
+
+/* -- Reels grid in detail -- */
+
+.hist-section {
+  margin-top: 14px;
+}
+.hist-section h3 {
+  font-family: var(--titan-display);
+  font-size: 0.8rem;
+  color: var(--titan-ash);
+  margin: 0 0 8px;
+}
+.hist-reels {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+.hist-reel-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hist-cell {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.15);
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--titan-smoke);
+}
+.hist-cell-hit {
+  border-color: var(--titan-forge-gold);
+  background: rgba(212, 168, 67, 0.15);
+  box-shadow: 0 0 6px rgba(212, 168, 67, 0.3);
+}
+.hist-sym-mini {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+.hist-sym-mini.sym-A { color: #ffd700; }
+.hist-sym-mini.sym-B { color: #5dade2; }
+.hist-sym-mini.sym-C { color: #58d68d; }
+.hist-sym-mini.sym-D { color: #bb8fce; }
+.hist-sym-mini.sym-E { color: #f4d03f; }
+.hist-sym-mini.sym-F { color: #e74c3c; }
+.hist-sym-mini.sym-G { color: #2ecc71; }
+.hist-sym-mini.sym-W { color: #ff6347; }
+
+.hist-cell.sym-A { color: #ffd700; }
+.hist-cell.sym-B { color: #5dade2; }
+.hist-cell.sym-C { color: #58d68d; }
+.hist-cell.sym-D { color: #bb8fce; }
+.hist-cell.sym-E { color: #f4d03f; }
+.hist-cell.sym-F { color: #e74c3c; }
+.hist-cell.sym-G { color: #2ecc71; }
+.hist-cell.sym-W { color: #ff6347; }
+
+/* -- Jackpot tier badges -- */
+
+.tier-badge-grand {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+.tier-badge-major {
+  background: rgba(100, 149, 237, 0.2);
+  color: cornflowerblue;
+}
+
+.jackpot-prize {
+  color: var(--titan-forge-gold);
+}
+
+/* -- Misc -- */
+
+.muted { color: var(--titan-ash); }
+.error { color: #e74c3c; }
