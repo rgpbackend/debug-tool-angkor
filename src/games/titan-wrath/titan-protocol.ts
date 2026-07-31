@@ -439,6 +439,13 @@ export function parseTitanHistoryDetailPayload(
         Array.isArray(col) ? col.map((s) => String(s)) : [],
       )
     : [];
+  // Transpose row-major (3 rows × 5 cols) → col-major (5 cols × 3 rows)
+  const reels =
+    rawReels.length === 3 && rawReels.every((r) => r.length === 5)
+      ? Array.from({ length: 5 }, (_, ci) =>
+          Array.from({ length: 3 }, (__, ri) => rawReels[ri][ci] ?? ""),
+        )
+      : rawReels;
   const jackpot = parseTitanHistoryJackpot(payload.jackpot);
   return {
     cmd: payload.cmd as string | number,
@@ -452,7 +459,7 @@ export function parseTitanHistoryDetailPayload(
     bet: readTitanHistoryAmount(payload.bet),
     win: readTitanHistoryAmount(payload.win),
     profit: readTitanHistoryAmount(payload.profit),
-    reels: rawReels,
+    reels,
     winWays,
     ...(jackpot ? { jackpot } : {}),
   };

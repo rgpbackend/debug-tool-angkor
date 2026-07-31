@@ -6,6 +6,7 @@ import type {
   TitanHistoryWinWay,
   TitanHistorySpinType,
 } from "../titan-protocol";
+import { getSymbolImage } from "../assets/symbols";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -46,6 +47,13 @@ function spinTypeLabel(t: TitanHistorySpinType): string {
 // ---------------------------------------------------------------------------
 // Sub-component: Level 2 — Spin Detail
 // ---------------------------------------------------------------------------
+
+const SYMBOL_TIER: Record<string, string> = {
+  A: "symbol-high", B: "symbol-high",
+  C: "symbol-mid", D: "symbol-mid", E: "symbol-mid",
+  F: "symbol-low", G: "symbol-low",
+  W: "symbol-wild",
+};
 
 function winWayHighlightKey(reelIndex: number, rowIndex: number): string {
   return `${reelIndex}:${rowIndex}`;
@@ -126,14 +134,20 @@ function DetailPanel({ detail, onBack }: DetailPanelProps) {
       {/* Reels grid */}
       <div className="hist-section">
         <h3>Reels</h3>
-        <div className="hist-reels">
+        <div className="titan-reel-grid">
           {detail.reels.map((col, ci) => (
-            <div key={`rcol-${ci}`} className="hist-reel-col">
+            <div key={`rcol-${ci}`} className="titan-reel-col">
               {col.map((sym, ri) => {
+                const imgSrc = getSymbolImage(sym);
+                const tierClass = SYMBOL_TIER[sym] ?? "";
                 const hit = highlightKeys.has(winWayHighlightKey(ci, ri));
                 return (
-                  <div key={`rc-${ci}-${ri}`} className={`hist-cell sym-${sym}${hit ? " hist-cell-hit" : ""}`}>
-                    {sym}
+                  <div key={`rc-${ci}-${ri}`} className={`cell titan-symbol-cell ${tierClass}${hit ? " hist-cell-hit" : ""}`}>
+                    {imgSrc ? (
+                      <img src={imgSrc} alt={sym} className="titan-symbol-img" />
+                    ) : (
+                      <span className="titan-symbol-text">{sym || "·"}</span>
+                    )}
                   </div>
                 );
               })}
