@@ -176,9 +176,6 @@ export default function GameScreen({
             <button type="button" className="lobby-btn" onClick={onBackToLobby}>
               ← Lobby
             </button>
-            <button type="button" className="logout-btn" onClick={onLogout}>
-              Log out
-            </button>
           </div>
         </div>
       </div>
@@ -190,9 +187,6 @@ export default function GameScreen({
       <div className="game-screen-toolbar row">
         <button type="button" onClick={onBackToLobby}>
           ← Lobby
-        </button>
-        <button type="button" className="logout-btn" onClick={onLogout}>
-          Log out
         </button>
       </div>
 

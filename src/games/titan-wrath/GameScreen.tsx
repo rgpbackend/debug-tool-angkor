@@ -212,9 +212,6 @@ export default function GameScreen({
             <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
               ← Lobby
             </button>
-            <button type="button" className="titan-logout-btn" onClick={onLogout}>
-              Log out
-            </button>
           </div>
         </div>
       </div>
@@ -262,14 +259,9 @@ export default function GameScreen({
           onOpenHistory={() => setHistoryOpen(true)}
           onOpenJackpotWinners={() => setJackpotHistoryOpen(true)}
           toolbarSlot={
-            <>
-              <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
-                ← Lobby
-              </button>
-              <button type="button" className="titan-logout-btn" onClick={onLogout}>
-                Log out
-              </button>
-            </>
+            <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
+              ← Lobby
+            </button>
           }
         />
       </div>
