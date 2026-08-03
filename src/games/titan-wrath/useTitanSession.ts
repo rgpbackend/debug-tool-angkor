@@ -95,6 +95,9 @@ export function useTitanSession(
   const [lastJackpotWin, setLastJackpotWin] = useState<TitanJackpotTriggered | null>(null);
   const currentRoundIdRef = useRef<string | null>(null);
 
+  // SESSION_TAKEN_OVER popup state
+  const [sessionTakenOver, setSessionTakenOver] = useState(false);
+
 
   const error = gameError || ws.error;
 
@@ -254,10 +257,15 @@ export function useTitanSession(
     const client = ws.clientRef.current;
     if (!client) return;
     const cleanup = client.addPayloadListener(isTitanSessionTakenOver, () => {
-      callbacks.onTokenBan();
+      setSessionTakenOver(true);
     });
     return cleanup;
-  }, [ws.clientRef, callbacks.onTokenBan, ws.phase]);
+  }, [ws.clientRef, ws.phase]);
+
+  const dismissSessionTakenOver = useCallback(() => {
+    setSessionTakenOver(false);
+    callbacks.onConnectionLost("Session taken over");
+  }, [callbacks.onConnectionLost]);
 
   // --- jackpot meter: reset on new round, accumulate tokens ---
   useEffect(() => {
@@ -362,6 +370,9 @@ export function useTitanSession(
     jackpotTierConfig,
     lastJackpotWin,
     dismissJackpotCelebration,
+    // session takeover
+    sessionTakenOver,
+    dismissSessionTakenOver,
     // history
     fetchHistoryList,
     fetchHistoryDetail,

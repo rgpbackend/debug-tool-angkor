@@ -53,6 +53,8 @@ export default function GameScreen({
     jackpotTierConfig,
     lastJackpotWin,
     dismissJackpotCelebration,
+    sessionTakenOver,
+    dismissSessionTakenOver,
     fetchHistoryList,
     fetchHistoryDetail,
     fetchJackpotWinHistory,
@@ -320,6 +322,20 @@ export default function GameScreen({
             <h2>Error</h2>
             <p>{error}</p>
             <button className="titan-insufficient-ok" onClick={() => session.setGameError(null)}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Session Taken Over popup */}
+      {sessionTakenOver && (
+        <div className="titan-insufficient-overlay">
+          <div className="titan-insufficient-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="titan-insufficient-icon">🔌</div>
+            <h2>Session Taken Over</h2>
+            <p>This session was opened on another device. You will be returned to the lobby.</p>
+            <button className="titan-insufficient-ok" onClick={dismissSessionTakenOver}>
               OK
             </button>
           </div>
