@@ -26,7 +26,7 @@ export default function GameScreen({
   const session = useTitanSession(
     defaults.wsUrl,
     wsAccessToken,
-    { onTokenBan: onLogout, onConnectionLost: onLogout },
+    { onTokenBan: onLogout, onConnectionLost: onBackToLobby },
     _parentBalance,
   );
 

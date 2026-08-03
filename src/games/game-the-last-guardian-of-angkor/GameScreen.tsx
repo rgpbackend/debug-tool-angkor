@@ -41,7 +41,7 @@ export default function GameScreen({
     "AGENCY_001",
     ANGKOR_JACKPOT_TIERS,
     wsAccessToken,
-    { onTokenBan: onLogout, onConnectionLost: onLogout },
+    { onTokenBan: onLogout, onConnectionLost: onBackToLobby },
     () => depositFunds?.() ?? Promise.resolve(),
     agencyUserToken,
     parentBalance ?? null,
