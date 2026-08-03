@@ -265,6 +265,11 @@ export function readWireDecimalString(value: unknown): string | undefined {
   return undefined;
 }
 
+/** Round a float balance to 4 decimal places to kill IEEE 754 noise (e.g. 0.6040000000000016 → 0.604). */
+export function sanitizeBalance(raw: number): number {
+  return Number(raw.toFixed(4));
+}
+
 /** Top-level `balance` on join (1005) or spin (1500) payloads. */
 export function readTopLevelBalance(
   payload: Record<string, unknown>,

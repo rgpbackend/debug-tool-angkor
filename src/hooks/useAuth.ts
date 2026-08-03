@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { fetchProfile, login as loginAgency, register, deposit, playGame } from "../api/agency";
 import { refreshSessionToken } from "../api/auth";
+import { sanitizeBalance } from "../ws/protocol";
 import {
   clearGameSession,
   loadAgencyUserToken,
@@ -94,7 +95,7 @@ export function useAuth() {
     setBalanceLoading(true);
     try {
       const profile = await fetchProfile(token);
-      setBalance(profile.balance);
+      setBalance(sanitizeBalance(profile.balance));
     } catch {
       // silent — balance stays null
     } finally {

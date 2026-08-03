@@ -44,8 +44,8 @@ export default function LobbyScreen({
   };
 
   const formatBalance = (n: number | null) => {
-    if (n == null) return "$0.00";
-    return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (n == null) return "$0.0000";
+    return `$${n.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`;
   };
 
   return (
