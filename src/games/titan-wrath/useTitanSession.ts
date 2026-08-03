@@ -8,6 +8,7 @@ import {
   formatTitanError,
   isTitanRespinPending,
   isTitanRoundEnded,
+  isTitanSessionTakenOver,
   isTitanBalanceUpdate,
   isTitanJackpotTriggered,
   isTitanHistoryListPayload,
@@ -189,13 +190,12 @@ export function useTitanSession(
     } catch (e) {
       setIsSpinning(false);
       spinBusyRef.current = false;
-      flushQueuedBalance(); // apply queued balance even on error
+      flushQueuedBalance();
       const msg = e instanceof Error ? e.message : String(e);
       if (!client.isConnected() || isWsConnectionLost(msg)) {
         callbacks.onConnectionLost(msg);
-      } else {
-        setGameError(msg);
       }
+      // Server errors handled by push error listener (formatTitanError).
       return null;
     }
   }, [selectBetValue, superBetActive, ws, callbacks]);
@@ -241,7 +241,7 @@ export function useTitanSession(
         }
     });
     return cleanup;
-  }, [ws.clientRef, ws.joinGame]);
+  }, [ws.clientRef, ws.joinGame, ws.phase]);
 
   // --- jackpot listener (1502) ---
   useEffect(() => {
@@ -270,6 +270,16 @@ export function useTitanSession(
     });
     return cleanup;
   }, [ws.clientRef, ws.sessionReady]);
+
+  // --- SESSION_TAKEN_OVER (1006) push listener ---
+  useEffect(() => {
+    const client = ws.clientRef.current;
+    if (!client) return;
+    const cleanup = client.addPayloadListener(isTitanSessionTakenOver, () => {
+      callbacks.onTokenBan();
+    });
+    return cleanup;
+  }, [ws.clientRef, callbacks.onTokenBan, ws.phase]);
 
   // --- jackpot meter: reset on new round, accumulate tokens ---
   useEffect(() => {

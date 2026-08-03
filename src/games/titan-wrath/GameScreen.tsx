@@ -314,6 +314,20 @@ export default function GameScreen({
         onClose={() => setJackpotHistoryOpen(false)}
         onFetch={fetchJackpotWinHistory}
       />
+
+      {/* Error popup */}
+      {error && (
+        <div className="titan-insufficient-overlay" onClick={() => session.setGameError(null)}>
+          <div className="titan-insufficient-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="titan-insufficient-icon">⚠️</div>
+            <h2>Error</h2>
+            <p>{error}</p>
+            <button className="titan-insufficient-ok" onClick={() => session.setGameError(null)}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2297,3 +2297,52 @@
 
 .muted { color: var(--titan-ash); }
 .error { color: #e74c3c; }
+
+/* -- Insufficient balance popup -- */
+
+.titan-insufficient-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.titan-insufficient-popup {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid #c8943e;
+  border-radius: 12px;
+  padding: 32px 40px;
+  text-align: center;
+  max-width: 360px;
+}
+
+.titan-insufficient-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.titan-insufficient-popup h2 {
+  color: #f5d78c;
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+
+.titan-insufficient-popup p {
+  color: #aaa;
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.titan-insufficient-ok {
+  margin-top: 16px;
+  padding: 8px 32px;
+  background: linear-gradient(180deg, #f5d78c 0%, #c8943e 100%);
+  color: #1a0e04;
+  border: none;
+  border-radius: 4px;
+  font-weight: 700;
+  cursor: pointer;
+}

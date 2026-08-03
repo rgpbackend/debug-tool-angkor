@@ -205,7 +205,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         </button>
       </header>
 
-      {props.error && <div className="titan-error-banner">{props.error}</div>}
 
       <div className="titan-cabinet-status">
         {formattedBalance && (

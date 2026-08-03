@@ -275,6 +275,16 @@ export function isTitanJackpotTriggered(
 }
 
 // ---------------------------------------------------------------------------
+// SESSION_TAKEN_OVER (1006) — server → client push on session eviction
+// ---------------------------------------------------------------------------
+
+export function isTitanSessionTakenOver(
+  payload: Record<string, unknown>,
+): boolean {
+  return hasCmd(payload, "1006") && payload.c === 1318;
+}
+
+// ---------------------------------------------------------------------------
 // GAME_HISTORY_LIST (1503) — client → server, returns all finished spins
 // ---------------------------------------------------------------------------
 
