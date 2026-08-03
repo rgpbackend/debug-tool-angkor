@@ -49,7 +49,6 @@ export default function GameScreen({
     paylineWins,
     symbolCatalog,
     serverPaylines,
-    endSpinCycle,
     jackpotMeterTokens,
     jackpotTierConfig,
     lastJackpotWin,
@@ -108,13 +107,11 @@ export default function GameScreen({
   });
 
   // Reset spinResponseReady when phase goes idle (sequence complete)
-  // Also flush any queued WIN balance update now that effects are done
   useEffect(() => {
     if (spinPhase === "idle") {
       setSpinResponseReady(false);
-      endSpinCycle();
     }
-  }, [spinPhase, endSpinCycle]);
+  }, [spinPhase]);
 
   const spinBusy = spinPhase !== "idle";
 

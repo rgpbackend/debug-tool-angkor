@@ -95,19 +95,6 @@ export function useTitanSession(
   const [lastJackpotWin, setLastJackpotWin] = useState<TitanJackpotTriggered | null>(null);
   const currentRoundIdRef = useRef<string | null>(null);
 
-  // Queue ALL balance updates while spin animation is in flight.
-  // On idle, flush the last server balance as source of truth.
-  const spinAnimatingRef = useRef(false);
-  const queuedBalanceRef = useRef<string | null>(null);
-
-  const flushQueuedBalance = useCallback(() => {
-    spinAnimatingRef.current = false;
-    const queued = queuedBalanceRef.current;
-    if (queued) {
-      queuedBalanceRef.current = null;
-      ws.setBalance(queued);
-    }
-  }, [ws.setBalance]);
 
   const error = gameError || ws.error;
 
@@ -157,7 +144,6 @@ export function useTitanSession(
     setGameError(null);
     setLastJackpotWin(null); // dismiss any stale celebration before new spin
     spinBusyRef.current = true;
-    spinAnimatingRef.current = true;
 
     // Optimistic: deduct bet only for BASE spins (new round). RESPINs cost 0.
     const isBaseSpin = !lastSpin || isTitanRoundEnded(lastSpin);
@@ -190,7 +176,6 @@ export function useTitanSession(
     } catch (e) {
       setIsSpinning(false);
       spinBusyRef.current = false;
-      flushQueuedBalance();
       const msg = e instanceof Error ? e.message : String(e);
       if (!client.isConnected() || isWsConnectionLost(msg)) {
         callbacks.onConnectionLost(msg);
@@ -201,20 +186,14 @@ export function useTitanSession(
   }, [selectBetValue, superBetActive, ws, callbacks]);
 
   // --- balance push listener (1501) ---
-  // During spin animation ALL balance updates are queued.
-  // The server balance is the source of truth — flushed when effects complete.
+  // All server balance updates are applied immediately to the UI.
   useEffect(() => {
     const client = ws.clientRef.current;
     if (!client || !ws.sessionReady) return;
     const cleanup = client.addPayloadListener(isTitanBalanceUpdate, (payload) => {
       const bal = payload.balance;
       if (typeof bal !== "number" || !Number.isFinite(bal)) return;
-      const balStr = String(bal);
-      if (spinAnimatingRef.current) {
-        queuedBalanceRef.current = balStr;
-        return;
-      }
-      ws.setBalance(balStr);
+      ws.setBalance(String(bal));
     });
     return cleanup;
   }, [ws.clientRef, ws.sessionReady, ws.setBalance]);
@@ -230,7 +209,6 @@ export function useTitanSession(
         setGameError(msg);
         setIsSpinning(false);
         spinBusyRef.current = false;
-        flushQueuedBalance();
         // Auto-retry hint for lock errors
         if (c === 1310) {
           window.setTimeout(() => { /* UI can prompt retry */ }, 500);
@@ -379,7 +357,6 @@ export function useTitanSession(
     totalWin,
     gameError,
     setGameError,
-    endSpinCycle: flushQueuedBalance,
     // Olympus Jackpot
     jackpotMeterTokens,
     jackpotTierConfig,
