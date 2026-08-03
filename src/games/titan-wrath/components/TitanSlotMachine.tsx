@@ -175,7 +175,7 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   }, [props.wildAnimDone]);
 
   const formattedBalance = props.balance !== null
-    ? `$${Number(props.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ? `$${Number(props.balance).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`
     : null;
 
   // What to show in the display box
