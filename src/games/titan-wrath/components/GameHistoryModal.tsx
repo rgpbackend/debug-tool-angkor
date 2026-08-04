@@ -48,13 +48,6 @@ function spinTypeLabel(t: TitanHistorySpinType): string {
 // Sub-component: Level 2 — Spin Detail
 // ---------------------------------------------------------------------------
 
-const SYMBOL_TIER: Record<string, string> = {
-  A: "symbol-high", B: "symbol-high",
-  C: "symbol-mid", D: "symbol-mid", E: "symbol-mid",
-  F: "symbol-low", G: "symbol-low",
-  W: "symbol-wild",
-};
-
 function winWayHighlightKey(reelIndex: number, rowIndex: number): string {
   return `${reelIndex}:${rowIndex}`;
 }
@@ -87,10 +80,9 @@ function buildHighlightSet(
 
 interface DetailPanelProps {
   detail: TitanHistoryDetailPayload;
-  onBack: () => void;
 }
 
-function DetailPanel({ detail, onBack }: DetailPanelProps) {
+function DetailPanel({ detail }: DetailPanelProps) {
   const [highlightIdx, setHighlightIdx] = useState(0);
   const winWays = detail.winWays ?? [];
   const safeIdx = winWays.length === 0 ? 0 : Math.min(Math.max(highlightIdx, 0), winWays.length - 1);
@@ -104,9 +96,6 @@ function DetailPanel({ detail, onBack }: DetailPanelProps) {
   return (
     <div className="hist-detail">
       <div className="hist-detail-header">
-        <button type="button" className="hist-back-btn" onClick={onBack}>
-          ← Back
-        </button>
         <span className="hist-detail-title">
           {spinTypeLabel(detail.spinType)} Spin
         </span>
@@ -134,19 +123,18 @@ function DetailPanel({ detail, onBack }: DetailPanelProps) {
       {/* Reels grid */}
       <div className="hist-section">
         <h3>Reels</h3>
-        <div className="titan-reel-grid">
+        <div className="hist-reels">
           {detail.reels.map((col, ci) => (
-            <div key={`rcol-${ci}`} className="titan-reel-col">
+            <div key={`rcol-${ci}`} className="hist-reel-col">
               {col.map((sym, ri) => {
                 const imgSrc = getSymbolImage(sym);
-                const tierClass = SYMBOL_TIER[sym] ?? "";
                 const hit = highlightKeys.has(winWayHighlightKey(ci, ri));
                 return (
-                  <div key={`rc-${ci}-${ri}`} className={`cell titan-symbol-cell ${tierClass}${hit ? " hist-cell-hit" : ""}`}>
+                  <div key={`rc-${ci}-${ri}`} className={`hist-cell${hit ? " hist-cell-hit" : ""}`}>
                     {imgSrc ? (
                       <img src={imgSrc} alt={sym} className="titan-symbol-img" />
                     ) : (
-                      <span className="titan-symbol-text">{sym || "·"}</span>
+                      <span>{sym || "·"}</span>
                     )}
                   </div>
                 );
@@ -376,7 +364,11 @@ export default function GameHistoryModal({
         <header className="autospin-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>Game History</span>
           <div style={{ display: "flex", gap: 8 }}>
-            {view === "list" && (
+            {view === "detail" ? (
+              <button type="button" className="hist-back-btn" onClick={handleBack}>
+                ← Back
+              </button>
+            ) : (
               <button type="button" className="autospin-option" onClick={fetchList} disabled={!canQuery || loading} style={{ padding: "4px 12px", fontSize: "0.8rem" }}>
                 {loading ? "…" : "Refresh"}
               </button>
@@ -389,7 +381,7 @@ export default function GameHistoryModal({
 
         <div className="hist-body">
           {view === "detail" && detail ? (
-            <DetailPanel detail={detail} onBack={handleBack} />
+            <DetailPanel detail={detail} />
           ) : loading && allItems.length === 0 ? (
             <p className="muted">Loading…</p>
           ) : !canQuery ? (

@@ -2188,13 +2188,18 @@
   color: var(--titan-forge-gold);
 }
 .hist-back-btn {
-  background: none;
+  background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(138, 133, 128, 0.25);
   border-radius: 4px;
   color: var(--titan-smoke);
   padding: 3px 10px;
   cursor: pointer;
   font-size: 0.75rem;
+  font-family: var(--titan-body);
+}
+.hist-back-btn:hover {
+  border-color: var(--titan-forge-gold);
+  color: var(--titan-forge-gold);
 }
 
 .hist-detail-meta {
@@ -2235,17 +2240,23 @@
   gap: 2px;
 }
 .hist-cell {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(138, 133, 128, 0.15);
-  border-radius: 3px;
+  border-radius: 4px;
   font-weight: 700;
   font-size: 0.8rem;
   color: var(--titan-smoke);
+  overflow: hidden;
+}
+.hist-cell img {
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
 }
 .hist-cell-hit {
   border-color: var(--titan-forge-gold);

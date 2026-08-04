@@ -424,14 +424,14 @@ function parseTitanHistoryWinWay(raw: unknown): TitanHistoryWinWay | null {
   if (!isObject(raw)) return null;
   const r = raw as Record<string, unknown>;
   if (typeof r.paylineId !== "string") return null;
-  const dir = r.direction;
-  if (dir !== "LTR" && dir !== "RTL") return null;
+  const rawDir = typeof r.direction === "string" ? r.direction.toUpperCase() : "";
+  const direction: "LTR" | "RTL" = rawDir === "RTL" ? "RTL" : "LTR";
   return {
     paylineId: r.paylineId,
     symbol: typeof r.symbol === "string" ? r.symbol : "",
     count: typeof r.count === "number" ? r.count : 0,
     win: typeof r.win === "string" ? r.win : String(r.win ?? "0"),
-    direction: dir,
+    direction,
   };
 }
 
