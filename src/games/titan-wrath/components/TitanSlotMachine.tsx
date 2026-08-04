@@ -200,48 +200,66 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
           {props.toolbarSlot}
         </div>
         <span className="titan-cabinet-title">⚡ Titan&apos;s Wrath</span>
+        {formattedBalance && (
+          <span className="titan-header-balance">{formattedBalance}</span>
+        )}
         <button type="button" className="titan-menu-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
           ☰
         </button>
       </header>
 
-
-      <div className="titan-cabinet-status">
-        {formattedBalance && (
-          <>
-            <span className="titan-status-label">Balance</span>
-            <span className="titan-status-value">{formattedBalance}</span>
-          </>
-        )}
-      </div>
-
-      <TitanJackpotMeter
-        tokenCount={tokenCountForMeter}
-        impactNew={meterImpact}
-        reachedTier={props.jackpotMeterTier}
-        tierConfig={props.jackpotTierConfig}
-        baseBet={Number(props.selectBetValue) || 0}
-      />
-
-      <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
-        <div className="titan-reel-stage">
-          <TitanReelGrid
-            patternGrid={props.patternGrid}
-            lockedReels={props.lockedReels}
-            spinning={spinning}
-            onPresentationChange={handlePresentationChange}
-            tokenPositions={props.tokenPositions}
-            tokensVisible={tokensVisible}
-            tokensFlying={tokensFlying}
+      <div className="titan-game-body">
+        <div className="titan-sidebar titan-sidebar--left">
+          <TitanJackpotMeter
+            tokenCount={tokenCountForMeter}
+            impactNew={meterImpact}
+            reachedTier={props.jackpotMeterTier}
+            tierConfig={props.jackpotTierConfig}
+            baseBet={Number(props.selectBetValue) || 0}
           />
-          <TitanPaylineOverlay
-            paylines={props.serverPaylines}
-            paylineWins={props.paylineWins}
-            ready={paylinesReady}
-          />
-          <TitanWildExpansion
-            wildInfo={showWild ? props.wildInfo : undefined}
-            onComplete={handleWildDone}
+        </div>
+
+        <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
+          <div className="titan-reel-stage">
+            <div className="titan-reel-container">
+              <TitanReelGrid
+                patternGrid={props.patternGrid}
+                lockedReels={props.lockedReels}
+                spinning={spinning}
+                onPresentationChange={handlePresentationChange}
+                tokenPositions={props.tokenPositions}
+                tokensVisible={tokensVisible}
+                tokensFlying={tokensFlying}
+              />
+              <TitanPaylineOverlay
+                paylines={props.serverPaylines}
+                paylineWins={props.paylineWins}
+                ready={paylinesReady}
+              />
+            </div>
+            <TitanWildExpansion
+              wildInfo={showWild ? props.wildInfo : undefined}
+              onComplete={handleWildDone}
+            />
+          </div>
+        </div>
+
+        <div className="titan-sidebar titan-sidebar--right">
+          <TitanControls
+            betLevels={props.betLevels}
+            selectBetValue={props.selectBetValue}
+            onBetChange={props.onBetChange}
+            betDisabled={props.betDisabled}
+            canSpin={props.canSpin}
+            spinning={isBusy}
+            onSpin={props.onSpin}
+            autoSpinActive={props.autoSpinActive}
+            autoSpinCount={props.autoSpinCount}
+            onAutoSpinStart={props.onAutoSpinStart}
+            onAutoSpinStop={props.onAutoSpinStop}
+            superBetActive={props.superBetActive}
+            superBetToggleable={props.superBetToggleable}
+            onSuperBetToggle={props.onSuperBetToggle}
           />
         </div>
       </div>
@@ -249,23 +267,6 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
       <div className={`titan-cabinet-display${showResult && props.totalWin !== null && props.totalWin > 0 ? " display-win" : ""}`}>
         {renderDisplay()}
       </div>
-
-      <TitanControls
-        betLevels={props.betLevels}
-        selectBetValue={props.selectBetValue}
-        onBetChange={props.onBetChange}
-        betDisabled={props.betDisabled}
-        canSpin={props.canSpin}
-        spinning={isBusy}
-        onSpin={props.onSpin}
-        autoSpinActive={props.autoSpinActive}
-        autoSpinCount={props.autoSpinCount}
-        onAutoSpinStart={props.onAutoSpinStart}
-        onAutoSpinStop={props.onAutoSpinStop}
-        superBetActive={props.superBetActive}
-        superBetToggleable={props.superBetToggleable}
-        onSuperBetToggle={props.onSuperBetToggle}
-      />
 
       <PaytableModal
         open={paytableOpen}

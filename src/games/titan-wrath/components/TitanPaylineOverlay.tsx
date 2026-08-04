@@ -61,7 +61,7 @@ export default function TitanPaylineOverlay({
     <svg
       className="titan-payline-overlay"
       viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMidYMid meet"
     >
       {/* Active payline path */}
       {(() => {

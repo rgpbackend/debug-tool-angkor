@@ -219,53 +219,64 @@ export default function GameScreen({
 
   return (
     <div className="titan-screen">
-      {/* Game panel — left side */}
+      {/* Left side — game (top) + message log (bottom) */}
       <div className="titan-game-panel">
-        <TitanSlotMachine
-          patternGrid={patternGrid}
-          lockedReels={lockedReels}
-          spinPhase={spinPhase}
-          isSpinning={isSpinning}
-          onPresentationChange={setReelsAnimating}
-          serverPaylines={serverPaylines}
-          paylineWins={paylineWins}
-          wildInfo={wildInfo}
-          wildAnimDone={() => {}}
-          totalWin={currentTotalWin}
-          betLevels={betLevels}
-          selectBetValue={selectBetValue}
-          onBetChange={session.setBet}
-          betDisabled={betDisabled}
-          canSpin={canSpin && !autoSpinActive}
-          onSpin={() => void executeSpin()}
-          autoSpinActive={autoSpinActive}
-          autoSpinCount={autoSpinRemaining}
-          onAutoSpinStart={startAutoSpin}
-          onAutoSpinStop={stopAutoSpin}
-          superBetActive={superBetActive}
-          superBetToggleable={superBetToggleable}
-          onSuperBetToggle={setSuperBetActive}
-          error={error}
-          symbols={symbolCatalog}
-          balance={displayBalance}
-          tokenPositions={tokenPositions}
-          roundId={viewSpin?.round?.roundId ?? ""}
-          jackpotMeterTokens={jackpotMeterTokens}
-          jackpotMeterTier={jackpotMeterTier}
-          jackpotTierConfig={jackpotTierConfig}
-          lastJackpotWin={lastJackpotWin}
-          onDismissJackpot={dismissJackpotCelebration}
-          onOpenHistory={() => setHistoryOpen(true)}
-          onOpenJackpotWinners={() => setJackpotHistoryOpen(true)}
-          toolbarSlot={
-            <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
-              ← Lobby
-            </button>
-          }
-        />
+        <div className="titan-game-area">
+          <TitanSlotMachine
+            patternGrid={patternGrid}
+            lockedReels={lockedReels}
+            spinPhase={spinPhase}
+            isSpinning={isSpinning}
+            onPresentationChange={setReelsAnimating}
+            serverPaylines={serverPaylines}
+            paylineWins={paylineWins}
+            wildInfo={wildInfo}
+            wildAnimDone={() => {}}
+            totalWin={currentTotalWin}
+            betLevels={betLevels}
+            selectBetValue={selectBetValue}
+            onBetChange={session.setBet}
+            betDisabled={betDisabled}
+            canSpin={canSpin && !autoSpinActive}
+            onSpin={() => void executeSpin()}
+            autoSpinActive={autoSpinActive}
+            autoSpinCount={autoSpinRemaining}
+            onAutoSpinStart={startAutoSpin}
+            onAutoSpinStop={stopAutoSpin}
+            superBetActive={superBetActive}
+            superBetToggleable={superBetToggleable}
+            onSuperBetToggle={setSuperBetActive}
+            error={error}
+            symbols={symbolCatalog}
+            balance={displayBalance}
+            tokenPositions={tokenPositions}
+            roundId={viewSpin?.round?.roundId ?? ""}
+            jackpotMeterTokens={jackpotMeterTokens}
+            jackpotMeterTier={jackpotMeterTier}
+            jackpotTierConfig={jackpotTierConfig}
+            lastJackpotWin={lastJackpotWin}
+            onDismissJackpot={dismissJackpotCelebration}
+            onOpenHistory={() => setHistoryOpen(true)}
+            onOpenJackpotWinners={() => setJackpotHistoryOpen(true)}
+            toolbarSlot={
+              <button type="button" className="titan-lobby-btn" onClick={onBackToLobby}>
+                ← Lobby
+              </button>
+            }
+          />
+        </div>
+        <div className="titan-game-log">
+          <div className="titan-debug-section-header">
+            <span>Message Log</span>
+          </div>
+          <DebugMessageLog
+            clientRef={clientRef}
+            sessionReady={sessionReady}
+          />
+        </div>
       </div>
 
-      {/* Debug panel — right side */}
+      {/* Right side — debug tools */}
       <div className={`titan-debug-panel${debugOpen ? "" : " collapsed"}`}>
         <button
           className="titan-debug-toggle"
@@ -275,26 +286,14 @@ export default function GameScreen({
           {debugOpen ? "▶" : "◀"}
         </button>
 
-        {/* Cheat section */}
         <div className="titan-debug-section">
           <div className="titan-debug-section-header">
-            <span>Cheat Symbols</span>
+            <span>Cheat Tools</span>
           </div>
           <DebugCheatPanel
             clientRef={clientRef}
             canCheat={canSpin && !isSpinning && sessionReady}
             lastPatternGrid={viewSpin?.spin?.patternGrid ?? ""}
-          />
-        </div>
-
-        {/* Message log section */}
-        <div className="titan-debug-section">
-          <div className="titan-debug-section-header">
-            <span>Message Log</span>
-          </div>
-          <DebugMessageLog
-            clientRef={clientRef}
-            sessionReady={sessionReady}
           />
         </div>
       </div>

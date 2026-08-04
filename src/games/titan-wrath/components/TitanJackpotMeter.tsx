@@ -74,64 +74,61 @@ export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTi
         <span className="jackpot-meter-label-rule" />
       </div>
 
-      {/* Track with fill + tier markers */}
-      <div className={`jackpot-meter-track${impact ? " meter-impact" : ""}`}>
-        <div
-          className={`jackpot-meter-fill${flash ? " flash" : ""}`}
-          style={{ transform: `scaleX(${fillPct / 100})` }}
-        />
+      {/* Vertical bar + labels side by side */}
+      <div className="jackpot-meter-body">
+        <div className={`jackpot-meter-track${impact ? " meter-impact" : ""}`}>
+          <div
+            className={`jackpot-meter-fill${flash ? " flash" : ""}`}
+            style={{ height: `${fillPct}%` }}
+          />
 
-        {/* Impact burst particles at the fill edge */}
-        {impact && (
-          <div className="meter-impact-burst" aria-hidden>
-            {Array.from({ length: impactNew }, (_, i) => (
-              <span key={i} className="meter-impact-spark" style={{ animationDelay: `${i * 0.08}s` }} />
-            ))}
-          </div>
-        )}
+          {impact && (
+            <div className="meter-impact-burst" aria-hidden>
+              {Array.from({ length: impactNew }, (_, i) => (
+                <span key={i} className="meter-impact-spark" style={{ animationDelay: `${i * 0.08}s` }} />
+              ))}
+            </div>
+          )}
 
-        <div className="jackpot-meter-tiers">
-          {tierMarkers.map((t) => {
-            const reached = tokenCount >= t.tokens;
-            return (
-              <div
-                key={t.tier}
-                className={`jackpot-meter-tier-marker${reached ? " tier-reached" : ""}`}
-              >
-                <div className="jackpot-meter-tier-dots">
-                  {Array.from({ length: t.tokens }, (_, i) => (
-                    <span
-                      key={i}
-                      className={`jackpot-meter-tier-dot${i < tokenCount ? " dot-filled" : ""}`}
-                    />
-                  ))}
+          <div className="jackpot-meter-tiers">
+            {tierMarkers.map((t) => {
+              const reached = tokenCount >= t.tokens;
+              const pct = maxTokens > 0 ? (t.tokens / maxTokens) * 100 : 0;
+              return (
+                <div
+                  key={t.tier}
+                  className={`jackpot-meter-tier-marker${reached ? " tier-reached" : ""}`}
+                  style={{ top: `${100 - pct}%` }}
+                >
+                  <div className="jackpot-meter-tier-dot" />
                 </div>
-              </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="jackpot-meter-tier-labels">
+          {tierMarkers.map((t) => {
+            const reached = tokenCount >= t.tokens || reachedTier === t.tier;
+            const entry = tierConfig.find((e) => e.tier === t.tier);
+            const prize = entry ? entry.multiplier * baseBet : 0;
+            const labelPct = maxTokens > 0 ? (t.tokens / maxTokens) * 100 : 0;
+            return (
+              <span
+                key={t.tier}
+                className={`jackpot-meter-tier-label ${t.cssClass}${reached ? " tier-reached" : ""}`}
+                style={{ top: `${100 - labelPct}%` }}
+              >
+                <span className="tier-label-name">{t.tier}</span>
+                <span className="tier-label-prize">
+                  {prize < 1_000_000
+                    ? `$${prize.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : `$${(prize / 1_000_000).toFixed(1)}M`}
+                </span>
+              </span>
             );
           })}
         </div>
-      </div>
-
-      {/* Tier labels below — name + prize amount */}
-      <div className="jackpot-meter-tier-labels">
-        {tierMarkers.map((t) => {
-          const reached = tokenCount >= t.tokens || reachedTier === t.tier;
-          const entry = tierConfig.find((e) => e.tier === t.tier);
-          const prize = entry ? entry.multiplier * baseBet : 0;
-          return (
-            <span
-              key={t.tier}
-              className={`jackpot-meter-tier-label ${t.cssClass}${reached ? " tier-reached" : ""}`}
-            >
-              <span className="tier-label-name">{t.tier}</span>
-              <span className="tier-label-prize">
-                {prize < 1_000_000
-                  ? `$${prize.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                  : `$${(prize / 1_000_000).toFixed(1)}M`}
-              </span>
-            </span>
-          );
-        })}
       </div>
     </div>
   );

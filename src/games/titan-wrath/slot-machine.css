@@ -49,11 +49,29 @@
   flex: 1;
   min-width: 420px;
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.titan-game-area {
+  flex: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 8px;
-  overflow-y: auto;
-  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.titan-game-log {
+  flex-shrink: 0;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid rgba(212, 168, 67, 0.08);
+  background: #0F0D13;
 }
 
 /* ============================================================
@@ -120,11 +138,6 @@
   min-height: 0;
 }
 
-.titan-debug-section:first-child {
-  flex: 0 0 auto;
-  max-height: 45%;
-}
-
 .titan-debug-section-header {
   display: flex;
   align-items: center;
@@ -156,9 +169,9 @@
 
 .titan-slot-machine {
   width: 100%;
-  max-width: 520px;
-  display: flex;
-  flex-direction: column;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   background: linear-gradient(180deg, #120F0D 0%, var(--titan-obsidian) 100%);
   border: 1px solid rgba(212, 168, 67, 0.12);
   border-radius: 14px;
@@ -169,23 +182,33 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-/* Scale up on larger screens */
-@media (min-width: 600px) {
-  .titan-slot-machine {
-    max-width: 600px;
-  }
+/* ============================================================
+   Game body — 3-column: jackpot | grid | controls
+   ============================================================ */
+
+.titan-game-body {
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
 }
 
-@media (min-width: 800px) {
-  .titan-slot-machine {
-    max-width: 720px;
-  }
+.titan-sidebar {
+  flex-shrink: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
-
-@media (min-width: 1100px) {
-  .titan-slot-machine {
-    max-width: 800px;
-  }
+.titan-sidebar--left {
+  width: 170px;
+  border-right: 1px solid rgba(212, 168, 67, 0.08);
+  padding: 6px;
+}
+.titan-sidebar--right {
+  width: 150px;
+  border-left: 1px solid rgba(212, 168, 67, 0.08);
+  padding: 10px 8px;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 /* ============================================================
@@ -196,7 +219,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 7px 14px;
   background: rgba(0, 0, 0, 0.3);
   border-bottom: 1px solid rgba(212, 168, 67, 0.08);
   gap: 10px;
@@ -248,34 +271,21 @@
   color: var(--titan-smoke);
 }
 
+.titan-header-balance {
+  font-family: var(--titan-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--titan-smoke);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
 /* ============================================================
-   Status Row (Balance)
+   Status Row (Balance) — hidden, balance in header now
    ============================================================ */
 
 .titan-cabinet-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.titan-status-label {
-  font-family: var(--titan-display);
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--titan-ash);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.titan-status-value {
-  font-family: var(--titan-body);
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--titan-forge-gold);
-  font-variant-numeric: tabular-nums;
+  display: none;
 }
 
 /* ============================================================
@@ -297,16 +307,29 @@
    ============================================================ */
 
 .titan-grid-area {
+  flex: 1;
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   padding: 10px 12px;
+  min-height: 0;
+  overflow: hidden;
   background:
     radial-gradient(ellipse 70% 60% at 50% 50%, rgba(26, 20, 16, 0.6) 0%, var(--titan-obsidian) 100%);
 }
 
 .titan-reel-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.titan-reel-container {
   position: relative;
   display: flex;
   align-items: center;
@@ -330,61 +353,60 @@
    ============================================================ */
 
 .titan-reel-grid {
-  --titan-cell-w: 72px;
-  --titan-cell-gap: 4px;
-  --titan-reel-pad: 4px;
+  --titan-cell-w: 80px;
+  --titan-cell-gap: 5px;
+  --titan-reel-pad: 5px;
   display: flex;
   gap: var(--titan-cell-gap);
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   position: relative;
   z-index: 1;
   padding: 8px 10px;
-}
-
-@media (min-width: 600px) {
-  .titan-reel-grid {
-    --titan-cell-w: 82px;
-    --titan-cell-gap: 5px;
-  }
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 @media (min-width: 800px) {
-  .titan-reel-grid {
-    --titan-cell-w: 92px;
-    --titan-cell-gap: 5px;
-  }
+  .titan-reel-grid { --titan-cell-w: 100px; }
+}
+@media (min-width: 1100px) {
+  .titan-reel-grid { --titan-cell-w: 120px; }
+}
+@media (min-width: 1400px) {
+  .titan-reel-grid { --titan-cell-w: 140px; }
 }
 
 .titan-reel-col {
   --reel-rows: 3;
-  --reel-gap: 4px;
-  --reel-cell: var(--titan-cell-w, 72px);
+  --reel-gap: 3px;
+  --reel-cell: var(--titan-cell-w, 80px);
   --reel-viewport-height: calc(var(--reel-rows) * var(--reel-cell) + (var(--reel-rows) - 1) * var(--reel-gap));
   display: flex;
   flex-direction: column;
   gap: var(--reel-gap);
-  border-radius: 7px;
-  padding: var(--titan-reel-pad, 4px);
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(212, 168, 67, 0.08);
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  padding: 3px;
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
   position: relative;
   overflow: hidden;
   flex: 0 0 auto;
-  min-height: var(--reel-viewport-height);
   justify-content: center;
 }
 
 .titan-reel-col.reel-locked {
-  box-shadow: 0 0 12px var(--titan-divine-amber), inset 0 0 8px rgba(240, 192, 96, 0.2);
+  border-color: rgba(240, 192, 96, 0.3);
+  box-shadow: 0 0 12px var(--titan-divine-amber);
   animation: locked-pulse 2s ease-in-out infinite;
 }
 
 @keyframes locked-pulse {
-  0%, 100% { box-shadow: 0 0 12px var(--titan-divine-amber), inset 0 0 8px rgba(240, 192, 96, 0.2); }
-  50% { box-shadow: 0 0 20px var(--titan-divine-amber), inset 0 0 14px rgba(240, 192, 96, 0.35); }
+  0%, 100% { box-shadow: 0 0 12px var(--titan-divine-amber); }
+  50% { box-shadow: 0 0 24px var(--titan-divine-amber); }
 }
 
 /* Motion reel viewport */
@@ -412,10 +434,8 @@
 
 .titan-symbol-cell,
 .titan-reel-grid .titan-symbol-cell {
-  width: var(--reel-cell, 62px) !important;
-  min-width: var(--reel-cell, 62px) !important;
-  height: var(--reel-cell, 62px) !important;
-  min-height: var(--reel-cell, 62px) !important;
+  width: var(--reel-cell, 80px);
+  height: var(--reel-cell, 80px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -424,6 +444,7 @@
   border: 1px solid rgba(138, 133, 128, 0.15);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   position: relative;
+  flex-shrink: 0;
 }
 
 /* Cells with images — let the PNG art breathe */
@@ -451,7 +472,7 @@
 
 .titan-symbol-text {
   font-family: var(--titan-display);
-  font-size: clamp(0.85rem, calc(var(--reel-cell, 62px) * 0.36), 1.4rem);
+  font-size: clamp(0.85rem, calc(var(--reel-cell, 80px) * 0.35), 2rem);
   font-weight: 700;
   user-select: none;
 }
@@ -583,9 +604,9 @@
    ============================================================ */
 
 .titan-cabinet-display {
-  padding: 8px 16px;
+  padding: 6px 16px;
   text-align: center;
-  min-height: 36px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -622,12 +643,10 @@
 
 .titan-controls {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.25);
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  flex: 1;
 }
 
 /* Super Bet */
@@ -635,7 +654,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 7px 10px;
+  padding: 8px 6px;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(138, 133, 128, 0.25);
   border-radius: 7px;
@@ -667,16 +686,18 @@
   margin-top: 3px;
 }
 
-/* Bet Controls */
+/* Bet Controls — compact row */
 .titan-bet-controls {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: 4px;
 }
 
 .bet-btn {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -684,55 +705,44 @@
   border: 1px solid rgba(138, 133, 128, 0.25);
   border-radius: 50%;
   color: var(--titan-smoke);
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .bet-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .bet-btn:not(:disabled):hover { border-color: var(--titan-forge-gold); color: var(--titan-forge-gold); }
 
 .bet-display {
-  padding: 6px 14px;
+  padding: 4px 8px;
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(138, 133, 128, 0.2);
-  border-radius: 6px;
+  border-radius: 5px;
   color: var(--titan-smoke);
   font-family: var(--titan-body);
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
+  text-align: center;
+  min-width: 52px;
 }
 
 .bet-display:hover { border-color: var(--titan-forge-gold); }
 
 /* Spin Button */
 .titan-spin-btn {
-  width: 60px;
-  height: 60px;
+  width: 100%;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  border: 3px solid var(--titan-forge-gold);
+  border-radius: 10px;
+  border: 2px solid var(--titan-forge-gold);
   background: linear-gradient(135deg, rgba(26, 20, 16, 0.9), rgba(13, 11, 15, 0.9));
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 0 18px rgba(212, 168, 67, 0.25);
-}
-
-@media (min-width: 600px) {
-  .titan-spin-btn {
-    width: 68px;
-    height: 68px;
-  }
-}
-
-@media (min-width: 800px) {
-  .titan-spin-btn {
-    width: 76px;
-    height: 76px;
-  }
 }
 
 .titan-spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -770,7 +780,8 @@
 
 /* Auto Spin Button */
 .titan-auto-btn {
-  padding: 7px 14px;
+  width: 100%;
+  padding: 8px;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(138, 133, 128, 0.25);
   border-radius: 7px;
@@ -1221,175 +1232,168 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 0 12px 8px;
-  background: linear-gradient(180deg,
-    rgba(0, 0, 0, 0.35) 0%,
-    rgba(0, 0, 0, 0.2) 100%
-  );
-  border-bottom: 1px solid rgba(212, 168, 67, 0.06);
+  padding: 8px 4px;
+  height: 100%;
 }
 
 .jackpot-meter-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 4px 0 2px;
+  gap: 8px;
+  padding: 8px 4px 10px;
 }
 
 .jackpot-meter-label-text {
   font-family: var(--titan-display);
-  font-size: 0.55rem;
-  font-weight: 600;
-  color: var(--titan-ash);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.15em;
 }
 
 .jackpot-meter-label-rule {
   flex: 1;
   height: 1px;
-  background: rgba(212, 168, 67, 0.15);
-  max-width: 40px;
+  max-width: 28px;
+}
+.jackpot-meter-label-rule:first-child {
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 67, 0.2));
+}
+.jackpot-meter-label-rule:last-child {
+  background: linear-gradient(90deg, rgba(212, 168, 67, 0.2), transparent);
+}
+
+.jackpot-meter-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  padding: 8px 0;
 }
 
 .jackpot-meter-track {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  height: 32px;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 1px,
-      rgba(255, 255, 255, 0.015) 1px,
-      rgba(255, 255, 255, 0.015) 2px
-    ),
-    var(--titan-stone, #1E1B18);
-  border: 1px solid rgba(138, 133, 128, 0.2);
-  border-radius: 4px;
-  overflow: hidden;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(138, 133, 128, 0.12);
+  border-radius: 7px;
+  overflow: visible;
 }
 
-/* Fill bar — golden divine light creeping across the stone */
 .jackpot-meter-fill {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(212, 168, 67, 0.25) 0%,
-    rgba(240, 192, 96, 0.45) 60%,
-    rgba(255, 245, 224, 0.55) 100%
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top,
+    rgba(212, 168, 67, 0.5) 0%,
+    rgba(240, 192, 96, 0.7) 50%,
+    rgba(255, 245, 224, 0.8) 100%
   );
-  transform-origin: left center;
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 1;
-  box-shadow: inset 0 0 12px rgba(240, 192, 96, 0.3);
 }
 
-/* Glowing edge at the fill front — like light leaking from a crack */
 .jackpot-meter-fill::after {
   content: "";
   position: absolute;
+  top: 0;
+  left: 0;
   right: 0;
-  inset: 0 auto 0 0;
-  width: 3px;
+  height: 3px;
   background: var(--titan-divine-amber);
-  box-shadow: 0 0 10px var(--titan-divine-amber), 0 0 20px rgba(240, 192, 96, 0.6);
-  border-radius: 2px;
-  margin-left: -1px;
+  box-shadow: 0 0 8px var(--titan-divine-amber);
+  border-radius: 1px;
 }
 
-/* Tier markers — carved column dividers */
+/* Tier markers — anchored along the vertical bar */
 .jackpot-meter-tiers {
   position: absolute;
   inset: 0;
-  display: flex;
   z-index: 2;
   pointer-events: none;
 }
-
 .jackpot-meter-tier-marker {
-  flex: 1;
-  position: relative;
+  position: absolute;
+  left: -9px;
+  right: -9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid rgba(138, 133, 128, 0.15);
+  transform: translateY(-50%);
 }
-
-.jackpot-meter-tier-marker:last-child {
-  border-right: none;
-}
-
-/* Tier reached — column section ignites */
-.jackpot-meter-tier-marker.tier-reached {
-  background: rgba(212, 168, 67, 0.08);
-}
-
-.jackpot-meter-tier-dots {
-  display: flex;
-  gap: 2px;
-}
-
 .jackpot-meter-tier-dot {
-  width: 5px;
-  height: 5px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: rgba(138, 133, 128, 0.3);
-  transition: background 0.3s, box-shadow 0.3s;
+  border: 2px solid rgba(138, 133, 128, 0.35);
+  background: var(--titan-obsidian);
+  flex-shrink: 0;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
-
-.jackpot-meter-tier-dot.dot-filled {
-  background: var(--titan-divine-amber);
-  box-shadow: 0 0 4px var(--titan-divine-amber);
+.jackpot-meter-tier-marker.tier-reached .jackpot-meter-tier-dot {
+  border-color: var(--titan-divine-amber);
+  box-shadow: 0 0 8px var(--titan-divine-amber);
+  background: rgba(240, 192, 96, 0.25);
 }
+.jackpot-meter-tier-dots { display: none; }
 
-/* Tier labels below track */
+/* Tier labels — right of centered bar */
 .jackpot-meter-tier-labels {
-  display: flex;
-  padding-top: 4px;
+  position: absolute;
+  left: calc(50% + 12px);
+  right: 0;
+  top: 0;
+  bottom: 0;
 }
 
 .jackpot-meter-tier-label {
-  flex: 1;
-  text-align: center;
-  font-family: var(--titan-display);
-  font-weight: 600;
-  color: var(--titan-ash);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  transition: color 0.3s, text-shadow 0.3s;
+  position: absolute;
+  left: 6px;
+  right: 4px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1px;
+  align-items: flex-start;
+  transform: translateY(-50%);
 }
 
 .tier-label-name {
-  font-size: 0.55rem;
+  font-family: var(--titan-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
 }
 
 .tier-label-prize {
-  font-size: 0.5rem;
   font-family: var(--titan-body);
+  font-size: 0.55rem;
   font-weight: 500;
-  color: var(--titan-ash);
-  opacity: 0.7;
-  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 
-.jackpot-meter-tier-label.tier-reached .tier-label-prize {
-  color: var(--titan-forge-gold);
-  opacity: 1;
-}
+/* Default: dimmed */
+.jackpot-meter-tier-label .tier-label-name { color: rgba(138, 133, 128, 0.4); }
+.jackpot-meter-tier-label .tier-label-prize { color: rgba(138, 133, 128, 0.3); }
 
-.jackpot-meter-tier-label.tier-reached .tier-label-name {
-  color: var(--titan-smoke);
-}
+/* Per-tier name colors */
+.jackpot-meter-tier-label.tier-label-mini  .tier-label-name { color: rgba(184, 138, 90, 0.5); }
+.jackpot-meter-tier-label.tier-label-minor .tier-label-name { color: rgba(176, 176, 184, 0.5); }
+.jackpot-meter-tier-label.tier-label-major .tier-label-name { color: rgba(212, 168, 67, 0.5); }
+.jackpot-meter-tier-label.tier-label-grand .tier-label-name { color: rgba(232, 69, 45, 0.5); }
 
-.jackpot-meter-tier-label.tier-label-mini.tier-reached .tier-label-name  { color: var(--meter-tier-mini); }
+/* Reached: lit */
+.jackpot-meter-tier-label.tier-reached .tier-label-prize { color: var(--titan-forge-gold); }
+.jackpot-meter-tier-label.tier-label-mini.tier-reached  .tier-label-name { color: var(--meter-tier-mini); }
 .jackpot-meter-tier-label.tier-label-minor.tier-reached .tier-label-name { color: var(--meter-tier-minor); }
 .jackpot-meter-tier-label.tier-label-major.tier-reached .tier-label-name { color: var(--meter-tier-major); }
 .jackpot-meter-tier-label.tier-label-grand.tier-reached .tier-label-name {
