@@ -480,11 +480,10 @@ export function parseTitanHistoryDetailPayload(
 // ---------------------------------------------------------------------------
 
 export interface TitanJackpotWinRecord {
-  roundId: string;
-  tier: string;
-  prize: string;
-  tokenCount: number;
-  resolvedAt: number;
+  date: string;           // "YYYY-MM-DD" in UTC
+  amount: number;          // prize amount (double)
+  jackpotType: string;     // "GRAND" or "MAJOR"
+  userName?: string;       // winner display name (GDD §10.3)
 }
 
 export interface TitanJackpotWinHistoryPayload {
@@ -505,13 +504,12 @@ function parseTitanJackpotWinRecord(
 ): TitanJackpotWinRecord | null {
   if (!isObject(row)) return null;
   const r = row as Record<string, unknown>;
-  if (typeof r.roundId !== "string") return null;
+  if (typeof r.date !== "string" || typeof r.jackpotType !== "string") return null;
   return {
-    roundId: r.roundId,
-    tier: typeof r.tier === "string" ? r.tier : "",
-    prize: typeof r.prize === "string" ? r.prize : String(r.prize ?? "0"),
-    tokenCount: typeof r.tokenCount === "number" ? r.tokenCount : 0,
-    resolvedAt: typeof r.resolvedAt === "number" ? r.resolvedAt : 0,
+    date: r.date,
+    amount: typeof r.amount === "number" ? r.amount : Number(r.amount ?? 0),
+    jackpotType: r.jackpotType,
+    userName: typeof r.userName === "string" ? r.userName : undefined,
   };
 }
 

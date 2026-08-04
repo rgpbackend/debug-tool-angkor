@@ -2102,6 +2102,25 @@
   color: var(--titan-ash);
 }
 
+/* -- Page dots (GDD §10.4) -- */
+
+.hist-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hist-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(138, 133, 128, 0.3);
+  transition: background 0.2s;
+}
+.hist-dot.active {
+  background: var(--titan-forge-gold);
+  box-shadow: 0 0 6px rgba(212, 168, 67, 0.5);
+}
+
 /* -- Table -- */
 
 .hist-table-wrap {
@@ -2163,7 +2182,7 @@
 /* -- Amounts -- */
 
 .hist-amount {
-  text-align: right;
+  text-align: left;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }

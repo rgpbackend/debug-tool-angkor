@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { TitanJackpotWinRecord, TitanJackpotWinHistoryPayload } from "../titan-protocol";
 
 // ---------------------------------------------------------------------------
@@ -11,21 +11,30 @@ const PAGE_SIZE = 10;
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatTs(ms: number): string {
-  if (!ms) return "—";
-  return new Date(ms).toLocaleDateString();
-}
-
-function formatPrize(prize: string): string {
-  const n = Number(prize);
-  if (!Number.isFinite(n)) return prize;
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function formatAmount(amount: number): string {
+  if (!Number.isFinite(amount)) return "—";
+  return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 const TIER_BADGE_CLASS: Record<string, string> = {
   GRAND: "tier-badge-grand",
   MAJOR: "tier-badge-major",
 };
+
+// ---------------------------------------------------------------------------
+// Page dots
+// ---------------------------------------------------------------------------
+
+function PageDots({ page, total }: { page: number; total: number }) {
+  if (total <= 1) return null;
+  return (
+    <span className="hist-dots">
+      {Array.from({ length: total }, (_, i) => (
+        <span key={i} className={i === page - 1 ? "hist-dot active" : "hist-dot"} />
+      ))}
+    </span>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Main
@@ -49,14 +58,8 @@ export default function JackpotHistoryModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter: GRAND + MAJOR only per GDD
-  const filtered = useMemo(
-    () => allItems.filter((r) => r.tier === "GRAND" || r.tier === "MAJOR"),
-    [allItems],
-  );
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const visibleItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(allItems.length / PAGE_SIZE));
+  const visibleItems = allItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const safePage = Math.min(page, totalPages);
 
   const fetchData = useCallback(async () => {
@@ -110,25 +113,16 @@ export default function JackpotHistoryModal({
         {error && <p className="error" style={{ color: "#e74c3c", margin: "0 0 8px" }}>{error}</p>}
 
         <div className="hist-body">
-          {loading && filtered.length === 0 ? (
+          {loading && allItems.length === 0 ? (
             <p className="muted">Loading…</p>
           ) : !canQuery ? (
             <p className="muted">Connect and join a game to view jackpot winners.</p>
-          ) : filtered.length === 0 ? (
+          ) : allItems.length === 0 ? (
             <p className="muted">No jackpot winners yet.</p>
           ) : (
             <>
               <div className="hist-list-toolbar">
-                <span className="muted">{filtered.length} winner{filtered.length !== 1 ? "s" : ""}</span>
-                <div className="hist-pagination">
-                  <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={!hasPrev || loading}>
-                    ← Prev
-                  </button>
-                  <span className="hist-page-info">{safePage} / {totalPages}</span>
-                  <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={!hasNext || loading}>
-                    Next →
-                  </button>
-                </div>
+                <span className="muted">{allItems.length} winner{allItems.length !== 1 ? "s" : ""}</span>
               </div>
 
               <div className="hist-table-wrap">
@@ -136,28 +130,38 @@ export default function JackpotHistoryModal({
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Tier</th>
-                      <th>Prize</th>
-                      <th>Tokens</th>
+                      <th>User Name</th>
+                      <th>Amount</th>
+                      <th>Jackpot Type</th>
                       <th>Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {visibleItems.map((r, idx) => (
-                      <tr key={`${r.roundId}-${idx}`}>
+                      <tr key={`${r.jackpotType}-${r.date}-${idx}`}>
                         <td className="muted">{(safePage - 1) * PAGE_SIZE + idx + 1}</td>
+                        <td>{r.userName ?? "—"}</td>
+                        <td className="hist-amount">${formatAmount(r.amount)}</td>
                         <td>
-                          <span className={`hist-type-badge ${TIER_BADGE_CLASS[r.tier] ?? ""}`}>
-                            {r.tier}
+                          <span className={`hist-type-badge ${TIER_BADGE_CLASS[r.jackpotType] ?? ""}`}>
+                            {r.jackpotType}
                           </span>
                         </td>
-                        <td className="hist-amount">${formatPrize(r.prize)}</td>
-                        <td>{r.tokenCount}</td>
-                        <td className="muted">{formatTs(r.resolvedAt)}</td>
+                        <td className="muted">{r.date}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="hist-pagination">
+                <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={!hasPrev || loading}>
+                  ← Prev
+                </button>
+                <PageDots page={safePage} total={totalPages} />
+                <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={!hasNext || loading}>
+                  Next →
+                </button>
               </div>
 
               <p className="muted" style={{ textAlign: "center", marginTop: 12, fontSize: "0.75rem" }}>
