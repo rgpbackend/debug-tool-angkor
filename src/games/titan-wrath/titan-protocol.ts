@@ -480,10 +480,10 @@ export function parseTitanHistoryDetailPayload(
 // ---------------------------------------------------------------------------
 
 export interface TitanJackpotWinRecord {
-  date: string;           // "YYYY-MM-DD" in UTC
-  amount: number;          // prize amount (double)
-  jackpotType: string;     // "GRAND" or "MAJOR"
-  userName?: string;       // winner display name (GDD §10.3)
+  date: string;              // "YYYY-MM-DD" in UTC
+  amount: number;             // prize amount (double)
+  jackpotType: string;        // "GRAND" or "MAJOR"
+  playerDisplayName?: string; // winner display name (GDD §10.3)
 }
 
 export interface TitanJackpotWinHistoryPayload {
@@ -509,7 +509,7 @@ function parseTitanJackpotWinRecord(
     date: r.date,
     amount: typeof r.amount === "number" ? r.amount : Number(r.amount ?? 0),
     jackpotType: r.jackpotType,
-    userName: typeof r.userName === "string" ? r.userName : undefined,
+    playerDisplayName: typeof r.playerDisplayName === "string" ? r.playerDisplayName : undefined,
   };
 }
 

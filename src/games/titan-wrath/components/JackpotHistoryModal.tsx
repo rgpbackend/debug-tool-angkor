@@ -22,21 +22,6 @@ const TIER_BADGE_CLASS: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Page dots
-// ---------------------------------------------------------------------------
-
-function PageDots({ page, total }: { page: number; total: number }) {
-  if (total <= 1) return null;
-  return (
-    <span className="hist-dots">
-      {Array.from({ length: total }, (_, i) => (
-        <span key={i} className={i === page - 1 ? "hist-dot active" : "hist-dot"} />
-      ))}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -123,6 +108,15 @@ export default function JackpotHistoryModal({
             <>
               <div className="hist-list-toolbar">
                 <span className="muted">{allItems.length} winner{allItems.length !== 1 ? "s" : ""}</span>
+                <div className="hist-pagination">
+                  <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={!hasPrev || loading}>
+                    ← Prev
+                  </button>
+                  <span className="hist-page-info">{safePage} / {totalPages}</span>
+                  <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={!hasNext || loading}>
+                    Next →
+                  </button>
+                </div>
               </div>
 
               <div className="hist-table-wrap">
@@ -140,7 +134,7 @@ export default function JackpotHistoryModal({
                     {visibleItems.map((r, idx) => (
                       <tr key={`${r.jackpotType}-${r.date}-${idx}`}>
                         <td className="muted">{(safePage - 1) * PAGE_SIZE + idx + 1}</td>
-                        <td>{r.userName ?? "—"}</td>
+                        <td>{r.playerDisplayName ?? "—"}</td>
                         <td className="hist-amount">${formatAmount(r.amount)}</td>
                         <td>
                           <span className={`hist-type-badge ${TIER_BADGE_CLASS[r.jackpotType] ?? ""}`}>
@@ -152,16 +146,6 @@ export default function JackpotHistoryModal({
                     ))}
                   </tbody>
                 </table>
-              </div>
-
-              <div className="hist-pagination">
-                <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={!hasPrev || loading}>
-                  ← Prev
-                </button>
-                <PageDots page={safePage} total={totalPages} />
-                <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={!hasNext || loading}>
-                  Next →
-                </button>
               </div>
 
               <p className="muted" style={{ textAlign: "center", marginTop: 12, fontSize: "0.75rem" }}>
