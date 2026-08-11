@@ -1,14 +1,16 @@
-import { useCallback, useState, type RefObject } from "react";
+import { useCallback, useMemo, useState, type RefObject } from "react";
 import type { BrowserWsClient } from "../../../ws/browser-ws-client";
+import type { GameSymbol } from "../../../ws/protocol";
 
 const COLS = 5;
 const ROWS = 3;
-const VALID_SYMBOLS = new Set(["A", "B", "C", "D", "E", "F", "G", "W"]);
 
 interface DebugCheatPanelProps {
   clientRef: RefObject<BrowserWsClient | null>;
   canCheat: boolean;
   lastPatternGrid: string;
+  /** Server symbols for cheat validation. Falls back to A-G,W if empty. */
+  symbols?: GameSymbol[];
 }
 
 function emptyGrid(): string[][] {
@@ -39,9 +41,15 @@ function toRowMajorFlat(grid: string[][]): string {
   return flat;
 }
 
-export default function DebugCheatPanel({ clientRef, canCheat, lastPatternGrid }: DebugCheatPanelProps) {
+export default function DebugCheatPanel({ clientRef, canCheat, lastPatternGrid, symbols = [] }: DebugCheatPanelProps) {
   const [cheatGrid, setCheatGrid] = useState<string[][]>(emptyGrid);
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(null);
+
+  const validSymbols = useMemo(() => {
+    if (symbols.length > 0) return new Set(symbols.map((s) => s.id));
+    // Fallback: keep old hardcoded set so debug panel works without server data
+    return new Set(["A", "B", "C", "D", "E", "F", "G", "W"]);
+  }, [symbols]);
 
   // Token cheat state
   const [tokenCount, setTokenCount] = useState<string>("6");
@@ -76,7 +84,7 @@ export default function DebugCheatPanel({ clientRef, canCheat, lastPatternGrid }
     for (let c = 0; c < COLS; c++) {
       for (let r = 0; r < ROWS; r++) {
         const sym = cheatGrid[c]?.[r] ?? "";
-        if (!sym || !VALID_SYMBOLS.has(sym)) {
+        if (!sym || !validSymbols.has(sym)) {
           setStatus({ text: `Invalid symbol at reel ${c + 1}, row ${r + 1}`, ok: false });
           return;
         }

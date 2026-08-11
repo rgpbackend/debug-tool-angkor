@@ -294,6 +294,7 @@ export default function GameScreen({
             clientRef={clientRef}
             canCheat={canSpin && !isSpinning && sessionReady}
             lastPatternGrid={viewSpin?.spin?.patternGrid ?? ""}
+            symbols={symbolCatalog}
           />
         </div>
       </div>

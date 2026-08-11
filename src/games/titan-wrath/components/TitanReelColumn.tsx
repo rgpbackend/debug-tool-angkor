@@ -6,17 +6,6 @@ import {
 } from "../lib/reel-spin";
 import { getSymbolImage } from "../assets/symbols";
 
-const SYMBOL_CLASS: Record<string, string> = {
-  A: "symbol-high",
-  B: "symbol-high",
-  C: "symbol-mid",
-  D: "symbol-mid",
-  E: "symbol-mid",
-  F: "symbol-low",
-  G: "symbol-low",
-  W: "symbol-wild",
-};
-
 type TitanReelColumnProps = {
   reelIndex: number;
   colLen: number;
@@ -34,6 +23,8 @@ type TitanReelColumnProps = {
   tokensVisible?: boolean;
   /** Whether tokens are in fly-to-meter animation. */
   tokensFlying?: boolean;
+  /** symbolId → CSS class, derived from server GameSymbol.kind */
+  symbolTierClass?: Record<string, string>;
 };
 
 function renderCell(
@@ -42,13 +33,14 @@ function renderCell(
   rowIndex: number,
   hasToken: boolean,
   isFlying: boolean,
+  tierClass: string,
 ) {
   const displaySym = sym || "·";
   const imgSrc = sym ? getSymbolImage(sym) : undefined;
   const cellClass = [
     "cell",
     "titan-symbol-cell",
-    sym ? (SYMBOL_CLASS[sym] ?? "") : "cell--empty",
+    sym ? tierClass : "cell--empty",
     hasToken ? "cell-has-token" : "",
   ].filter(Boolean).join(" ");
 
@@ -73,11 +65,11 @@ function renderCell(
   );
 }
 
-function renderMotionCell(sym: string, reelIndex: number, stripIndex: number) {
+function renderMotionCell(sym: string, reelIndex: number, stripIndex: number, tierClass: string) {
   const displaySym = sym || "·";
   const imgSrc = sym ? getSymbolImage(sym) : undefined;
   return (
-    <div key={`r${reelIndex}-m${stripIndex}`} className={`cell titan-symbol-cell cell--motion ${sym ? (SYMBOL_CLASS[sym] ?? "") : "cell--empty"}`}>
+    <div key={`r${reelIndex}-m${stripIndex}`} className={`cell titan-symbol-cell cell--motion ${sym ? tierClass : "cell--empty"}`}>
       {imgSrc ? (
         <img src={imgSrc} alt={sym} className="titan-symbol-img" />
       ) : (
@@ -101,6 +93,7 @@ export default function TitanReelColumn({
   tokenRows,
   tokensVisible,
   tokensFlying = false,
+  symbolTierClass = {},
 }: Readonly<TitanReelColumnProps>) {
   const showTokens = !!(tokensVisible && tokenRows && tokenRows.size > 0);
   const stripResult = reelState === "stopping" ? column : motionResult;
@@ -135,7 +128,7 @@ export default function TitanReelColumn({
       <div className={reelColClass} style={reelColStyle}>
         {column.map((sym, ri) => {
           const hasToken = !!(showTokens && (tokenRows?.has(ri) ?? false));
-          return renderCell(sym, reelIndex, ri, hasToken, hasToken && tokensFlying);
+          return renderCell(sym, reelIndex, ri, hasToken, hasToken && tokensFlying, symbolTierClass[sym] ?? "");
         })}
       </div>
     );
@@ -146,7 +139,7 @@ export default function TitanReelColumn({
     <div className={reelColClass} style={reelColStyle}>
       <div className="reel-viewport">
         <div ref={stripRef} className="reel-strip reel-strip--motion">
-          {motionStrip.symbols.map((sym, i) => renderMotionCell(sym, reelIndex, i))}
+          {motionStrip.symbols.map((sym, i) => renderMotionCell(sym, reelIndex, i, symbolTierClass[sym] ?? ""))}
         </div>
       </div>
     </div>

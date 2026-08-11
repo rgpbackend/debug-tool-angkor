@@ -21,6 +21,8 @@ interface TitanReelGridProps {
   tokenPositions?: number[];
   tokensVisible?: boolean;
   tokensFlying?: boolean;
+  /** symbolId → CSS class, derived from server GameSymbol.kind */
+  symbolTierClass?: Record<string, string>;
 }
 
 export default function TitanReelGrid({
@@ -31,6 +33,7 @@ export default function TitanReelGrid({
   tokenPositions = [],
   tokensVisible = false,
   tokensFlying = false,
+  symbolTierClass = {},
 }: TitanReelGridProps) {
   const reels = useMemo(() => parsePatternGrid(patternGrid), [patternGrid]);
 
@@ -228,6 +231,7 @@ export default function TitanReelGrid({
             tokenRows={tokenRowsByCol.get(ci)}
             tokensVisible={tokensVisible}
             tokensFlying={tokensFlying}
+            symbolTierClass={symbolTierClass}
           />
         );
       })}

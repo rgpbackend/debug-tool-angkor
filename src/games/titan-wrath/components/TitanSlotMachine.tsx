@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { GameSymbol, ServerPayline, JackpotTierEntry } from "../../../ws/protocol";
 import type { TitanPaylineWin, TitanWildSpinInfo, TitanJackpotTier, TitanJackpotTriggered } from "../titan-protocol";
 import type { SpinPhase } from "../hooks/useSpinPhase";
@@ -10,6 +10,14 @@ import TitanJackpotCelebration from "./TitanJackpotCelebration";
 import TitanControls from "./TitanControls";
 import PaytableModal from "./PaytableModal";
 import MenuPopover from "./MenuPopover";
+
+const KIND_CLASS: Record<string, string> = {
+  HIGH_PAY: "symbol-high",
+  MID_PAY: "symbol-mid",
+  LOW_PAY: "symbol-low",
+  WILD: "symbol-wild",
+  GOLDEN_WILD: "symbol-wild",
+};
 
 interface TitanSlotMachineProps {
   // Grid
@@ -77,6 +85,16 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
   const showWild = phase === "wild_expand";
   const showResult = phase === "result";
   const isBusy = phase !== "idle";
+
+  // Derive symbol tier CSS classes from server GameSymbol.kind
+  const symbolTierClass = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const sym of props.symbols) {
+      const cls = sym.kind ? KIND_CLASS[sym.kind] : undefined;
+      if (cls) map[sym.id] = cls;
+    }
+    return map;
+  }, [props.symbols]);
 
   // --- Token animation state machine ---
   // idle → appear → flying → done → idle
@@ -230,6 +248,7 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
                 tokenPositions={props.tokenPositions}
                 tokensVisible={tokensVisible}
                 tokensFlying={tokensFlying}
+                symbolTierClass={symbolTierClass}
               />
               <TitanPaylineOverlay
                 paylines={props.serverPaylines}

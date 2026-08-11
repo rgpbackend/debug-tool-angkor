@@ -7,10 +7,21 @@ interface PaytableModalProps {
   onClose: () => void;
 }
 
-const SYMBOL_ORDER = ["A", "B", "C", "D", "E", "F", "G", "W"];
+const KIND_ORDER: Record<string, number> = {
+  HIGH_PAY: 0,
+  MID_PAY: 1,
+  LOW_PAY: 2,
+};
 
 export default function PaytableModal({ open, symbols, onClose }: PaytableModalProps) {
   if (!open) return null;
+
+  // Sort by kind (HIGH → MID → LOW), wild/scatter last
+  const ordered = [...symbols].sort((a, b) => {
+    const ao = KIND_ORDER[a.kind ?? ""] ?? 3;
+    const bo = KIND_ORDER[b.kind ?? ""] ?? 3;
+    return ao - bo || a.id.localeCompare(b.id);
+  });
   const map = new Map(symbols.map((s) => [s.id, s]));
 
   return (
@@ -21,7 +32,7 @@ export default function PaytableModal({ open, symbols, onClose }: PaytableModalP
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="paytable-grid">
-          {SYMBOL_ORDER.map((id) => {
+          {ordered.map(({ id }) => {
             const sym = map.get(id);
             const payouts = sym?.payouts;
             const isWild = sym?.substitutes === true;
