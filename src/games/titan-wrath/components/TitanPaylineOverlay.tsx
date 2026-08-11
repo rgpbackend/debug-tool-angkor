@@ -20,19 +20,6 @@ function makePath(rows: number[]): string {
   }).join(" ");
 }
 
-const PAYLINE_PATHS: Record<string, string> = {
-  P01: makePath([1, 1, 1, 1, 1]),
-  P02: makePath([0, 0, 0, 0, 0]),
-  P03: makePath([2, 2, 2, 2, 2]),
-  P04: makePath([2, 1, 0, 1, 2]),
-  P05: makePath([0, 1, 2, 1, 0]),
-  P06: makePath([0, 0, 1, 0, 0]),
-  P07: makePath([2, 0, 1, 0, 0]),
-  P08: makePath([1, 2, 2, 2, 1]),
-  P09: makePath([1, 0, 0, 0, 1]),
-  P10: makePath([1, 0, 1, 0, 1]),
-};
-
 interface TitanPaylineOverlayProps {
   paylines: ServerPayline[];
   paylineWins: TitanPaylineWin[];
@@ -65,7 +52,7 @@ export default function TitanPaylineOverlay({
     >
       {/* Active payline path */}
       {(() => {
-        const d = PAYLINE_PATHS[highlightId] ?? makePath(activePayline?.rows ?? []);
+        const d = makePath(activePayline?.rows ?? []);
         const dir = currentWin.direction === "RTL" ? -1 : 1;
         return (
           <g className="payline-group">
