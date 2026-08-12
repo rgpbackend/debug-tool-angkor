@@ -11,6 +11,7 @@ import {
   isTitanSessionTakenOver,
   isTitanBalanceUpdate,
   isTitanJackpotTriggered,
+  isTitanPoolBalanceChanged,
   isTitanHistoryListPayload,
   isTitanHistoryDetailPayload,
   isTitanJackpotWinHistoryPayload,
@@ -20,6 +21,7 @@ import {
   type TitanSpinPayload,
   type TitanJackpotTier,
   type TitanJackpotTriggered,
+  type TitanPoolBalanceChanged,
   type TitanHistoryListPayload,
   type TitanHistoryDetailPayload,
   type TitanJackpotWinHistoryPayload,
@@ -47,10 +49,10 @@ const TITAN_JACKPOT_TIERS: JackpotTierInfo[] = [
 
 /** Fallback jackpot tier definitions when server doesn't provide them. */
 const FALLBACK_JACKPOT_TIERS: JackpotTierEntry[] = [
-  { tier: "MINI",  requiredTokens: 3, multiplier: 10 },
-  { tier: "MINOR", requiredTokens: 4, multiplier: 50 },
-  { tier: "MAJOR", requiredTokens: 5, multiplier: 200 },
-  { tier: "GRAND", requiredTokens: 6, multiplier: 1000 },
+  { tier: "MINI",  requiredTokens: 3, multiplier: 5 },
+  { tier: "MINOR", requiredTokens: 4, multiplier: 10 },
+  { tier: "MAJOR", requiredTokens: 5 },
+  { tier: "GRAND", requiredTokens: 6 },
 ];
 
 /** Derive active jackpot tier config from server JOIN or fallback. */
@@ -94,6 +96,9 @@ export function useTitanSession(
   const [jackpotMeterTokens, setJackpotMeterTokens] = useState(0);
   const [lastJackpotWin, setLastJackpotWin] = useState<TitanJackpotTriggered | null>(null);
   const currentRoundIdRef = useRef<string | null>(null);
+
+  // Progressive pool balances (cmd 1506 broadcast)
+  const [poolBalances, setPoolBalances] = useState<TitanPoolBalanceChanged | null>(null);
 
   // SESSION_TAKEN_OVER popup state
   const [sessionTakenOver, setSessionTakenOver] = useState(false);
@@ -174,6 +179,18 @@ export function useTitanSession(
       const poolsFromSpin = parseJackpotPoolsFromPayload(raw);
       if (poolsFromSpin) ws.applyJackpotPools(poolsFromSpin);
 
+      // Spin carries definitive jackpot info — trigger celebration from it.
+      if (parsed.spin.jackpotTier) {
+        setLastJackpotWin({
+          cmd: 1502,
+          c: 0,
+          tier: parsed.spin.jackpotTier as TitanJackpotTier,
+          prizeAmount: parsed.spin.jackpotPrize,
+          tokenCount: jackpotMeterTokens + parsed.spin.tokenPositions.length,
+          playerDisplayName: "",
+        });
+      }
+
       spinBusyRef.current = false;
       return parsed;
     } catch (e) {
@@ -246,7 +263,22 @@ export function useTitanSession(
         tier,
         prizeAmount: Number.isFinite(prizeAmount) ? prizeAmount : 0,
         tokenCount: Number.isFinite(tokenCount) ? Math.round(tokenCount) : 0,
-        playerId: String(payload.playerId ?? ""),
+        playerDisplayName: String(payload.playerDisplayName ?? ""),
+      });
+    });
+    return cleanup;
+  }, [ws.clientRef, ws.sessionReady]);
+
+  // --- POOL_BALANCE_CHANGED (1506) push listener ---
+  useEffect(() => {
+    const client = ws.clientRef.current;
+    if (!client || !ws.sessionReady) return;
+    const cleanup = client.addPayloadListener(isTitanPoolBalanceChanged, (payload) => {
+      setPoolBalances({
+        cmd: 1506,
+        c: typeof payload.c === "number" ? payload.c : 0,
+        grand: typeof payload.grand === "string" ? payload.grand : "0",
+        major: typeof payload.major === "string" ? payload.major : "0",
       });
     });
     return cleanup;
@@ -368,6 +400,7 @@ export function useTitanSession(
     // Olympus Jackpot
     jackpotMeterTokens,
     jackpotTierConfig,
+    poolBalances,
     lastJackpotWin,
     dismissJackpotCelebration,
     // session takeover

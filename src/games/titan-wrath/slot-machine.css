@@ -171,7 +171,7 @@
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   background: linear-gradient(180deg, #120F0D 0%, var(--titan-obsidian) 100%);
   border: 1px solid rgba(212, 168, 67, 0.12);
   border-radius: 14px;
@@ -1221,195 +1221,232 @@
 }
 
 /* ============================================================
-   Olympus Jackpot Meter — broken-column artifact
+   Olympus Jackpot — Horizontal Bar (above grid)
    ============================================================ */
 
-.titan-jackpot-meter {
-  --meter-tier-mini: #B88A5A;
-  --meter-tier-minor: #B0B0B8;
-  --meter-tier-major: var(--titan-forge-gold);
-  --meter-tier-grand: var(--titan-wrath-vermilion);
+.titan-jackpot-bar {
+  --bar-mini: #B88A5A;
+  --bar-minor: #B0B0B8;
+  --bar-major: var(--titan-forge-gold);
+  --bar-grand: var(--titan-wrath-vermilion);
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 8px 4px;
-  height: 100%;
+  gap: 6px;
+  padding: 8px 12px 4px;
+  flex-shrink: 0;
 }
 
-.jackpot-meter-label {
+/* --- Tier cards row --- */
+
+.jackpot-bar-cards {
   display: flex;
+  gap: 4px;
+  justify-content: space-between;
+}
+
+.jackpot-bar-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 4px 10px;
+  padding: 5px 4px 4px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(138, 133, 128, 0.1);
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+  min-width: 0;
 }
 
-.jackpot-meter-label-text {
+.jackpot-bar-card.card-reached {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.jackpot-bar-card.tier-mini  { border-color: rgba(184, 138, 90, 0.15); }
+.jackpot-bar-card.tier-minor { border-color: rgba(176, 176, 184, 0.15); }
+.jackpot-bar-card.tier-major { border-color: rgba(212, 168, 67, 0.15); }
+.jackpot-bar-card.tier-grand { border-color: rgba(232, 69, 45, 0.15); }
+
+.jackpot-bar-card.tier-mini.card-reached  { border-color: rgba(184, 138, 90, 0.5); box-shadow: 0 0 8px rgba(184, 138, 90, 0.2); }
+.jackpot-bar-card.tier-minor.card-reached { border-color: rgba(176, 176, 184, 0.5); box-shadow: 0 0 8px rgba(176, 176, 184, 0.2); }
+.jackpot-bar-card.tier-major.card-reached { border-color: rgba(212, 168, 67, 0.5); box-shadow: 0 0 12px rgba(212, 168, 67, 0.25); }
+.jackpot-bar-card.tier-grand.card-reached {
+  border-color: rgba(232, 69, 45, 0.6);
+  box-shadow: 0 0 16px rgba(232, 69, 45, 0.3);
+  animation: grand-card-glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes grand-card-glow {
+  0% { box-shadow: 0 0 16px rgba(232, 69, 45, 0.3); }
+  100% { box-shadow: 0 0 24px rgba(232, 69, 45, 0.5); }
+}
+
+.card-tier-name {
   font-family: var(--titan-display);
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  color: var(--titan-forge-gold);
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
 }
 
-.jackpot-meter-label-rule {
-  flex: 1;
-  height: 1px;
-  max-width: 28px;
-}
-.jackpot-meter-label-rule:first-child {
-  background: linear-gradient(90deg, transparent, rgba(212, 168, 67, 0.2));
-}
-.jackpot-meter-label-rule:last-child {
-  background: linear-gradient(90deg, rgba(212, 168, 67, 0.2), transparent);
+.card-tier-tokens {
+  font-family: var(--titan-body);
+  font-size: 0.5rem;
+  color: var(--titan-ash);
+  line-height: 1.3;
 }
 
-.jackpot-meter-body {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  min-height: 0;
+.card-tier-prize {
+  font-family: var(--titan-display);
+  font-size: 0.58rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.card-tier-prize.prize-progressive {
+  color: var(--titan-divine-amber);
+}
+
+/* Per-tier colors */
+.jackpot-bar-card .card-tier-name { color: rgba(138, 133, 128, 0.4); }
+.jackpot-bar-card .card-tier-prize { color: rgba(138, 133, 128, 0.35); }
+
+.jackpot-bar-card.tier-mini  .card-tier-name { color: rgba(184, 138, 90, 0.5); }
+.jackpot-bar-card.tier-minor .card-tier-name { color: rgba(176, 176, 184, 0.5); }
+.jackpot-bar-card.tier-major .card-tier-name { color: rgba(212, 168, 67, 0.5); }
+.jackpot-bar-card.tier-grand .card-tier-name { color: rgba(232, 69, 45, 0.5); }
+
+.jackpot-bar-card.tier-mini.card-reached  .card-tier-name { color: var(--bar-mini); }
+.jackpot-bar-card.tier-minor.card-reached .card-tier-name { color: var(--bar-minor); }
+.jackpot-bar-card.tier-major.card-reached .card-tier-name { color: var(--bar-major); }
+.jackpot-bar-card.tier-grand.card-reached .card-tier-name {
+  color: var(--bar-grand);
+  text-shadow: 0 0 6px rgba(232, 69, 45, 0.5);
+}
+
+.jackpot-bar-card.card-reached .card-tier-prize { color: var(--titan-smoke); }
+.jackpot-bar-card.tier-major.card-reached .card-tier-prize { color: var(--titan-forge-gold); }
+.jackpot-bar-card.tier-grand.card-reached .card-tier-prize { color: var(--titan-divine-amber); }
+
+/* --- Progress track --- */
+
+.jackpot-bar-track {
   position: relative;
-  padding: 8px 0;
-}
-
-.jackpot-meter-track {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 0;
-  bottom: 0;
-  width: 14px;
+  height: 8px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(138, 133, 128, 0.12);
-  border-radius: 7px;
+  border: 1px solid rgba(138, 133, 128, 0.1);
+  border-radius: 4px;
   overflow: visible;
+  margin: 0 2px;
 }
 
-.jackpot-meter-fill {
+.jackpot-bar-fill {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top,
-    rgba(212, 168, 67, 0.5) 0%,
-    rgba(240, 192, 96, 0.7) 50%,
-    rgba(255, 245, 224, 0.8) 100%
+  inset: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg,
+    rgba(184, 138, 90, 0.6) 0%,
+    rgba(176, 176, 184, 0.5) 25%,
+    rgba(212, 168, 67, 0.6) 55%,
+    rgba(232, 69, 45, 0.7) 100%
   );
-  transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 1;
 }
 
-.jackpot-meter-fill::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--titan-divine-amber);
-  box-shadow: 0 0 8px var(--titan-divine-amber);
-  border-radius: 1px;
+.jackpot-bar-fill.fill-flash {
+  animation: bar-fill-flash 0.4s ease-out;
 }
 
-/* Tier markers — anchored along the vertical bar */
-.jackpot-meter-tiers {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-.jackpot-meter-tier-marker {
-  position: absolute;
-  left: -9px;
-  right: -9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translateY(-50%);
-}
-.jackpot-meter-tier-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid rgba(138, 133, 128, 0.35);
-  background: var(--titan-obsidian);
-  flex-shrink: 0;
-  transition: border-color 0.3s, box-shadow 0.3s;
-}
-.jackpot-meter-tier-marker.tier-reached .jackpot-meter-tier-dot {
-  border-color: var(--titan-divine-amber);
-  box-shadow: 0 0 8px var(--titan-divine-amber);
-  background: rgba(240, 192, 96, 0.25);
-}
-.jackpot-meter-tier-dots { display: none; }
-
-/* Tier labels — right of centered bar */
-.jackpot-meter-tier-labels {
-  position: absolute;
-  left: calc(50% + 12px);
-  right: 0;
-  top: 0;
-  bottom: 0;
-}
-
-.jackpot-meter-tier-label {
-  position: absolute;
-  left: 6px;
-  right: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  transform: translateY(-50%);
-}
-
-.tier-label-name {
-  font-family: var(--titan-display);
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  line-height: 1.2;
-}
-
-.tier-label-prize {
-  font-family: var(--titan-body);
-  font-size: 0.55rem;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-
-/* Default: dimmed */
-.jackpot-meter-tier-label .tier-label-name { color: rgba(138, 133, 128, 0.4); }
-.jackpot-meter-tier-label .tier-label-prize { color: rgba(138, 133, 128, 0.3); }
-
-/* Per-tier name colors */
-.jackpot-meter-tier-label.tier-label-mini  .tier-label-name { color: rgba(184, 138, 90, 0.5); }
-.jackpot-meter-tier-label.tier-label-minor .tier-label-name { color: rgba(176, 176, 184, 0.5); }
-.jackpot-meter-tier-label.tier-label-major .tier-label-name { color: rgba(212, 168, 67, 0.5); }
-.jackpot-meter-tier-label.tier-label-grand .tier-label-name { color: rgba(232, 69, 45, 0.5); }
-
-/* Reached: lit */
-.jackpot-meter-tier-label.tier-reached .tier-label-prize { color: var(--titan-forge-gold); }
-.jackpot-meter-tier-label.tier-label-mini.tier-reached  .tier-label-name { color: var(--meter-tier-mini); }
-.jackpot-meter-tier-label.tier-label-minor.tier-reached .tier-label-name { color: var(--meter-tier-minor); }
-.jackpot-meter-tier-label.tier-label-major.tier-reached .tier-label-name { color: var(--meter-tier-major); }
-.jackpot-meter-tier-label.tier-label-grand.tier-reached .tier-label-name {
-  color: var(--meter-tier-grand);
-  text-shadow: 0 0 8px rgba(232, 69, 45, 0.5);
-}
-
-/* Token counter flash on increment */
-@keyframes meter-token-flash {
+@keyframes bar-fill-flash {
   0% { filter: brightness(1); }
-  50% { filter: brightness(1.8); box-shadow: 0 0 20px var(--titan-divine-amber); }
+  50% { filter: brightness(1.8); }
   100% { filter: brightness(1); }
 }
 
-.jackpot-meter-fill.flash {
-  animation: meter-token-flash 0.4s ease-out;
+/* Token count floating badge */
+.jackpot-bar-badge {
+  position: absolute;
+  top: -18px;
+  transform: translateX(-50%);
+  z-index: 3;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--titan-divine-amber);
+  color: var(--titan-obsidian);
+  font-family: var(--titan-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 8px rgba(240, 192, 96, 0.5);
+  pointer-events: none;
+  transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --- Tier markers on the track --- */
+
+.jackpot-bar-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.marker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(138, 133, 128, 0.3);
+  background: var(--titan-obsidian);
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+}
+
+.jackpot-bar-marker.marker-reached .marker-dot {
+  border-color: var(--titan-divine-amber);
+  box-shadow: 0 0 6px var(--titan-divine-amber);
+  background: rgba(240, 192, 96, 0.3);
+}
+
+/* --- Impact sparks --- */
+
+.jackpot-bar-track.track-impact {
+  box-shadow: inset 0 0 12px rgba(240, 192, 96, 0.2);
+}
+
+.bar-impact-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.bar-impact-spark {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--titan-divine-amber);
+  box-shadow: 0 0 6px var(--titan-divine-amber), 0 0 12px rgba(240, 192, 96, 0.4);
+  animation: bar-spark-burst 0.5s ease-out forwards;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes bar-spark-burst {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(2); opacity: 1; }
+  100% { transform: translate(-50%, 0) scale(0.2); opacity: 0; }
 }
 
 /* ============================================================
@@ -1742,8 +1779,8 @@
   .titan-joining-forge-bar { animation: none; }
   .divine-token-badge { animation: none; }
   .divine-token-badge.token-flying { animation: none; opacity: 0; }
-  .jackpot-meter-fill { transition: none; }
-  .meter-impact-spark { animation: none; }
+  .jackpot-bar-fill { transition: none; }
+  .bar-impact-spark { animation: none; }
   .celebration-burst-ring { animation: none; }
   .celebration-spark { animation: none; }
 }

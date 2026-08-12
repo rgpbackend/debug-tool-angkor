@@ -1,49 +1,75 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { JackpotTierEntry } from "../../../ws/protocol";
+import type { TitanPoolBalanceChanged } from "../titan-protocol";
 
 const TIER_CSS: Record<string, string> = {
-  MINI: "tier-label-mini",
-  MINOR: "tier-label-minor",
-  MAJOR: "tier-label-major",
-  GRAND: "tier-label-grand",
+  MINI: "tier-mini",
+  MINOR: "tier-minor",
+  MAJOR: "tier-major",
+  GRAND: "tier-grand",
+};
+
+const TIER_LABEL: Record<string, string> = {
+  MINI: "Mini",
+  MINOR: "Minor",
+  MAJOR: "Major",
+  GRAND: "Grand",
 };
 
 interface TitanJackpotMeterProps {
-  /** Current token count to display. */
   tokenCount: number;
-  /** Number of new tokens arriving right now (for impact animation). */
   impactNew?: number;
-  /** Highest tier reached so far (if any). */
   reachedTier: string | null;
-  /** Tier definitions from server JOIN (sorted by requiredTokens asc). */
   tierConfig: JackpotTierEntry[];
-  /** Current base bet for prize calculation (prize = multiplier × baseBet). */
+  poolBalances: TitanPoolBalanceChanged | null;
   baseBet: number;
 }
 
-export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTier, tierConfig, baseBet }: TitanJackpotMeterProps) {
+function formatPrize(v: number): string {
+  if (!Number.isFinite(v) || v <= 0) return "—";
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function getPoolPrize(tier: string, poolBalances: TitanPoolBalanceChanged | null): number {
+  if (!poolBalances) return 0;
+  if (tier === "GRAND") return Number(poolBalances.grand) || 0;
+  if (tier === "MAJOR") return Number(poolBalances.major) || 0;
+  return 0;
+}
+
+function getTierPrize(
+  tier: string,
+  entry: JackpotTierEntry | undefined,
+  poolBalances: TitanPoolBalanceChanged | null,
+  baseBet: number,
+): number {
+  // MINI / MINOR are fixed multiplier prizes
+  if (entry?.multiplier && entry.multiplier > 0) {
+    return entry.multiplier * baseBet;
+  }
+  // MAJOR / GRAND are progressive pool balances
+  return getPoolPrize(tier, poolBalances);
+}
+
+export default function TitanJackpotMeter({
+  tokenCount,
+  impactNew = 0,
+  reachedTier,
+  tierConfig,
+  poolBalances,
+  baseBet,
+}: TitanJackpotMeterProps) {
   const [flash, setFlash] = useState(false);
   const [impact, setImpact] = useState(false);
   const prevCount = useRef(tokenCount);
 
-  // Derive max tokens from tier config (highest requiredTokens).
   const maxTokens = useMemo(
     () => tierConfig.reduce((max, t) => Math.max(max, t.requiredTokens), 0),
     [tierConfig],
   );
 
-  // Build tier marker data from config.
-  const tierMarkers = useMemo(
-    () =>
-      tierConfig.map((t) => ({
-        tier: t.tier,
-        tokens: t.requiredTokens,
-        cssClass: TIER_CSS[t.tier] ?? "",
-      })),
-    [tierConfig],
-  );
-
-  // Flash when tokenCount changes (meter just updated)
+  // Flash on increment
   useEffect(() => {
     if (tokenCount > prevCount.current) {
       setFlash(true);
@@ -54,7 +80,7 @@ export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTi
     prevCount.current = tokenCount;
   }, [tokenCount]);
 
-  // Impact burst when new tokens arrive
+  // Impact burst
   useEffect(() => {
     if (impactNew > 0) {
       setImpact(true);
@@ -65,70 +91,84 @@ export default function TitanJackpotMeter({ tokenCount, impactNew = 0, reachedTi
 
   const fillPct = maxTokens > 0 ? Math.min(100, (tokenCount / maxTokens) * 100) : 0;
 
+  const tiers = useMemo(
+    () =>
+      tierConfig.map((t) => {
+        const reached = tokenCount >= t.requiredTokens || reachedTier === t.tier;
+        const prize = getTierPrize(t.tier, t, poolBalances, baseBet);
+        const markerPct = maxTokens > 0 ? (t.requiredTokens / maxTokens) * 100 : 0;
+        const isProgressive = !t.multiplier || t.multiplier === 0;
+        return {
+          tier: t.tier,
+          label: TIER_LABEL[t.tier] ?? t.tier,
+          tokens: t.requiredTokens,
+          cssClass: TIER_CSS[t.tier] ?? "",
+          reached,
+          prize,
+          markerPct,
+          isProgressive,
+        };
+      }),
+    [tierConfig, tokenCount, reachedTier, poolBalances, baseBet, maxTokens],
+  );
+
   return (
-    <div className="titan-jackpot-meter" aria-label={`Jackpot meter: ${tokenCount} of ${maxTokens} tokens`}>
-      {/* Label row */}
-      <div className="jackpot-meter-label">
-        <span className="jackpot-meter-label-rule" />
-        <span className="jackpot-meter-label-text">Olympus Jackpot</span>
-        <span className="jackpot-meter-label-rule" />
+    <div className="titan-jackpot-bar" aria-label={`Olympus Jackpot: ${tokenCount} of ${maxTokens} tokens`}>
+      {/* Tier cards row */}
+      <div className="jackpot-bar-cards">
+        {tiers.map((t) => (
+          <div
+            key={t.tier}
+            className={`jackpot-bar-card ${t.cssClass}${t.reached ? " card-reached" : ""}`}
+          >
+            <span className="card-tier-name">{t.label}</span>
+            <span className="card-tier-tokens">{t.tokens} tokens</span>
+            <span className={`card-tier-prize${t.isProgressive ? " prize-progressive" : ""}`}>
+              {t.isProgressive && poolBalances === null
+                ? "…"
+                : formatPrize(t.prize)}
+            </span>
+          </div>
+        ))}
       </div>
 
-      {/* Vertical bar + labels side by side */}
-      <div className="jackpot-meter-body">
-        <div className={`jackpot-meter-track${impact ? " meter-impact" : ""}`}>
+      {/* Progress track */}
+      <div className={`jackpot-bar-track${impact ? " track-impact" : ""}`}>
+        <div
+          className={`jackpot-bar-fill${flash ? " fill-flash" : ""}`}
+          style={{ width: `${fillPct}%` }}
+        />
+
+        {/* Token count badge on the fill */}
+        {tokenCount > 0 && (
+          <span className="jackpot-bar-badge" style={{ left: `calc(${fillPct}% - 16px)` }}>
+            {tokenCount}
+          </span>
+        )}
+
+        {/* Tier markers */}
+        {tiers.map((t) => (
           <div
-            className={`jackpot-meter-fill${flash ? " flash" : ""}`}
-            style={{ height: `${fillPct}%` }}
-          />
-
-          {impact && (
-            <div className="meter-impact-burst" aria-hidden>
-              {Array.from({ length: impactNew }, (_, i) => (
-                <span key={i} className="meter-impact-spark" style={{ animationDelay: `${i * 0.08}s` }} />
-              ))}
-            </div>
-          )}
-
-          <div className="jackpot-meter-tiers">
-            {tierMarkers.map((t) => {
-              const reached = tokenCount >= t.tokens;
-              const pct = maxTokens > 0 ? (t.tokens / maxTokens) * 100 : 0;
-              return (
-                <div
-                  key={t.tier}
-                  className={`jackpot-meter-tier-marker${reached ? " tier-reached" : ""}`}
-                  style={{ top: `${100 - pct}%` }}
-                >
-                  <div className="jackpot-meter-tier-dot" />
-                </div>
-              );
-            })}
+            key={t.tier}
+            className={`jackpot-bar-marker${t.reached ? " marker-reached" : ""}`}
+            style={{ left: `${t.markerPct}%` }}
+          >
+            <div className="marker-dot" />
           </div>
-        </div>
+        ))}
 
-        <div className="jackpot-meter-tier-labels">
-          {tierMarkers.map((t) => {
-            const reached = tokenCount >= t.tokens || reachedTier === t.tier;
-            const entry = tierConfig.find((e) => e.tier === t.tier);
-            const prize = entry ? entry.multiplier * baseBet : 0;
-            const labelPct = maxTokens > 0 ? (t.tokens / maxTokens) * 100 : 0;
-            return (
+        {/* Impact sparks */}
+        {impact && (
+          <div className="bar-impact-sparks" aria-hidden>
+            {Array.from({ length: impactNew }, (_, i) => (
               <span
-                key={t.tier}
-                className={`jackpot-meter-tier-label ${t.cssClass}${reached ? " tier-reached" : ""}`}
-                style={{ top: `${100 - labelPct}%` }}
-              >
-                <span className="tier-label-name">{t.tier}</span>
-                <span className="tier-label-prize">
-                  {prize < 1_000_000
-                    ? `$${prize.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : `$${(prize / 1_000_000).toFixed(1)}M`}
-                </span>
-              </span>
-            );
-          })}
-        </div>
+                key={i}
+                className="bar-impact-spark"
+                style={{ left: `calc(${fillPct}% - 4px)`, animationDelay: `${i * 0.06}s` }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

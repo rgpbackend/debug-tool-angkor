@@ -51,6 +51,7 @@ export default function GameScreen({
     serverPaylines,
     jackpotMeterTokens,
     jackpotTierConfig,
+    poolBalances,
     lastJackpotWin,
     dismissJackpotCelebration,
     sessionTakenOver,
@@ -254,6 +255,7 @@ export default function GameScreen({
             jackpotMeterTokens={jackpotMeterTokens}
             jackpotMeterTier={jackpotMeterTier}
             jackpotTierConfig={jackpotTierConfig}
+            poolBalances={poolBalances}
             lastJackpotWin={lastJackpotWin}
             onDismissJackpot={dismissJackpotCelebration}
             onOpenHistory={() => setHistoryOpen(true)}

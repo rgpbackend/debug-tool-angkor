@@ -141,9 +141,11 @@ export default function TitanJackpotCelebration({
           ${activePrize.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
         <span className="celebration-sub">
-          {activeTier === "GRAND"
-            ? "The wrath of Olympus is yours — MAXIMUM JACKPOT!"
-            : `${config.multiplier}× base bet · Divine favor bestowed`}
+          {config.multiplier
+            ? `${config.multiplier}× base bet · Divine favor bestowed`
+            : activeTier === "GRAND"
+              ? "The wrath of Olympus is yours — MAXIMUM JACKPOT!"
+              : "Progressive pool claimed · Olympus smiles upon you"}
         </span>
       </div>
     </div>

@@ -41,6 +41,8 @@ export interface TitanSpinPayload {
     baseBet: number;
     titanWild?: TitanWildSpinInfo;
     tokenPositions: number[];
+    jackpotTier: string | null;
+    jackpotPrize: number;
   };
   round: {
     roundId: string;
@@ -172,6 +174,8 @@ export function parseTitanSpinPayload(
       baseBet: typeof spin.baseBet === "number" ? spin.baseBet : 0,
       ...(spin.titanWild ? { titanWild: parseTitanWildSpin(spin.titanWild) } : {}),
       tokenPositions: parseTokenPositions(spin.tokenPositions),
+      jackpotTier: typeof spin.jackpotTier === "string" ? spin.jackpotTier : null,
+      jackpotPrize: typeof spin.jackpotPrize === "number" ? spin.jackpotPrize : 0,
     },
     round: {
       roundId: String(round.roundId ?? ""),
@@ -229,9 +233,7 @@ export function isTitanRoundEnded(payload: TitanSpinPayload): boolean {
 export interface TitanBalanceUpdate {
   cmd: 1501;
   c: number;
-  playerId: string;
   balance: number;
-  reason: "BET" | "WIN";
 }
 
 export function isTitanBalanceUpdate(
@@ -239,8 +241,7 @@ export function isTitanBalanceUpdate(
 ): boolean {
   return (
     hasCmd(payload, "1501") &&
-    typeof payload.balance === "number" &&
-    typeof payload.reason === "string"
+    typeof payload.balance === "number"
   );
 }
 
@@ -256,7 +257,7 @@ export interface TitanJackpotTriggered {
   tier: TitanJackpotTier;
   prizeAmount: number;
   tokenCount: number;
-  playerId: string;
+  playerDisplayName: string;
 }
 
 export function isTitanJackpotTriggered(
@@ -303,9 +304,9 @@ export interface TitanHistoryItem {
   stepIndex: number;
   totalStepsInRound: number;
   timestamp: number;
-  bet: number;
-  win: number;
-  profit: number;
+  bet: string;
+  win: string;
+  profit: string;
   jackpot?: TitanHistoryJackpotSnapshot;
 }
 
@@ -327,13 +328,10 @@ function readTitanHistorySpinType(v: unknown): TitanHistorySpinType {
   return "BASE";
 }
 
-function readTitanHistoryAmount(v: unknown): number {
-  if (typeof v === "string" && v.trim()) {
-    const n = Number(v.trim());
-    return Number.isFinite(n) ? n : 0;
-  }
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  return 0;
+function readTitanHistoryAmount(v: unknown): string {
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  if (typeof v === "string" && v.trim()) return v.trim();
+  return "0";
 }
 
 function parseTitanHistoryJackpot(
@@ -404,9 +402,9 @@ export interface TitanHistoryDetailPayload {
   stepIndex: number;
   totalStepsInRound: number;
   timestamp: number;
-  bet: number;
-  win: number;
-  profit: number;
+  bet: string;
+  win: string;
+  profit: string;
   reels: string[][];
   winWays: TitanHistoryWinWay[];
   jackpot?: TitanHistoryJackpotSnapshot;
@@ -484,6 +482,7 @@ export interface TitanJackpotWinRecord {
   amount: number;             // prize amount (double)
   jackpotType: string;        // "GRAND" or "MAJOR"
   playerDisplayName?: string; // winner display name (GDD §10.3)
+  isOwn: boolean;             // true when record belongs to requesting player
 }
 
 export interface TitanJackpotWinHistoryPayload {
@@ -510,6 +509,7 @@ function parseTitanJackpotWinRecord(
     amount: typeof r.amount === "number" ? r.amount : Number(r.amount ?? 0),
     jackpotType: r.jackpotType,
     playerDisplayName: typeof r.playerDisplayName === "string" ? r.playerDisplayName : undefined,
+    isOwn: Boolean(r.isOwn),
   };
 }
 
@@ -526,4 +526,27 @@ export function parseTitanJackpotWinHistoryPayload(
     items,
     count: typeof payload.count === "number" ? payload.count : items.length,
   };
+}
+
+// ---------------------------------------------------------------------------
+// POOL_BALANCE_CHANGED (1506) — server → client push (all online players)
+// ---------------------------------------------------------------------------
+
+export interface TitanPoolBalanceChanged {
+  cmd: 1506;
+  c: number;
+  /** Pool balance as decimal string (e.g. "10012.50"). */
+  grand: string;
+  /** Pool balance as decimal string (e.g. "2037.20"). */
+  major: string;
+}
+
+export function isTitanPoolBalanceChanged(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    hasCmd(payload, "1506") &&
+    typeof payload.grand === "string" &&
+    typeof payload.major === "string"
+  );
 }

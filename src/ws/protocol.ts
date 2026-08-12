@@ -47,7 +47,7 @@ export interface ServerPayline {
 export interface JackpotTierEntry {
   tier: string;
   requiredTokens: number;
-  multiplier: number;
+  multiplier?: number;
 }
 
 /** Minimal shared last-round type — games define their own typed versions. */
@@ -370,11 +370,10 @@ function parseJackpotTiers(raw: unknown): JackpotTierEntry[] | undefined {
     const t = item as Record<string, unknown>;
     if (typeof t.tier !== "string") continue;
     if (typeof t.requiredTokens !== "number") continue;
-    if (typeof t.multiplier !== "number") continue;
     result.push({
       tier: t.tier,
       requiredTokens: t.requiredTokens,
-      multiplier: t.multiplier,
+      multiplier: typeof t.multiplier === "number" ? t.multiplier : undefined,
     });
   }
   return result.length > 0 ? result : undefined;

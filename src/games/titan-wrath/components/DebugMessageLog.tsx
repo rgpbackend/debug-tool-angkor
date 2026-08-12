@@ -17,10 +17,16 @@ type LogEntry = {
 
 const CMD_NAMES: Record<number, string> = {
   1005: "JOIN",
+  1006: "SESSION_TAKEN_OVER",
   1500: "SPIN",
   1501: "BALANCE_UPDATE",
   1502: "JACKPOT_TRIGGERED",
-  2001: "CHEAT",
+  1503: "GAME_HISTORY_LIST",
+  1504: "GAME_HISTORY_DETAIL",
+  1505: "JACKPOT_WIN_HISTORY",
+  1506: "POOL_BALANCE_CHANGED",
+  2001: "DEBUG_CHEAT_GRID",
+  2002: "DEBUG_CHEAT_JACKPOT",
 };
 
 function isHeartbeatFrame(frame: WsOutboundFrame): boolean {
@@ -70,7 +76,6 @@ function inboundPreview(payload: Record<string, unknown>): string {
     if (round?.state) parts.push(`round=${round.state}`);
   }
   if (cmd === 1501 || cmd === "1501") {
-    if (typeof payload.reason === "string") parts.push(`reason=${payload.reason}`);
     if (typeof payload.balance === "number") parts.push(`balance=${payload.balance}`);
   }
   if (cmd === 1502 || cmd === "1502") {
@@ -80,6 +85,22 @@ function inboundPreview(payload: Record<string, unknown>): string {
   if (cmd === 1005 || cmd === "1005") {
     parts.push("config");
     if (Array.isArray(payload.symbols)) parts.push(`${payload.symbols.length} symbols`);
+  }
+  if (cmd === 1006 || cmd === "1006") {
+    parts.push("session evicted");
+  }
+  if (cmd === 1506 || cmd === "1506") {
+    if (typeof payload.grand === "string") parts.push(`grand=${payload.grand}`);
+    if (typeof payload.major === "string") parts.push(`major=${payload.major}`);
+  }
+  if (cmd === 1503 || cmd === "1503") {
+    if (typeof payload.count === "number") parts.push(`${payload.count} spins`);
+  }
+  if (cmd === 1504 || cmd === "1504") {
+    if (typeof payload.spinType === "string") parts.push(payload.spinType);
+  }
+  if (cmd === 1505 || cmd === "1505") {
+    if (typeof payload.count === "number") parts.push(`${payload.count} winners`);
   }
   return parts.join(" ");
 }

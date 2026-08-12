@@ -23,20 +23,27 @@ function formatTs(ms: number): string {
   return new Date(ms).toLocaleString();
 }
 
-function formatAmount(v: number): string {
-  return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function toNum(v: string | number): number {
+  return typeof v === "number" ? v : (Number(v) || 0);
 }
 
-function formatProfit(v: number): string {
-  const a = formatAmount(Math.abs(v));
-  if (v > 0) return `+$${a}`;
-  if (v < 0) return `−$${a}`;
+function formatAmount(v: string | number): string {
+  const n = toNum(v);
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatProfit(v: string | number): string {
+  const n = toNum(v);
+  const a = formatAmount(Math.abs(n));
+  if (n > 0) return `+$${a}`;
+  if (n < 0) return `−$${a}`;
   return `$${a}`;
 }
 
-function profitClass(v: number): string {
-  if (v > 0) return "hist-profit-pos";
-  if (v < 0) return "hist-profit-neg";
+function profitClass(v: string | number): string {
+  const n = toNum(v);
+  if (n > 0) return "hist-profit-pos";
+  if (n < 0) return "hist-profit-neg";
   return "";
 }
 

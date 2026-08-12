@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { GameSymbol, ServerPayline, JackpotTierEntry } from "../../../ws/protocol";
-import type { TitanPaylineWin, TitanWildSpinInfo, TitanJackpotTier, TitanJackpotTriggered } from "../titan-protocol";
+import type { TitanPaylineWin, TitanWildSpinInfo, TitanJackpotTier, TitanJackpotTriggered, TitanPoolBalanceChanged } from "../titan-protocol";
 import type { SpinPhase } from "../hooks/useSpinPhase";
 import TitanReelGrid from "./TitanReelGrid";
 import TitanPaylineOverlay from "./TitanPaylineOverlay";
@@ -69,6 +69,7 @@ interface TitanSlotMachineProps {
   jackpotMeterTokens: number;
   jackpotMeterTier: TitanJackpotTier | null;
   jackpotTierConfig: JackpotTierEntry[];
+  poolBalances: TitanPoolBalanceChanged | null;
   lastJackpotWin: TitanJackpotTriggered | null;
   onDismissJackpot: () => void;
   // Menu
@@ -226,17 +227,17 @@ export default function TitanSlotMachine(props: TitanSlotMachineProps) {
         </button>
       </header>
 
-      <div className="titan-game-body">
-        <div className="titan-sidebar titan-sidebar--left">
-          <TitanJackpotMeter
-            tokenCount={tokenCountForMeter}
-            impactNew={meterImpact}
-            reachedTier={props.jackpotMeterTier}
-            tierConfig={props.jackpotTierConfig}
-            baseBet={Number(props.selectBetValue) || 0}
-          />
-        </div>
+      {/* Olympus Jackpot — horizontal bar above the grid */}
+      <TitanJackpotMeter
+        tokenCount={tokenCountForMeter}
+        impactNew={meterImpact}
+        reachedTier={props.jackpotMeterTier}
+        tierConfig={props.jackpotTierConfig}
+        poolBalances={props.poolBalances}
+        baseBet={Number(props.selectBetValue) || 0}
+      />
 
+      <div className="titan-game-body">
         <div className="titan-grid-area" data-spinning={spinning ? "" : undefined}>
           <div className="titan-reel-stage">
             <div className="titan-reel-container">
