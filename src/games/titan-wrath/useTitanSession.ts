@@ -211,9 +211,9 @@ export function useTitanSession(
     const client = ws.clientRef.current;
     if (!client || !ws.sessionReady) return;
     const cleanup = client.addPayloadListener(isTitanBalanceUpdate, (payload) => {
-      const bal = payload.balance;
-      if (typeof bal !== "number" || !Number.isFinite(bal)) return;
-      ws.setBalance(String(bal));
+      const bal = payload.balance; // string on wire per contract
+      if (typeof bal !== "string") return;
+      ws.setBalance(bal);
     });
     return cleanup;
   }, [ws.clientRef, ws.sessionReady, ws.setBalance]);
@@ -247,16 +247,8 @@ export function useTitanSession(
     if (!client || !ws.sessionReady) return;
     const cleanup = client.addPayloadListener(isTitanJackpotTriggered, (payload) => {
       const tier = (payload.tier as TitanJackpotTier) ?? "MINI";
-      const rawPrize = payload.prizeAmount;
-      const rawTokens = payload.tokenCount;
-      const prizeAmount =
-        typeof rawPrize === "number" ? rawPrize
-        : typeof rawPrize === "string" ? Number(rawPrize)
-        : 0;
-      const tokenCount =
-        typeof rawTokens === "number" ? rawTokens
-        : typeof rawTokens === "string" ? Number(rawTokens)
-        : 0;
+      const prizeAmount = Number(payload.prizeAmount) || 0;
+      const tokenCount = typeof payload.tokenCount === "number" ? payload.tokenCount : 0;
       setLastJackpotWin({
         cmd: 1502,
         c: 0,
@@ -270,9 +262,11 @@ export function useTitanSession(
   }, [ws.clientRef, ws.sessionReady]);
 
   // --- POOL_BALANCE_CHANGED (1506) push listener ---
+  // Registered on phase change (not sessionReady) because the JOIN-time
+  // 1506 push can arrive before React re-renders after sessionReady flips.
   useEffect(() => {
     const client = ws.clientRef.current;
-    if (!client || !ws.sessionReady) return;
+    if (!client) return;
     const cleanup = client.addPayloadListener(isTitanPoolBalanceChanged, (payload) => {
       setPoolBalances({
         cmd: 1506,
@@ -282,7 +276,7 @@ export function useTitanSession(
       });
     });
     return cleanup;
-  }, [ws.clientRef, ws.sessionReady]);
+  }, [ws.clientRef, ws.phase]);
 
   // --- SESSION_TAKEN_OVER (1006) push listener ---
   useEffect(() => {

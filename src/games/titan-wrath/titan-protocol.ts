@@ -98,6 +98,16 @@ export function isTitanSpinError(
 // Spin parser
 // ---------------------------------------------------------------------------
 
+/** Parse monetary values from wire (string per contract, or number fallback). */
+function readMoney(v: unknown): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim()) {
+    const n = Number(v.trim());
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
 function parsePaylineWin(raw: unknown): TitanPaylineWin | null {
   if (!isObject(raw)) return null;
   const r = raw as Record<string, unknown>;
@@ -110,7 +120,7 @@ function parsePaylineWin(raw: unknown): TitanPaylineWin | null {
     paylineId: r.paylineId,
     symbol: r.symbol,
     count: r.count,
-    winAmount: typeof r.winAmount === "number" ? r.winAmount : 0,
+    winAmount: readMoney(r.winAmount),
     direction: dir,
   };
 }
@@ -168,20 +178,20 @@ export function parseTitanSpinPayload(
       spinType: (spin.spinType === "RESPIN" ? "RESPIN" : "BASE") as "BASE" | "RESPIN",
       spinIndex: typeof spin.spinIndex === "number" ? spin.spinIndex : 0,
       patternGrid: typeof spin.patternGrid === "string" ? spin.patternGrid : "",
-      winAmount: typeof spin.winAmount === "number" ? spin.winAmount : 0,
+      winAmount: readMoney(spin.winAmount),
       paylineWins,
       superBet: Boolean(spin.superBet),
-      baseBet: typeof spin.baseBet === "number" ? spin.baseBet : 0,
+      baseBet: readMoney(spin.baseBet),
       ...(spin.titanWild ? { titanWild: parseTitanWildSpin(spin.titanWild) } : {}),
       tokenPositions: parseTokenPositions(spin.tokenPositions),
       jackpotTier: typeof spin.jackpotTier === "string" ? spin.jackpotTier : null,
-      jackpotPrize: typeof spin.jackpotPrize === "number" ? spin.jackpotPrize : 0,
+      jackpotPrize: readMoney(spin.jackpotPrize),
     },
     round: {
       roundId: String(round.roundId ?? ""),
       state: (round.state === "RESPIN" ? "RESPIN" : round.state === "ENDED" ? "ENDED" : "ACTIVE") as "ACTIVE" | "RESPIN" | "ENDED",
-      betAmount: typeof round.betAmount === "number" ? round.betAmount : 0,
-      totalWin: typeof round.totalWin === "number" ? round.totalWin : 0,
+      betAmount: readMoney(round.betAmount),
+      totalWin: readMoney(round.totalWin),
     },
     state: {
       titanWild: parseTitanWildState(state.titanWild),
@@ -233,15 +243,17 @@ export function isTitanRoundEnded(payload: TitanSpinPayload): boolean {
 export interface TitanBalanceUpdate {
   cmd: 1501;
   c: number;
-  balance: number;
+  /** Balance as decimal string on wire (e.g. "99800.0"). */
+  balance: string;
 }
 
 export function isTitanBalanceUpdate(
   payload: Record<string, unknown>,
 ): boolean {
+  // balance is string on wire per contract
   return (
     hasCmd(payload, "1501") &&
-    typeof payload.balance === "number"
+    typeof payload.balance === "string"
   );
 }
 
@@ -265,13 +277,11 @@ export function isTitanJackpotTriggered(
 ): boolean {
   if (!hasCmd(payload, "1502")) return false;
   if (typeof payload.tier !== "string") return false;
-  // prizeAmount + tokenCount may arrive as number (per contract) or string
+  // prizeAmount is string on wire, tokenCount is number
   const prizeOk =
-    typeof payload.prizeAmount === "number" ||
-    (typeof payload.prizeAmount === "string" && !isNaN(Number(payload.prizeAmount)));
-  const tokenOk =
-    typeof payload.tokenCount === "number" ||
-    (typeof payload.tokenCount === "string" && !isNaN(Number(payload.tokenCount)));
+    typeof payload.prizeAmount === "string" ||
+    typeof payload.prizeAmount === "number";
+  const tokenOk = typeof payload.tokenCount === "number";
   return prizeOk && tokenOk;
 }
 
@@ -506,7 +516,7 @@ function parseTitanJackpotWinRecord(
   if (typeof r.date !== "string" || typeof r.jackpotType !== "string") return null;
   return {
     date: r.date,
-    amount: typeof r.amount === "number" ? r.amount : Number(r.amount ?? 0),
+    amount: readMoney(r.amount),
     jackpotType: r.jackpotType,
     playerDisplayName: typeof r.playerDisplayName === "string" ? r.playerDisplayName : undefined,
     isOwn: Boolean(r.isOwn),

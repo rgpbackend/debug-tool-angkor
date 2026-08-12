@@ -122,7 +122,6 @@ export default function TitanJackpotMeter({
             className={`jackpot-bar-card ${t.cssClass}${t.reached ? " card-reached" : ""}`}
           >
             <span className="card-tier-name">{t.label}</span>
-            <span className="card-tier-tokens">{t.tokens} tokens</span>
             <span className={`card-tier-prize${t.isProgressive ? " prize-progressive" : ""}`}>
               {t.isProgressive && poolBalances === null
                 ? "…"

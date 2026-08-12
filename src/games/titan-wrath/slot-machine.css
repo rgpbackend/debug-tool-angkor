@@ -1232,7 +1232,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 8px 12px 4px;
+  padding: 10px 14px 6px;
   flex-shrink: 0;
 }
 
@@ -1249,12 +1249,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 5px 4px 4px;
-  border-radius: 6px;
+  justify-content: center;
+  padding: 8px 6px;
+  border-radius: 8px;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(138, 133, 128, 0.1);
   transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
   min-width: 0;
+  gap: 2px;
 }
 
 .jackpot-bar-card.card-reached {
@@ -1282,26 +1284,19 @@
 
 .card-tier-name {
   font-family: var(--titan-display);
-  font-size: 0.55rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   line-height: 1.2;
-}
-
-.card-tier-tokens {
-  font-family: var(--titan-body);
-  font-size: 0.5rem;
-  color: var(--titan-ash);
-  line-height: 1.3;
 }
 
 .card-tier-prize {
   font-family: var(--titan-display);
-  font-size: 0.58rem;
+  font-size: 0.8rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  line-height: 1.3;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

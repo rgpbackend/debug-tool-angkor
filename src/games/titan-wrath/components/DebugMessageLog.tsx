@@ -76,11 +76,11 @@ function inboundPreview(payload: Record<string, unknown>): string {
     if (round?.state) parts.push(`round=${round.state}`);
   }
   if (cmd === 1501 || cmd === "1501") {
-    if (typeof payload.balance === "number") parts.push(`balance=${payload.balance}`);
+    if (typeof payload.balance === "string") parts.push(`balance=${payload.balance}`);
   }
   if (cmd === 1502 || cmd === "1502") {
     if (typeof payload.tier === "string") parts.push(`tier=${payload.tier}`);
-    if (typeof payload.prizeAmount === "number") parts.push(`prize=${payload.prizeAmount}`);
+    if (typeof payload.prizeAmount === "string") parts.push(`prize=${payload.prizeAmount}`);
   }
   if (cmd === 1005 || cmd === "1005") {
     parts.push("config");
