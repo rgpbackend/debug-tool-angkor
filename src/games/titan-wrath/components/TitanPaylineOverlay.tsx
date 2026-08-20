@@ -43,6 +43,12 @@ export default function TitanPaylineOverlay({
   const labelRow = activePayline?.rows?.[labelCol] ?? 1;
   const labelX = colCenter(labelCol);
   const labelY = rowCenter(labelRow) + 28; // offset below the path
+  const showMultiplier =
+    typeof currentWin.multiplier === "number" && currentWin.multiplier > 1;
+  const winLabel = showMultiplier
+    ? `$${currentWin.winAmount.toFixed(2)} x${currentWin.multiplier}`
+    : `$${currentWin.winAmount.toFixed(2)}`;
+  const labelW = showMultiplier ? 118 : 88;
 
   return (
     <svg
@@ -72,9 +78,9 @@ export default function TitanPaylineOverlay({
       {/* Win amount label on the grid */}
       <g>
         <rect
-          x={labelX - 44}
+          x={labelX - labelW / 2}
           y={labelY - 14}
-          width={88}
+          width={labelW}
           height={28}
           rx={6}
           fill="var(--titan-obsidian)"
@@ -93,7 +99,7 @@ export default function TitanPaylineOverlay({
           fontSize={16}
           fontWeight={700}
         >
-          ${currentWin.winAmount.toFixed(2)}
+          {winLabel}
         </text>
       </g>
     </svg>

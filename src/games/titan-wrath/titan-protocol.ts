@@ -15,6 +15,7 @@ export interface TitanPaylineWin {
   count: number;       // 3, 4, or 5
   winAmount: number;
   direction: "LTR" | "RTL";
+  multiplier?: number; // 1.0 = normal, 2/3 = Titan Multiplier, 4 = Titan's Wrath
 }
 
 export interface TitanWildSpinInfo {
@@ -122,6 +123,7 @@ function parsePaylineWin(raw: unknown): TitanPaylineWin | null {
     count: r.count,
     winAmount: readMoney(r.winAmount),
     direction: dir,
+    ...(typeof r.multiplier === "number" ? { multiplier: r.multiplier } : {}),
   };
 }
 
@@ -401,6 +403,7 @@ export interface TitanHistoryWinWay {
   count: number;
   win: string;
   direction: "LTR" | "RTL";
+  multiplier?: number;
 }
 
 export interface TitanHistoryDetailPayload {
@@ -440,6 +443,7 @@ function parseTitanHistoryWinWay(raw: unknown): TitanHistoryWinWay | null {
     count: typeof r.count === "number" ? r.count : 0,
     win: typeof r.win === "string" ? r.win : String(r.win ?? "0"),
     direction,
+    ...(typeof r.multiplier === "number" ? { multiplier: r.multiplier } : {}),
   };
 }
 
