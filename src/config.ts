@@ -16,7 +16,7 @@ export function readEnvDefaults(): AppEnvDefaults {
   const timeoutRaw = import.meta.env.VITE_WS_TIMEOUT_MS;
   const timeoutParsed = timeoutRaw ? Number(timeoutRaw) : Number.NaN;
   return {
-    apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? DEFAULT_API_BASE_URL,
+    apiBaseUrl: import.meta.env.VITE_API_AUTH_URL ?? DEFAULT_API_BASE_URL,
     wsUrl: import.meta.env.VITE_WS_URL ?? DEFAULT_WS_URL,
     timeoutMs:
       Number.isFinite(timeoutParsed) && timeoutParsed > 0
