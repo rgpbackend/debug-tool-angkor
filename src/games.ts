@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { GameScreen as AngkorGameScreen } from "./games/game-the-last-guardian-of-angkor";
 import { GameScreen as TitanGameScreen } from "./games/titan-wrath";
+import { GameScreen as BulletGameScreen } from "./games/bullet-and-bounty";
 
 export interface JackpotTierDef {
   key: string;
@@ -58,7 +59,15 @@ const GAMES: GameDef[] = [
     ],
     GameScreen: TitanGameScreen,
   },
-  // Add new games here — same GameDef shape.
+  {
+    id: "yama_01026",
+    name: "Bullet and Bounty",
+    icon: "🤠",
+    agentId: "AGENCY_001",
+    winSystem: "winways",
+    jackpotTiers: [],
+    GameScreen: BulletGameScreen,
+  },
 ];
 
 export function getGames(): GameDef[] {

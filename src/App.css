@@ -521,6 +521,24 @@
   filter: drop-shadow(0 0 12px rgba(232, 69, 45, 0.4));
 }
 
+/* Bullet card — dust and lead */
+.lobby-game-card--bullet {
+  border-color: rgba(196, 164, 74, 0.16);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 30%, rgba(139, 30, 30, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(196, 164, 74, 0.05) 0%, rgba(0, 0, 0, 0.22) 100%),
+    #16110e;
+}
+
+.lobby-game-card--bullet:hover:not(:disabled) {
+  border-color: rgba(240, 192, 64, 0.35);
+  box-shadow: 0 0 30px rgba(139, 30, 30, 0.12);
+}
+
+.lobby-game-card--bullet .lobby-game-icon {
+  filter: drop-shadow(0 0 12px rgba(240, 192, 64, 0.35));
+}
+
 .lobby-game-name {
   font-family: 'Cinzel', serif;
   font-size: 0.95rem;

@@ -1,5 +1,6 @@
 import {
   hasCmd,
+  readJoinField,
   type WsOutboundFrame,
 } from "./protocol";
 import {
@@ -323,14 +324,15 @@ function formatCmdErrorMessage(payload: Record<string, unknown>): string {
 export function isJoinResponsePayload(
   payload: Record<string, unknown>,
 ): boolean {
+  const symbols = readJoinField(payload, "symbols");
   if (
     !hasCmd(payload, "1005") ||
     typeof payload.c !== "number" ||
-    !Array.isArray(payload.symbols)
+    !Array.isArray(symbols)
   ) {
     return false;
   }
-  const first = payload.symbols[0];
+  const first = symbols[0];
   if (first === undefined) {
     return true;
   }

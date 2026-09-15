@@ -15,6 +15,12 @@ type LobbyScreenProps = {
 
 const QUICK_DEPOSIT_OPTIONS = [100, 500, 1000, 5000, 10000];
 
+function lobbyCardTheme(id: string): string {
+  if (id === "yama_01021") return "titan";
+  if (id === "yama_01026") return "bullet";
+  return "angkor";
+}
+
 export default function LobbyScreen({
   loggedIn,
   error,
@@ -121,14 +127,18 @@ export default function LobbyScreen({
               <button
                 key={game.id}
                 type="button"
-                className={`lobby-game-card lobby-game-card--${game.id === "yama_01021" ? "titan" : "angkor"}`}
+                className={`lobby-game-card lobby-game-card--${lobbyCardTheme(game.id)}`}
                 disabled={busy || !loggedIn}
                 onClick={() => onLaunch(game)}
               >
                 <span className="lobby-game-icon">{game.icon}</span>
                 <span className="lobby-game-name">{game.name}</span>
                 <span className="lobby-game-meta">
-                  {game.winSystem === "paylines" ? "10 Paylines" : "Win Ways"}
+                  {game.id === "yama_01026"
+                    ? "576 Ways"
+                    : game.winSystem === "paylines"
+                      ? "10 Paylines"
+                      : "Win Ways"}
                 </span>
               </button>
             ))}

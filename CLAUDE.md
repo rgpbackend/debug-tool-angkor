@@ -60,6 +60,7 @@ games/<game>/
 **Existing games:**
 - `game-the-last-guardian-of-angkor` — Win-ways slot (6×5 grid). id: `game-the-last-guardian-of-angkor`.
 - `titan-wrath` — Paylines slot (5×3 grid, 10 paylines). id: `yama_01021`. Olympus Jackpot with Divine Token mechanic.
+- `bullet-and-bounty` — Win-ways slot (5 reels 3-4-4-4-3, 576 ways). id: `yama_01026`.
 
 ### Game session hook pattern
 

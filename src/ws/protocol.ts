@@ -12,6 +12,25 @@ export function hasCmd(
   return cmd === expected || cmd === Number(expected);
 }
 
+/**
+ * JOIN 1005 catalog: top-level (Angkor/Titan) or nested under `config` (yama_01026).
+ * Top-level wins when both are present.
+ */
+export function readJoinField(
+  payload: Record<string, unknown>,
+  key: string,
+): unknown {
+  const top = payload[key];
+  if (top !== undefined) {
+    return top;
+  }
+  const config = payload.config;
+  if (config !== null && typeof config === "object" && !Array.isArray(config)) {
+    return (config as Record<string, unknown>)[key];
+  }
+  return undefined;
+}
+
 export type SymbolKind =
   | "LOW_PAY"
   | "MID_PAY"
@@ -328,8 +347,13 @@ export function parseJoinResponsePayload(
   payload: Record<string, unknown>,
 ): JoinResponsePayload {
   // Accept both string and numeric bet levels from server.
-  const rawBetLevels = Array.isArray(payload.betAmounts) ? payload.betAmounts
-    : Array.isArray(payload.betLevels) ? payload.betLevels : undefined;
+  const rawBetAmounts = readJoinField(payload, "betAmounts");
+  const rawBetLevelsField = readJoinField(payload, "betLevels");
+  const rawBetLevels = Array.isArray(rawBetAmounts)
+    ? rawBetAmounts
+    : Array.isArray(rawBetLevelsField)
+      ? rawBetLevelsField
+      : undefined;
   const betLevels = rawBetLevels
     ?.filter(
       (level): level is string | number =>
@@ -340,20 +364,24 @@ export function parseJoinResponsePayload(
     );
 
   // Parse paylines from server response (e.g. Titan's Wrath).
-  const paylines = parseServerPaylines(payload.paylines);
+  const paylines = parseServerPaylines(readJoinField(payload, "paylines"));
 
   // Parse jackpot tiers from server (e.g. Titan's Wrath Olympus Jackpot).
-  const jackpotTiers = parseJackpotTiers(payload.jackpotTiers);
+  const jackpotTiers = parseJackpotTiers(readJoinField(payload, "jackpotTiers"));
 
+  const rawLastRound = readJoinField(payload, "lastRound");
   const lastRound =
-    payload.lastRound === null || payload.lastRound === undefined
+    rawLastRound === null || rawLastRound === undefined
       ? null
-      : (payload.lastRound as LastRound);
-  const balance = readTopLevelBalance(payload);
+      : (rawLastRound as LastRound);
+  const balance =
+    readTopLevelBalance(payload) ??
+    readWireDecimalString(readJoinField(payload, "balance")) ??
+    null;
   return {
     cmd: payload.cmd as string | number,
     c: Number(payload.c ?? 0),
-    symbols: parseGameSymbols(payload.symbols),
+    symbols: parseGameSymbols(readJoinField(payload, "symbols")),
     ...(betLevels?.length ? { betLevels } : {}),
     ...(paylines?.length ? { paylines } : {}),
     ...(balance ? { balance } : {}),
