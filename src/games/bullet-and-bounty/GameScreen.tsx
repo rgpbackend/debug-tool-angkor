@@ -41,6 +41,7 @@ export default function GameScreen({
     isSpinning,
     reels,
     totalWin,
+    winSymbols,
     symbolCatalog,
     freeSpin,
     pendingChoice,
@@ -109,6 +110,7 @@ export default function GameScreen({
       <BulletSlotMachine
         reels={reels}
         spinning={isSpinning}
+        winSymbols={winSymbols}
         symbols={symbolCatalog}
         balance={displayBalance}
         totalWin={totalWin}

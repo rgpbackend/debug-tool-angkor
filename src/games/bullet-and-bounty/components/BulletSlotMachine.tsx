@@ -1,11 +1,26 @@
-import { useCallback, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { GameSymbol } from "../../../ws/protocol";
 import { formatCreditAmount } from "../../../lib/session-utils";
 import { BULLET_REEL_HEIGHTS } from "../bullet-protocol";
+import {
+  buildSpinStrip,
+  buildUnifiedReelStrip,
+  REEL_SPIN,
+  type ReelVisualState,
+} from "../lib/reel-spin";
+import { useReelStripMotion } from "../hooks/useReelStripMotion";
 
 interface BulletSlotMachineProps {
   reels: string[][];
   spinning: boolean;
+  winSymbols: string[];
   symbols: GameSymbol[];
   balance: string | null;
   totalWin: string | null;
@@ -19,13 +34,120 @@ interface BulletSlotMachineProps {
   error: string | null;
 }
 
-function symbolLabel(id: string): string {
-  return id.trim() ? id : "·";
+function symbolGlyph(id: string): { glyph: string; cls: string } {
+  switch (id) {
+    case "W":
+      return { glyph: "W", cls: "bullet-cell--wild" };
+    case "S":
+      return { glyph: "💀", cls: "bullet-cell--scatter" };
+    case "P":
+      return { glyph: "⭐", cls: "bullet-cell--badge" };
+    default:
+      return { glyph: id.trim() ? id : "·", cls: "" };
+  }
+}
+
+type BulletReelColumnProps = {
+  col: number;
+  rows: number;
+  /** Settled symbols before this spin (viewport start position). */
+  originColumn: string[];
+  column: string[];
+  loopSegment: string[];
+  reelState: ReelVisualState;
+  bouncing: boolean;
+  hitSymbols: Set<string>;
+  kindById: Map<string, string | undefined>;
+  onStopped: (col: number) => void;
+};
+
+function BulletReelColumn({
+  col,
+  rows,
+  originColumn,
+  column,
+  loopSegment,
+  reelState,
+  bouncing,
+  hitSymbols,
+  kindById,
+  onStopped,
+}: BulletReelColumnProps) {
+  // The landing result rides in the strip from the moment the payload arrives
+  // (top cells sit off-viewport during cruise), so the stopping flip itself
+  // swaps no content — no layer re-raster right at the decel start.
+  const strip = useMemo(
+    () => buildUnifiedReelStrip(originColumn, loopSegment, column),
+    [originColumn, loopSegment, column],
+  );
+  const stripRef = useReelStripMotion({
+    reelState,
+    strip,
+    onStopped: () => onStopped(col),
+  });
+
+  const colClass = [
+    "bullet-reel",
+    reelState === "spinning" ? "bullet-reel--spinning" : "",
+    reelState === "stopping" ? "bullet-reel--stopping" : "",
+    reelState === "stopped" && bouncing ? "bullet-reel--bounce" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const style = { "--rows": rows } as CSSProperties;
+
+  const staticCell = (sym: string, ri: number) => {
+    const { glyph, cls } = symbolGlyph(sym);
+    const kind = kindById.get(sym);
+    const hit = hitSymbols.has(sym) ? "bullet-cell--hit" : "";
+    return (
+      <div
+        key={`${col}-${ri}`}
+        className={["bullet-cell", cls, kind ? `bullet-cell--${kind.toLowerCase()}` : "", hit]
+          .filter(Boolean)
+          .join(" ")}
+        aria-hidden="true"
+      >
+        {glyph}
+      </div>
+    );
+  };
+
+  if (reelState === "stopped" || reelState === "idle") {
+    return (
+      <div className={colClass} style={style}>
+        {column.map((sym, ri) => staticCell(sym, ri))}
+      </div>
+    );
+  }
+
+  return (
+    <div className={colClass} style={style}>
+      <div ref={stripRef} className="bullet-reel-strip bullet-reel-strip--motion">
+        {strip.symbols.map((sym, i) => {
+          const { glyph, cls } = symbolGlyph(sym);
+          return (
+            <div
+              key={`m-${i}`}
+              className={["bullet-cell", "bullet-cell--motion", cls]
+                .filter(Boolean)
+                .join(" ")}
+              aria-hidden="true"
+            >
+              {glyph}
+            </div>
+          );
+        })}
+      </div>
+      <div className="bullet-reel-shade" />
+    </div>
+  );
 }
 
 export default function BulletSlotMachine({
   reels,
   spinning,
+  winSymbols,
   symbols,
   balance,
   totalWin,
@@ -39,6 +161,94 @@ export default function BulletSlotMachine({
   error,
 }: BulletSlotMachineProps) {
   const [betPickerOpen, setBetPickerOpen] = useState(false);
+  const [reelStates, setReelStates] = useState<ReelVisualState[]>(
+    BULLET_REEL_HEIGHTS.map(() => "idle"),
+  );
+  const [bounces, setBounces] = useState<boolean[]>(
+    BULLET_REEL_HEIGHTS.map(() => false),
+  );
+  const [origin, setOrigin] = useState<string[][]>([]);
+  const [loopSegs, setLoopSegs] = useState<string[][]>([]);
+  const [winFlash, setWinFlash] = useState(false);
+
+  // Landing result for the current spin; "ready" once the 1500 payload arrives.
+  const resultRef = useRef<string[][]>(reels);
+  const resultReadyRef = useRef(true);
+  const seenReelsRef = useRef(reels);
+  const latestReelsRef = useRef(reels);
+
+  useEffect(() => {
+    if (seenReelsRef.current === reels) return;
+    seenReelsRef.current = reels;
+    latestReelsRef.current = reels;
+    resultRef.current = reels;
+    resultReadyRef.current = true;
+  }, [reels]);
+
+  // Rising edge of `spinning` bumps spinSeq; the theater runs off spinSeq so a
+  // fast server response (isSpinning false again in ~300ms) cannot cancel it.
+  const [spinSeq, setSpinSeq] = useState(0);
+  const prevSpinningRef = useRef(false);
+  useEffect(() => {
+    if (spinning === prevSpinningRef.current) return;
+    prevSpinningRef.current = spinning;
+    if (spinning) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- theater starts on the spin event
+      setSpinSeq((n) => n + 1);
+    }
+  }, [spinning]);
+
+  // Spin theater: all reels cruise, then stop left → right once the result is in.
+  useEffect(() => {
+    if (spinSeq === 0) return;
+    const reelsNow = latestReelsRef.current;
+    setOrigin(reelsNow);
+    setLoopSegs(
+      BULLET_REEL_HEIGHTS.map(() => buildSpinStrip(REEL_SPIN.loopSegmentLength)),
+    );
+    setReelStates(BULLET_REEL_HEIGHTS.map(() => "spinning"));
+    setWinFlash(false);
+    resultRef.current = reelsNow;
+    resultReadyRef.current = false;
+    seenReelsRef.current = reelsNow;
+    const timers: number[] = [];
+    for (let i = 0; i < BULLET_REEL_HEIGHTS.length; i++) {
+      timers.push(
+        window.setTimeout(() => {
+          const tryStop = () => {
+            if (resultReadyRef.current) {
+              setReelStates((prev) =>
+                prev.map((s, j) => (j === i ? "stopping" : s)),
+              );
+            } else {
+              timers.push(window.setTimeout(tryStop, 50));
+            }
+          };
+          tryStop();
+        }, REEL_SPIN.minSpinMs + i * REEL_SPIN.stopIntervalMs),
+      );
+    }
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [spinSeq]);
+
+  const handleReelStopped = useCallback((i: number) => {
+    setReelStates((prev) => prev.map((s, j) => (j === i ? "stopped" : s)));
+    setBounces((prev) => prev.map((b, j) => (j === i ? true : b)));
+    window.setTimeout(
+      () => setBounces((prev) => prev.map((b, j) => (j === i ? false : b))),
+      REEL_SPIN.bounceMs,
+    );
+  }, []);
+
+  const landed = reelStates.every((s) => s === "stopped");
+  const winKey = winSymbols.join(",");
+  useEffect(() => {
+    if (!landed || !winKey) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- flash starts when reels land
+    setWinFlash(true);
+    const t = window.setTimeout(() => setWinFlash(false), 1500);
+    return () => window.clearTimeout(t);
+  }, [landed, winKey]);
 
   const stepBet = useCallback(
     (dir: -1 | 1) => {
@@ -52,6 +262,12 @@ export default function BulletSlotMachine({
   const betDisplay = `$${Number(selectBetValue).toFixed(2)}`;
   const winNum = totalWin != null ? Number(totalWin) : 0;
   const showWin = Number.isFinite(winNum) && winNum > 0;
+  const busy = spinning || reelStates.some((s) => s === "spinning" || s === "stopping");
+  const hitSymbols = useMemo(() => new Set(winFlash ? winSymbols : []), [winFlash, winSymbols]);
+  const kindById = useMemo(
+    () => new Map(symbols.map((s) => [s.id, s.kind])),
+    [symbols],
+  );
 
   return (
     <div className="bullet-cabinet">
@@ -79,32 +295,31 @@ export default function BulletSlotMachine({
       </div>
 
       <div
-        className={`bullet-grid${spinning ? " bullet-grid--spinning" : ""}`}
+        className="bullet-grid"
         role="img"
         aria-label="Bullet and Bounty reels 3-4-4-4-3"
       >
         {BULLET_REEL_HEIGHTS.map((height, col) => (
-          <div key={col} className="bullet-reel" data-height={height}>
-            {Array.from({ length: height }, (_, row) => {
-              const id = reels[col]?.[row] ?? "";
-              const kind = symbols.find((s) => s.id === id)?.kind;
-              return (
-                <div
-                  key={`${col}-${row}`}
-                  className={`bullet-cell${kind ? ` bullet-cell--${kind.toLowerCase()}` : ""}`}
-                >
-                  {symbolLabel(id)}
-                </div>
-              );
-            })}
-          </div>
+          <BulletReelColumn
+            key={col}
+            col={col}
+            rows={height}
+            originColumn={origin[col] ?? []}
+            column={reels[col] ?? []}
+            loopSegment={loopSegs[col] ?? []}
+            reelState={reelStates[col]}
+            bouncing={bounces[col]}
+            hitSymbols={hitSymbols}
+            kindById={kindById}
+            onStopped={handleReelStopped}
+          />
         ))}
       </div>
 
       <div className="bullet-ticker">
         {error
           ? error
-          : spinning
+          : busy
             ? "Spinning…"
             : "Win up to 576 Ways · 3 Scatters trigger Free Spins · Win cap 13950x"}
       </div>
@@ -139,13 +354,13 @@ export default function BulletSlotMachine({
 
         <button
           type="button"
-          className={`bullet-spin-btn${spinning ? " bullet-spin-btn--busy" : ""}`}
-          disabled={!canSpin && !spinning}
+          className={`bullet-spin-btn${busy ? " bullet-spin-btn--busy" : ""}`}
+          disabled={!canSpin || busy}
           onClick={() => {
-            if (!spinning) onSpin();
+            if (!busy) onSpin();
           }}
         >
-          {spinning ? "■" : "SPIN"}
+          {busy ? "···" : "Spin"}
         </button>
       </div>
 

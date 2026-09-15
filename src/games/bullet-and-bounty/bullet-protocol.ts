@@ -46,6 +46,7 @@ export interface BulletSpinPayload {
   roundBet: string | null;
   isFinished: boolean;
   freeSpin: BulletFreeSpinState | null;
+  winSymbols: string[];
 }
 
 export interface BulletFreeSpinState {
@@ -132,6 +133,19 @@ export function parseBulletSpinPayload(payload: Record<string, unknown>): Bullet
   const spinState = isObject(payload.state) ? payload.state : undefined;
   const winRaw = spin?.win ?? spin?.winAmount ?? round?.totalWin;
   const totalRaw = round?.totalWin ?? winRaw;
+  const steps = Array.isArray(spin?.steps) ? spin.steps : [];
+  const winSymbols = [
+    ...new Set(
+      steps.flatMap(
+        (step: unknown): string[] =>
+          isObject(step) && Array.isArray(step.wins)
+            ? step.wins
+                .map((w: unknown) => (isObject(w) && typeof w.symbol === "string" ? w.symbol : ""))
+                .filter(Boolean)
+            : [],
+      ),
+    ),
+  ];
   return {
     cmd: payload.cmd as string | number,
     c: typeof payload.c === "number" ? payload.c : 0,
@@ -144,6 +158,7 @@ export function parseBulletSpinPayload(payload: Record<string, unknown>): Bullet
     roundBet: readWireDecimalString(round?.betAmount) ?? null,
     isFinished: round?.isFinished !== false && round?.state !== "ACTIVE" && round?.state !== "RESPIN",
     freeSpin: parseFreeSpinState(spinState),
+    winSymbols,
   };
 }
 

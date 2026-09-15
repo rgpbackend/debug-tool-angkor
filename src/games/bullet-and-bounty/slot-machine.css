@@ -1,248 +1,338 @@
-/* Bullet and Bounty — Wild West cabinet (join-ready debug screen) */
+@import url("https://fonts.googleapis.com/css2?family=Rye&display=swap");
 
-:root {
-  --bullet-bg: #16110e;
-  --bullet-wood: #2a1f1a;
-  --bullet-dust: #c4a44a;
-  --bullet-blood: #8b1e1e;
-  --bullet-lead: #8a8078;
-  --bullet-cream: #e8e0d5;
-  --bullet-gold: #f0c040;
-  --bullet-display: "Cinzel", serif;
-  --bullet-body: Inter, system-ui, -apple-system, sans-serif;
-}
-
+/* Bullet and Bounty — gunmetal iron, saloon wood, dusty brass, bounty gold (GDD §12.1). */
 .bullet-screen {
-  height: 100svh;
-  max-height: 100svh;
+  --bullet-ink: #17191d;
+  --bullet-iron: #262a31;
+  --bullet-panel: #2e333b;
+  --bullet-line: #454c57;
+  --bullet-wood-1: #46311f;
+  --bullet-wood-2: #2c1d11;
+  --bullet-sand: #c8a35f;
+  --bullet-sand-dim: #8d7850;
+  --bullet-gold: #f0cd6b;
+  --bullet-blood: #b04545;
+  --bullet-smoke: #a7adb6;
+  --bullet-cell: clamp(36px, min(8.2vw, 12vh), 80px);
+  --bullet-display: "Rye", "Georgia", serif;
+
+  /* game screen: everything fits the viewport, no scrolling */
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 12px;
-  box-sizing: border-box;
   background:
-    radial-gradient(ellipse 70% 50% at 50% 20%, rgba(139, 30, 30, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 80% 40% at 50% 80%, rgba(196, 164, 74, 0.06) 0%, transparent 55%),
-    var(--bullet-bg);
-  color: var(--bullet-cream);
-  font-family: var(--bullet-body);
+    radial-gradient(120% 90% at 50% 0%, rgba(200, 163, 95, 0.06), transparent 55%),
+    radial-gradient(140% 120% at 50% 110%, rgba(0, 0, 0, 0.55), transparent 60%),
+    var(--bullet-ink);
+  color: var(--bullet-smoke);
+  font: inherit;
 }
 
-.bullet-screen--joining {
-  flex-direction: column;
-}
-
-.bullet-joining-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.bullet-joining-emblem {
-  font-size: 3.5rem;
-  line-height: 1;
-  filter: drop-shadow(0 0 18px rgba(240, 192, 64, 0.4));
-}
-
-.bullet-joining-title {
-  font-family: var(--bullet-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--bullet-dust);
-  margin: 12px 0 0;
-  letter-spacing: 0.06em;
-}
-
-.bullet-joining-bar-track {
-  width: 180px;
-  height: 4px;
-  margin-top: 28px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.bullet-joining-bar {
-  width: 40%;
-  height: 100%;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, var(--bullet-blood), var(--bullet-gold), transparent);
-  animation: bullet-bar-slide 1.6s ease-in-out infinite;
-}
-
-@keyframes bullet-bar-slide {
-  0% { transform: translateX(-100%); opacity: 0; }
-  25% { opacity: 1; }
-  75% { opacity: 1; }
-  100% { transform: translateX(350%); opacity: 0; }
-}
-
-.bullet-joining-status {
-  margin: 16px 0 0;
-  font-size: 0.85rem;
-  color: var(--bullet-lead);
-}
-
-.bullet-joining-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.bullet-join-retry {
-  margin-top: 8px;
-}
-
-.bullet-error-text {
-  color: #e07070;
-  font-size: 0.85rem;
-  max-width: 28rem;
-}
+/* ---------- cabinet: wood-slat saloon frame with a bullet-pocked rail ---------- */
 
 .bullet-cabinet {
-  width: min(720px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 18px 18px;
-  border: 1px solid rgba(196, 164, 74, 0.22);
-  border-radius: 12px;
+  position: relative;
+  /* hug the reels so the wood frame reads as one balanced unit */
+  width: fit-content;
+  max-width: 96vw;
+  border: 1px solid #1d1409;
+  border-radius: 10px;
+  padding: 14px 18px 18px;
   background:
-    linear-gradient(180deg, rgba(196, 164, 74, 0.06) 0%, rgba(0, 0, 0, 0.25) 100%),
-    var(--bullet-wood);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    repeating-linear-gradient(
+      90deg,
+      var(--bullet-wood-1) 0 26px,
+      #3c2918 26px 28px,
+      var(--bullet-wood-2) 28px 54px,
+      #33220f 54px 56px
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(240, 205, 107, 0.14),
+    inset 0 -14px 30px rgba(0, 0, 0, 0.5),
+    0 18px 50px rgba(0, 0, 0, 0.55);
 }
+
+/* bullet holes across the top rail — two-layer radial per hole, no images */
+.bullet-cabinet::before {
+  content: "";
+  position: absolute;
+  inset: 4px 14px auto;
+  height: 9px;
+  background-image:
+    radial-gradient(circle 2.5px at 24px 4px, #120b05 98%, transparent),
+    radial-gradient(circle 2px at 190px 6px, #120b05 98%, transparent),
+    radial-gradient(circle 3px at 421px 3px, #120b05 98%, transparent),
+    radial-gradient(circle 2px at 640px 7px, #120b05 98%, transparent),
+    radial-gradient(circle 2.5px at 820px 4px, #120b05 98%, transparent);
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* ---------- toolbar / title ---------- */
 
 .bullet-toolbar {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: baseline;
+  gap: 14px;
+  padding: 6px 2px 12px;
 }
 
 .bullet-title {
-  flex: 1;
-  margin: 0;
+  margin: 0 auto;
   font-family: var(--bullet-display);
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 400;
+  font-size: clamp(20px, 3.4vw, 30px);
   letter-spacing: 0.04em;
-  color: var(--bullet-dust);
+  color: var(--bullet-gold);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
 }
 
 .bullet-ways {
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--bullet-lead);
+  font-size: 12px;
+  font-variant: all-small-caps;
+  letter-spacing: 0.14em;
+  color: var(--bullet-sand-dim);
 }
 
 .bullet-lobby-btn {
-  border: 1px solid rgba(196, 164, 74, 0.28);
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--bullet-cream);
+  border: 1px solid var(--bullet-line);
   border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, var(--bullet-panel), var(--bullet-iron));
+  color: var(--bullet-sand);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 13px;
+  cursor: pointer;
 }
 
-.bullet-lobby-btn:hover:not(:disabled) {
-  border-color: rgba(196, 164, 74, 0.55);
+.bullet-lobby-btn:hover {
+  color: var(--bullet-gold);
+  border-color: var(--bullet-sand-dim);
 }
 
-.bullet-lobby-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.bullet-lobby-btn:focus-visible,
+.bullet-screen button:focus-visible {
+  outline: 2px solid var(--bullet-gold);
+  outline-offset: 2px;
 }
+
+/* ---------- HUD plaques ---------- */
 
 .bullet-hud {
-  display: flex;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .bullet-hud-item {
-  flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.28);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #20180d;
+  border-radius: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, var(--bullet-panel), #23272e);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .bullet-hud-label {
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--bullet-lead);
+  font-size: 12px;
+  font-variant: all-small-caps;
+  letter-spacing: 0.16em;
+  color: var(--bullet-sand-dim);
 }
 
 .bullet-hud-value {
   font-variant-numeric: tabular-nums;
-  font-size: 1.05rem;
-  color: var(--bullet-cream);
+  font-size: 17px;
+  color: var(--bullet-smoke);
 }
 
 .bullet-hud-value--win {
   color: var(--bullet-gold);
+  text-shadow: 0 0 14px rgba(240, 205, 107, 0.35);
 }
+
+/* ---------- reels: iron window inside the wood frame ---------- */
 
 .bullet-grid {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: center; /* 3-row edge reels sit centered against 4-row reels */
   gap: 8px;
-  padding: 14px 8px;
+  width: fit-content;
+  margin: 0 auto;
+  border: 1px solid #120c05;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.35);
-  min-height: 280px;
-}
-
-.bullet-grid--spinning .bullet-cell {
-  animation: bullet-cell-spin 0.12s linear infinite;
-}
-
-@keyframes bullet-cell-spin {
-  50% { filter: brightness(1.4); }
+  padding: 10px;
+  background:
+    linear-gradient(180deg, rgba(240, 205, 107, 0.05), transparent 30%),
+    linear-gradient(180deg, #1b1e23, #101216);
+  box-shadow:
+    inset 0 2px 12px rgba(0, 0, 0, 0.75),
+    inset 0 0 0 1px rgba(200, 163, 95, 0.08);
 }
 
 .bullet-reel {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  contain: layout style paint;
+  width: var(--bullet-cell);
+  height: calc(var(--rows) * var(--bullet-cell));
+  border-radius: 4px;
+  background: #171a1f;
+  box-shadow: inset 0 0 0 1px rgba(69, 76, 87, 0.5);
 }
 
+.bullet-reel + .bullet-reel {
+  margin-left: 2px;
+}
+
+.bullet-reel-strip {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.bullet-cell--motion {
+  opacity: 0.94;
+}
+
+/* deceleration keeps streaks on the landing reel; cruise relies on motion */
+.bullet-reel--spinning .bullet-reel-shade,
+.bullet-reel--stopping .bullet-reel-shade {
+  opacity: 1;
+}
+
+.bullet-reel--bounce {
+  animation: bullet-reel-bounce 220ms cubic-bezier(0.25, 0.9, 0.35, 1);
+}
+
+@keyframes bullet-reel-bounce {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(4px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* motion-blur streaks + edge vignette while a reel is in motion */
+.bullet-reel-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(10, 12, 15, 0.9), transparent 18%, transparent 82%, rgba(10, 12, 15, 0.9)),
+    repeating-linear-gradient(180deg, transparent 0 9px, rgba(255, 255, 255, 0.05) 9px 13px);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+/* ---------- cells ---------- */
+
 .bullet-cell {
-  width: 64px;
-  height: 64px;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  border: 1px solid rgba(196, 164, 74, 0.18);
-  background: #1c1612;
-  font-family: var(--bullet-display);
+  /* cell + margins must total exactly --bullet-cell so reels land flush */
+  height: calc(var(--bullet-cell) - 6px);
+  margin: 3px 4px;
+  border: 1px solid #343b45;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #2c323b, #22262d);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  font-size: calc(var(--bullet-cell) * 0.44);
   font-weight: 700;
-  font-size: 1.15rem;
-  color: var(--bullet-cream);
+  color: var(--bullet-sand);
 }
 
-.bullet-cell--wild { color: var(--bullet-gold); border-color: rgba(240, 192, 64, 0.45); }
-.bullet-cell--scatter { color: #e07070; border-color: rgba(139, 30, 30, 0.55); }
-.bullet-cell--high_pay { color: #f3d48a; }
-.bullet-cell--mid_pay { color: #d8c8a8; }
-.bullet-cell--low_pay { color: #a89888; }
+.bullet-cell--high {
+  color: var(--bullet-blood);
+  border-color: #4a2727;
+  background: linear-gradient(180deg, #34262a, #261c20);
+}
+
+.bullet-cell--mid {
+  color: var(--bullet-sand);
+}
+
+.bullet-cell--low {
+  color: var(--bullet-smoke);
+  background: linear-gradient(180deg, #262b32, #1e2228);
+}
+
+.bullet-cell--wild {
+  color: var(--bullet-gold);
+  border-color: #6d5626;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(240, 205, 107, 0.22), transparent 62%),
+    linear-gradient(180deg, #332b18, #241f12);
+  text-shadow: 0 0 12px rgba(240, 205, 107, 0.5);
+}
+
+.bullet-cell--scatter {
+  font-size: calc(var(--bullet-cell) * 0.5);
+}
+
+.bullet-cell--badge {
+  font-size: calc(var(--bullet-cell) * 0.42);
+}
+
+.bullet-cell--hit {
+  animation: bullet-hit 0.55s ease-out 3;
+}
+
+@keyframes bullet-hit {
+  0% {
+    box-shadow: 0 0 0 0 rgba(240, 205, 107, 0.75);
+  }
+  60% {
+    box-shadow: 0 0 0 5px rgba(240, 205, 107, 0);
+    border-color: var(--bullet-gold);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(240, 205, 107, 0);
+  }
+}
+
+/* ---------- ticker ---------- */
 
 .bullet-ticker {
-  min-height: 1.4em;
-  font-size: 0.8rem;
-  color: #8fbf8a;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  /* inline-size containment: the long USP line must not widen the cabinet
+     (fit-content) while "Spinning…" is showing — that width flip read as a
+     squeeze/expand jerk on every spin */
+  contain: inline-size;
+  width: 100%;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0 12px;
+  border: 1px solid #20180d;
+  border-radius: 6px;
+  padding: 7px 14px;
+  background: #20242b;
+  font-size: 13px;
+  font-variant: all-small-caps;
+  letter-spacing: 0.12em;
+  color: var(--bullet-sand-dim);
+  text-align: center;
 }
+
+/* ---------- controls ---------- */
 
 .bullet-controls {
   display: flex;
@@ -253,121 +343,223 @@
 
 .bullet-bet-controls {
   display: flex;
-  align-items: center;
   gap: 6px;
 }
 
 .bullet-bet-btn,
 .bullet-bet-display {
-  border: 1px solid rgba(196, 164, 74, 0.28);
-  background: rgba(0, 0, 0, 0.3);
-  color: var(--bullet-cream);
+  border: 1px solid #20180d;
   border-radius: 6px;
-  cursor: pointer;
+  padding: 10px 0;
+  background: linear-gradient(180deg, var(--bullet-panel), #23272e);
+  color: var(--bullet-sand);
   font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .bullet-bet-btn {
-  width: 36px;
-  height: 36px;
-  font-size: 1.1rem;
+  width: 40px;
 }
 
 .bullet-bet-display {
-  min-width: 88px;
-  height: 36px;
-  font-variant-numeric: tabular-nums;
+  width: 96px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
 .bullet-bet-btn:disabled,
-.bullet-bet-display:disabled,
-.bullet-spin-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.bullet-bet-display:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
+.bullet-bet-btn:not(:disabled):hover,
+.bullet-bet-display:not(:disabled):hover {
+  color: var(--bullet-gold);
+}
+
+/* the one brass button on the cabinet */
 .bullet-spin-btn {
-  min-width: 96px;
-  height: 48px;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #d4a843 0%, #8b1e1e 140%);
-  color: #1a120c;
+  width: clamp(78px, 12vw, 96px);
+  height: clamp(78px, 12vw, 96px);
+  border-radius: 50%;
+  border: 1px solid #6d5626;
+  background:
+    radial-gradient(circle at 32% 28%, #f6e3a4, #d9af52 46%, #8a6a2c 100%);
+  color: #241a08;
   font-family: var(--bullet-display);
-  font-weight: 700;
+  font-size: clamp(17px, 2.6vw, 23px);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.55),
+    inset 0 -6px 12px rgba(90, 62, 16, 0.55),
+    0 6px 16px rgba(0, 0, 0, 0.5);
+  transition: transform 0.08s ease, filter 0.2s ease;
+}
+
+.bullet-spin-btn:not(:disabled):active {
+  transform: translateY(2px);
+}
+
+.bullet-spin-btn:disabled {
+  cursor: default;
 }
 
 .bullet-spin-btn--busy {
-  border-radius: 8px;
+  filter: saturate(0.25) brightness(0.75);
 }
+
+/* ---------- modals ---------- */
 
 .bullet-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 20;
+  background: rgba(10, 8, 5, 0.72);
+  backdrop-filter: blur(2px);
 }
 
-.bullet-bet-picker,
-.bullet-popup {
-  width: min(420px, calc(100% - 32px));
-  padding: 18px;
+.bullet-popup,
+.bullet-bet-picker {
+  min-width: 280px;
+  max-width: min(92vw, 420px);
+  border: 1px solid #20180d;
   border-radius: 10px;
-  border: 1px solid rgba(196, 164, 74, 0.28);
-  background: #201812;
+  padding: 22px 24px;
+  background: linear-gradient(180deg, var(--bullet-panel), #1d2127);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.6);
+  color: var(--bullet-smoke);
 }
 
-.bullet-bet-picker h3,
-.bullet-popup h2 {
-  margin: 0 0 12px;
+.bullet-popup h2,
+.bullet-bet-picker h3 {
+  margin: 0 0 8px;
   font-family: var(--bullet-display);
-  color: var(--bullet-dust);
+  font-weight: 400;
+  color: var(--bullet-gold);
 }
 
 .bullet-bet-picker-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
   gap: 8px;
+  margin-top: 14px;
 }
 
 .bullet-bet-option {
-  border: 1px solid rgba(196, 164, 74, 0.22);
-  background: rgba(0, 0, 0, 0.28);
-  color: var(--bullet-cream);
+  border: 1px solid var(--bullet-line);
   border-radius: 6px;
-  padding: 8px 4px;
-  cursor: pointer;
+  padding: 9px 0;
+  background: var(--bullet-iron);
+  color: var(--bullet-smoke);
   font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
 
 .bullet-bet-option--on {
   border-color: var(--bullet-gold);
   color: var(--bullet-gold);
+  background: rgba(240, 205, 107, 0.08);
 }
+
+/* ---------- free spins badge ---------- */
 
 .bullet-fs-badge {
   position: absolute;
   top: 12px;
   left: 12px;
-  padding: 6px 12px;
-  border: 1px solid var(--bullet-gold);
+  padding: 6px 14px;
+  border: 1px solid #6d5626;
   border-radius: 999px;
-  background: rgba(20, 12, 6, 0.85);
+  background: rgba(24, 17, 8, 0.9);
   color: var(--bullet-gold);
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-variant: all-small-caps;
+  letter-spacing: 0.1em;
   pointer-events: none;
 }
 
+/* ---------- joining screen ---------- */
+
+.bullet-screen--joining {
+  background: var(--bullet-ink);
+}
+
+.bullet-joining-card {
+  text-align: center;
+  padding: 40px 28px;
+}
+
+.bullet-joining-emblem {
+  font-size: 44px;
+}
+
+.bullet-joining-title {
+  font-family: var(--bullet-display);
+  font-weight: 400;
+  color: var(--bullet-gold);
+  margin: 10px 0 18px;
+}
+
+.bullet-joining-bar-track {
+  width: min(320px, 70vw);
+  height: 6px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: #23272e;
+  overflow: hidden;
+}
+
+.bullet-joining-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bullet-sand);
+  animation: bullet-joining-slide 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes bullet-joining-slide {
+  from {
+    transform: translateX(-70%);
+  }
+  to {
+    transform: translateX(70%);
+  }
+}
+
+.bullet-joining-status {
+  margin-top: 14px;
+  font-variant: all-small-caps;
+  letter-spacing: 0.14em;
+  color: var(--bullet-sand-dim);
+}
+
+.bullet-joining-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.bullet-error-text {
+  color: var(--bullet-blood);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .bullet-reel--bounce,
   .bullet-joining-bar,
-  .bullet-grid--spinning .bullet-cell {
+  .bullet-cell--hit {
     animation: none;
+  }
+
+  .bullet-reel-shade {
+    opacity: 0;
   }
 }
