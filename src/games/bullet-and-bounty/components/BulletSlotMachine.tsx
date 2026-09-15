@@ -39,11 +39,29 @@ function symbolGlyph(id: string): { glyph: string; cls: string } {
     case "W":
       return { glyph: "W", cls: "bullet-cell--wild" };
     case "S":
-      return { glyph: "💀", cls: "bullet-cell--scatter" };
+      return { glyph: "☠", cls: "bullet-cell--scatter" };
     case "P":
-      return { glyph: "⭐", cls: "bullet-cell--badge" };
+      return { glyph: "★", cls: "bullet-cell--badge" };
     default:
       return { glyph: id.trim() ? id : "·", cls: "" };
+  }
+}
+
+function kindClass(kind: string | undefined): string {
+  switch (kind) {
+    case "HIGH_PAY":
+      return "bullet-cell--high";
+    case "MID_PAY":
+      return "bullet-cell--mid";
+    case "LOW_PAY":
+      return "bullet-cell--low";
+    case "WILD":
+    case "GOLDEN_WILD":
+      return "bullet-cell--wild";
+    case "SCATTER":
+      return "bullet-cell--scatter";
+    default:
+      return "";
   }
 }
 
@@ -103,9 +121,7 @@ function BulletReelColumn({
     return (
       <div
         key={`${col}-${ri}`}
-        className={["bullet-cell", cls, kind ? `bullet-cell--${kind.toLowerCase()}` : "", hit]
-          .filter(Boolean)
-          .join(" ")}
+        className={["bullet-cell", cls, kindClass(kind), hit].filter(Boolean).join(" ")}
         aria-hidden="true"
       >
         {glyph}
@@ -273,10 +289,12 @@ export default function BulletSlotMachine({
     <div className="bullet-cabinet">
       <header className="bullet-toolbar">
         <button type="button" className="bullet-lobby-btn" onClick={onBackToLobby}>
-          ← Lobby
+          Lobby
         </button>
-        <h1 className="bullet-title">Bullet and Bounty</h1>
-        <span className="bullet-ways">576 Ways</span>
+        <div className="bullet-poster-name">
+          <h1 className="bullet-title">Bullet and Bounty</h1>
+          <p className="bullet-ways">Five reels, 3-4-4-4-3</p>
+        </div>
       </header>
 
       <div className="bullet-hud">
@@ -320,8 +338,10 @@ export default function BulletSlotMachine({
         {error
           ? error
           : busy
-            ? "Spinning…"
-            : "Win up to 576 Ways · 3 Scatters trigger Free Spins · Win cap 13950x"}
+            ? "Reels running"
+            : showWin
+              ? `Win $${formatCreditAmount(totalWin!)}`
+              : "Win up to 576 ways. Three scatters start free spins. Cap 13950×."}
       </div>
 
       <div className="bullet-controls">
@@ -367,7 +387,7 @@ export default function BulletSlotMachine({
       {betPickerOpen ? (
         <div className="bullet-modal-backdrop" onClick={() => setBetPickerOpen(false)}>
           <div className="bullet-bet-picker" onClick={(e) => e.stopPropagation()}>
-            <h3>Select Bet</h3>
+            <h3>Bet</h3>
             <div className="bullet-bet-picker-grid">
               {betLevels.map((level) => (
                 <button

@@ -260,6 +260,7 @@ export function useBulletSession(
     selectFreeSpinMode,
     sessionTakenOver,
     dismissSessionTakenOver,
+    clientRef: ws.clientRef,
   };
 }
 
