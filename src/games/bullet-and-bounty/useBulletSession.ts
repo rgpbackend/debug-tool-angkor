@@ -160,8 +160,9 @@ export function useBulletSession(
       return false;
     }
     setGameError(null);
+    // Do not set isSpinning: cmd 1507 returns no grid, and the reel theater
+    // would wait forever for reels to change (base spin → FS choice hang).
     spinBusyRef.current = true;
-    setIsSpinning(true);
     try {
       const payloadPromise = client.waitForPayload(isBulletModeResponse, "fs mode", {
         rejectMatcher: isBulletModeError,
@@ -184,7 +185,6 @@ export function useBulletSession(
       return false;
     } finally {
       spinBusyRef.current = false;
-      setIsSpinning(false);
     }
   };
 

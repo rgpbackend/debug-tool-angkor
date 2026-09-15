@@ -192,11 +192,12 @@ export default function BulletSlotMachine({
   const resultReadyRef = useRef(true);
   const seenReelsRef = useRef(reels);
   const latestReelsRef = useRef(reels);
+  const originAtSpinRef = useRef<string[][]>(reels);
 
   useEffect(() => {
+    latestReelsRef.current = reels;
     if (seenReelsRef.current === reels) return;
     seenReelsRef.current = reels;
-    latestReelsRef.current = reels;
     resultRef.current = reels;
     resultReadyRef.current = true;
   }, [reels]);
@@ -209,29 +210,38 @@ export default function BulletSlotMachine({
     if (spinning === prevSpinningRef.current) return;
     prevSpinningRef.current = spinning;
     if (spinning) {
+      originAtSpinRef.current = latestReelsRef.current;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- theater starts on the spin event
       setSpinSeq((n) => n + 1);
+    } else {
+      // Mode-select (1507) and fast 1500 can end spinning without a later reels effect.
+      resultReadyRef.current = true;
     }
   }, [spinning]);
 
   // Spin theater: all reels cruise, then stop left → right once the result is in.
   useEffect(() => {
     if (spinSeq === 0) return;
-    const reelsNow = latestReelsRef.current;
-    setOrigin(reelsNow);
+    const originReels = originAtSpinRef.current;
+    setOrigin(originReels);
     setLoopSegs(
       BULLET_REEL_HEIGHTS.map(() => buildSpinStrip(REEL_SPIN.loopSegmentLength)),
     );
     setReelStates(BULLET_REEL_HEIGHTS.map(() => "spinning"));
     setWinFlash(false);
-    resultRef.current = reelsNow;
-    resultReadyRef.current = false;
-    seenReelsRef.current = reelsNow;
+    resultRef.current = latestReelsRef.current;
+    // Fast 1500 / Strict Mode remount can deliver the result before this effect.
+    // Do not clear resultReady in that case or tryStop waits forever.
+    resultReadyRef.current = latestReelsRef.current !== originReels;
+    seenReelsRef.current = originReels;
     const timers: number[] = [];
     for (let i = 0; i < BULLET_REEL_HEIGHTS.length; i++) {
       timers.push(
         window.setTimeout(() => {
           const tryStop = () => {
+            if (latestReelsRef.current !== originReels) {
+              resultReadyRef.current = true;
+            }
             if (resultReadyRef.current) {
               setReelStates((prev) =>
                 prev.map((s, j) => (j === i ? "stopping" : s)),
