@@ -51,6 +51,7 @@ export default function GameScreen({
     reels,
     totalWin,
     winSymbols,
+    steps,
     symbolCatalog,
     freeSpin,
     pendingChoice,
@@ -91,6 +92,7 @@ export default function GameScreen({
             reels={reels}
             spinning={isSpinning}
             winSymbols={winSymbols}
+            steps={steps}
             symbols={symbolCatalog}
             balance={displayBalance}
             totalWin={totalWin}

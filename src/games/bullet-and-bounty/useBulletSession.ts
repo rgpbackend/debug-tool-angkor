@@ -254,6 +254,7 @@ export function useBulletSession(
     // WIN box shows this spin's own win (spin.winAmount); round.totalWin stays "0" until settle.
     totalWin: lastSpin?.spinWin ?? null,
     winSymbols: lastSpin?.winSymbols ?? [],
+    steps: lastSpin?.steps ?? [],
     freeSpin,
     pendingChoice,
     freeSpinActive,

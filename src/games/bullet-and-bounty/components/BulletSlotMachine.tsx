@@ -8,7 +8,7 @@ import {
 } from "react";
 import type { GameSymbol } from "../../../ws/protocol";
 import { formatCreditAmount } from "../../../lib/session-utils";
-import { BULLET_REEL_HEIGHTS } from "../bullet-protocol";
+import { BULLET_REEL_HEIGHTS, type BulletCascadeStep } from "../bullet-protocol";
 import {
   buildSpinStrip,
   buildUnifiedReelStrip,
@@ -21,6 +21,7 @@ interface BulletSlotMachineProps {
   reels: string[][];
   spinning: boolean;
   winSymbols: string[];
+  steps: BulletCascadeStep[];
   symbols: GameSymbol[];
   balance: string | null;
   totalWin: string | null;
@@ -164,6 +165,7 @@ export default function BulletSlotMachine({
   reels,
   spinning,
   winSymbols,
+  steps,
   symbols,
   balance,
   totalWin,
@@ -268,13 +270,53 @@ export default function BulletSlotMachine({
 
   const landed = reelStates.every((s) => s === "stopped");
   const winKey = winSymbols.join(",");
+
+  // Cascade replay: once reels settle, step through each cascade beat — show
+  // that step's grid (the grid its wins happened on) and flash its symbols.
+  const [cascadeIdx, setCascadeIdx] = useState<number | null>(null);
+  const stepsKey = steps.length + ":" + steps.map((s) => s.winAmount).join(",");
   useEffect(() => {
-    if (!landed || !winKey) return;
+    if (!landed || steps.length === 0) {
+      if (cascadeIdx !== null) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset on new spin
+        setCascadeIdx(null);
+      }
+      return;
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const STEP_MS = 950;
+    setCascadeIdx(0);
+    const timers = steps.map((_, i) =>
+      window.setTimeout(() => setCascadeIdx(i), 150 + i * STEP_MS),
+    );
+    timers.push(
+      window.setTimeout(() => setCascadeIdx(null), 150 + steps.length * STEP_MS),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- replays once per landed result
+  }, [landed, stepsKey]);
+
+  const winFlashKeyOffCascade = cascadeIdx === null;
+  useEffect(() => {
+    if (!landed || !winKey || !winFlashKeyOffCascade) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- flash starts when reels land
     setWinFlash(true);
     const t = window.setTimeout(() => setWinFlash(false), 1500);
     return () => window.clearTimeout(t);
-  }, [landed, winKey]);
+  }, [landed, winKey, winFlashKeyOffCascade]);
+
+  // During replay show the step's grid and flash that step's winning symbols.
+  const activeStep = cascadeIdx !== null ? steps[cascadeIdx] : undefined;
+  const shownReels = activeStep ? activeStep.grid : reels;
+  const flashSymbols = useMemo(
+    () =>
+      activeStep
+        ? new Set(activeStep.symbols)
+        : new Set(winFlash ? winSymbols : []),
+    [activeStep, winFlash, winSymbols],
+  );
 
   const stepBet = useCallback(
     (dir: -1 | 1) => {
@@ -289,7 +331,6 @@ export default function BulletSlotMachine({
   const winNum = totalWin != null ? Number(totalWin) : 0;
   const showWin = Number.isFinite(winNum) && winNum > 0;
   const busy = spinning || reelStates.some((s) => s === "spinning" || s === "stopping");
-  const hitSymbols = useMemo(() => new Set(winFlash ? winSymbols : []), [winFlash, winSymbols]);
   const kindById = useMemo(
     () => new Map(symbols.map((s) => [s.id, s.kind])),
     [symbols],
@@ -333,11 +374,11 @@ export default function BulletSlotMachine({
             col={col}
             rows={height}
             originColumn={origin[col] ?? []}
-            column={reels[col] ?? []}
+            column={shownReels[col] ?? []}
             loopSegment={loopSegs[col] ?? []}
             reelState={reelStates[col]}
             bouncing={bounces[col]}
-            hitSymbols={hitSymbols}
+            hitSymbols={flashSymbols}
             kindById={kindById}
             onStopped={handleReelStopped}
           />

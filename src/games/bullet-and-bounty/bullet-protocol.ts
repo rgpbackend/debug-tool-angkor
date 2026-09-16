@@ -34,6 +34,13 @@ export function normalizeBulletReels(raw: string[][] | undefined | null): string
   return base;
 }
 
+/** One cascade/tumble beat (GDD 2.3): wins on `grid`, then it tumbles forward. */
+export interface BulletCascadeStep {
+  winAmount: string;
+  symbols: string[];
+  grid: string[][];
+}
+
 export interface BulletSpinPayload {
   cmd: string | number;
   c: number;
@@ -47,6 +54,7 @@ export interface BulletSpinPayload {
   isFinished: boolean;
   freeSpin: BulletFreeSpinState | null;
   winSymbols: string[];
+  steps: BulletCascadeStep[];
 }
 
 export interface BulletFreeSpinState {
@@ -146,6 +154,24 @@ export function parseBulletSpinPayload(payload: Record<string, unknown>): Bullet
       ),
     ),
   ];
+  const cascadeSteps: BulletCascadeStep[] = steps.flatMap((step: unknown) => {
+    if (!isObject(step)) return [];
+    const wins = Array.isArray(step.wins) ? step.wins : [];
+    const symbols = [
+      ...new Set(
+        wins
+          .map((w: unknown) => (isObject(w) && typeof w.symbol === "string" ? w.symbol : ""))
+          .filter(Boolean),
+      ),
+    ];
+    return [
+      {
+        winAmount: readWireDecimalString(step.winAmount) ?? "0.0000",
+        symbols,
+        grid: normalizeBulletReels(isStringMatrix(step.grid) ? step.grid : undefined),
+      },
+    ];
+  });
   return {
     cmd: payload.cmd as string | number,
     c: typeof payload.c === "number" ? payload.c : 0,
@@ -159,6 +185,7 @@ export function parseBulletSpinPayload(payload: Record<string, unknown>): Bullet
     isFinished: round?.isFinished !== false && round?.state !== "ACTIVE" && round?.state !== "RESPIN",
     freeSpin: parseFreeSpinState(spinState),
     winSymbols,
+    steps: cascadeSteps,
   };
 }
 
