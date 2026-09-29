@@ -12,19 +12,37 @@ export interface AppEnvDefaults {
   authRefreshIntervalMs: number;
 }
 
+function defaultApiBaseUrl(): string {
+  if (import.meta.env.VITE_API_AUTH_URL) {
+    return import.meta.env.VITE_API_AUTH_URL;
+  }
+  if (import.meta.env.DEV) {
+    return "/agency-api";
+  }
+  return DEFAULT_API_BASE_URL;
+}
+
+function defaultAuthRefreshUrl(): string {
+  if (import.meta.env.VITE_AUTH_REFRESH_URL) {
+    return import.meta.env.VITE_AUTH_REFRESH_URL;
+  }
+  if (import.meta.env.DEV) {
+    return "/auth-refresh";
+  }
+  return "https://authentication.relaxwmestu.xyz/api/auth/refresh";
+}
+
 export function readEnvDefaults(): AppEnvDefaults {
   const timeoutRaw = import.meta.env.VITE_WS_TIMEOUT_MS;
   const timeoutParsed = timeoutRaw ? Number(timeoutRaw) : Number.NaN;
   return {
-    apiBaseUrl: import.meta.env.VITE_API_AUTH_URL ?? DEFAULT_API_BASE_URL,
+    apiBaseUrl: defaultApiBaseUrl(),
     wsUrl: import.meta.env.VITE_WS_URL ?? DEFAULT_WS_URL,
     timeoutMs:
       Number.isFinite(timeoutParsed) && timeoutParsed > 0
         ? timeoutParsed
         : 10_000,
-    authRefreshUrl:
-      import.meta.env.VITE_AUTH_REFRESH_URL ??
-      "https://authentication.relaxwmestu.xyz/api/auth/refresh",
+    authRefreshUrl: defaultAuthRefreshUrl(),
     authRefreshIntervalMs: (() => {
       const raw = import.meta.env.VITE_AUTH_REFRESH_INTERVAL_MS;
       const parsed = raw ? Number(raw) : Number.NaN;

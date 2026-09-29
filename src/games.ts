@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { GameScreen as AngkorGameScreen } from "./games/game-the-last-guardian-of-angkor";
 import { GameScreen as TitanGameScreen } from "./games/titan-wrath";
 import { GameScreen as BulletGameScreen } from "./games/bullet-and-bounty";
+import { GameScreen as AlchemyGameScreen } from "./games/alchemy-cascade";
 
 export interface JackpotTierDef {
   key: string;
@@ -26,7 +27,7 @@ export interface GameDef {
   icon: string;
   agentId: string;
   jackpotTiers: JackpotTierDef[];
-  winSystem: "winways" | "paylines";
+  winSystem: "winways" | "paylines" | "cluster";
   GameScreen: ComponentType<GameScreenProps>;
 }
 
@@ -67,6 +68,15 @@ const GAMES: GameDef[] = [
     winSystem: "winways",
     jackpotTiers: [],
     GameScreen: BulletGameScreen,
+  },
+  {
+    id: "yama_01027",
+    name: "Alchemy Cascade",
+    icon: "⚗️",
+    agentId: "AGENCY_001",
+    winSystem: "cluster",
+    jackpotTiers: [],
+    GameScreen: AlchemyGameScreen,
   },
 ];
 
