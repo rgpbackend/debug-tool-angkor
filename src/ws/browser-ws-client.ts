@@ -1,17 +1,27 @@
 import {
-  getFramePayload,
   hasCmd,
-  type WsFrame,
+  readJoinField,
   type WsOutboundFrame,
 } from "./protocol";
 import {
   isTokenBannedStompError,
-  parseStompErrorCode,
   StompTokenBannedError,
 } from "./stomp-errors";
 
+type WsInboundMessage =
+  | { type: "payload"; payload: Record<string, unknown> }
+  | { type: "stomp-error"; code: number };
+
+export type ParseMessageFn = (raw: string | Blob) => Promise<WsInboundMessage | null>;
+
 export interface BrowserWsClientOptions {
   timeoutMs: number;
+  /** Game-specific inbound message parser. */
+  parseMessage: ParseMessageFn;
+  /** Called for every successfully parsed inbound payload. */
+  onInbound?: (payload: Record<string, unknown>) => void;
+  /** Called for every outbound frame before it is sent. */
+  onOutbound?: (frame: WsOutboundFrame) => void;
 }
 
 type PayloadMatcher = (payload: Record<string, unknown>) => boolean;
@@ -29,10 +39,6 @@ interface PayloadListenerRegistration {
   handler: PayloadHandler;
 }
 
-type WsInboundMessage =
-  | { type: "payload"; payload: Record<string, unknown> }
-  | { type: "stomp-error"; code: number };
-
 export class BrowserWsClient {
   private socket: WebSocket | null = null;
   private lastClose: { code: number; reason: string } | null = null;
@@ -45,7 +51,7 @@ export class BrowserWsClient {
   private closingIntentionally = false;
 
   private readonly endpoint: string;
-  private readonly options: BrowserWsClientOptions;
+  readonly options: BrowserWsClientOptions;
 
   constructor(endpoint: string, options: BrowserWsClientOptions) {
     this.endpoint = endpoint;
@@ -89,6 +95,7 @@ export class BrowserWsClient {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       throw new Error("WS is not connected");
     }
+    this.options.onOutbound?.(frame);
     this.socket.send(JSON.stringify(frame));
   }
 
@@ -148,7 +155,7 @@ export class BrowserWsClient {
       const onMessage = (ev: MessageEvent<string | Blob>) => {
         void (async () => {
           try {
-            const message = await parseInboundMessage(ev.data);
+            const message = await this.options.parseMessage(ev.data);
             if (!message) {
               return;
             }
@@ -226,7 +233,7 @@ export class BrowserWsClient {
     this.persistentMessageHandler = (ev) => {
       void (async () => {
         try {
-          const message = await parseInboundMessage(ev.data);
+          const message = await this.options.parseMessage(ev.data);
           if (!message) {
             return;
           }
@@ -234,6 +241,7 @@ export class BrowserWsClient {
             this.dispatchStompError(message.code);
             return;
           }
+          this.options.onInbound?.(message.payload);
           for (const { matcher, handler } of this.payloadListeners) {
             if (matcher(message.payload)) {
               handler(message.payload);
@@ -300,63 +308,36 @@ export class BrowserWsClient {
 
 export { StompTokenBannedError } from "./stomp-errors";
 
-export function isSpinResponsePayload(
-  payload: Record<string, unknown>,
-): boolean {
-  if (
-    !hasCmd(payload, "1500") ||
-    !isObject(payload.spin) ||
-    !isObject(payload.round) ||
-    !isObject(payload.state)
-  ) {
-    return false;
-  }
-  const spin = payload.spin as Record<string, unknown>;
-  return isObject(spin.jackpot);
-}
-
-/** Spin cmd 1500 error envelope (`c: 1` or `errorCode`). */
-export function isSpinErrorPayload(
-  payload: Record<string, unknown>,
-): boolean {
-  if (!hasCmd(payload, "1500")) {
-    return false;
-  }
-  return payload.c === 1 || payload.errorCode != null;
-}
-
 function formatCmdErrorMessage(payload: Record<string, unknown>): string {
-  const msg = typeof payload.msg === "string" ? payload.msg.trim() : "";
+  const msg =
+    (typeof payload.msg === "string" && payload.msg.trim()) ||
+    (typeof payload.mgs === "string" && payload.mgs.trim()) ||
+    "";
   const errorCode =
     typeof payload.errorCode === "string" ? payload.errorCode.trim() : "";
-  if (errorCode && msg) {
-    return `${errorCode}: ${msg}`;
-  }
-  if (msg) {
-    return msg;
-  }
-  if (errorCode) {
-    return errorCode;
-  }
+  if (errorCode && msg) return `${errorCode}: ${msg}`;
+  if (msg) return msg;
+  if (errorCode) return errorCode;
   return "Command rejected";
 }
 
-function isObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
-}
+// --- Shared matchers (used by useWsSession) ---
 
 /** Matches cmd 1005 join/subscribe response. */
 export function isJoinResponsePayload(
   payload: Record<string, unknown>,
 ): boolean {
+  const symbols = readJoinField(payload, "symbols");
+  const c = Number(payload.c ?? 0);
   if (
     !hasCmd(payload, "1005") ||
-    typeof payload.c !== "number" ||
-    !Array.isArray(payload.symbols)
+    !Number.isFinite(c) ||
+    c !== 0 ||
+    !Array.isArray(symbols)
   ) {
     return false;
   }
-  const first = payload.symbols[0];
+  const first = symbols[0];
   if (first === undefined) {
     return true;
   }
@@ -368,34 +349,11 @@ export function isJoinResponsePayload(
   );
 }
 
-/** Matches cmd 1502 history-list response. */
-export function isHistoryListPayload(
-  payload: Record<string, unknown>,
-): boolean {
-  return (
-    hasCmd(payload, "1502") &&
-    Array.isArray(payload.items) &&
-    typeof payload.totalItems === "number" &&
-    typeof payload.totalPage === "number"
-  );
-}
-
-/** Matches cmd 1503 history-detail success (flat spin-step body, no spinId). */
-export function isHistoryDetailPayload(
-  payload: Record<string, unknown>,
-): boolean {
-  if (!hasCmd(payload, "1503")) {
-    return false;
-  }
-  if (payload.c === 1 || payload.errorCode != null) {
-    return false;
-  }
-  return (
-    typeof payload.roundId === "string" &&
-    Array.isArray(payload.reels) &&
-    (typeof payload.spinIndex === "number" ||
-      typeof payload.stepIndex === "number")
-  );
+/** Matches a failed cmd 1005 so join wait rejects instead of timing out. */
+export function isJoinErrorPayload(payload: Record<string, unknown>): boolean {
+  if (!hasCmd(payload, "1005")) return false;
+  const c = Number(payload.c);
+  return Number.isFinite(c) && c !== 0;
 }
 
 /** Matches cmd 1510 (pull) or 1520 (push) jackpot pools response. */
@@ -413,25 +371,6 @@ export function isJackpotPoolsPushPayload(
   payload: Record<string, unknown>,
 ): boolean {
   return hasCmd(payload, "1520") && Array.isArray(payload.pools);
-}
-
-/** Matches cmd 1511 jackpot win history response. */
-export function isJackpotWinHistoryPayload(
-  payload: Record<string, unknown>,
-): boolean {
-  return hasCmd(payload, "1511") && Array.isArray(payload.items);
-}
-
-/** Matches cmd 2002 force-jackpot arm response. */
-export function isForceJackpotResponse(
-  payload: Record<string, unknown>,
-): boolean {
-  return (
-    hasCmd(payload, "2002") &&
-    payload.c !== 1 &&
-    payload.errorCode == null &&
-    typeof payload.tier === "string"
-  );
 }
 
 /** Matches cmd 1521 jackpot winner broadcast. */
@@ -472,54 +411,3 @@ export function isGetBalanceErrorPayload(
   return payload.c === 1 || payload.errorCode != null;
 }
 
-async function parseInboundMessage(
-  raw: string | Blob,
-): Promise<WsInboundMessage | null> {
-  try {
-    const text = typeof raw === "string" ? raw : await raw.text();
-    const parsed: unknown = JSON.parse(text);
-    const stompCode = parseStompErrorCode(parsed);
-    if (stompCode !== null) {
-      return { type: "stomp-error", code: stompCode };
-    }
-    const frame = tryParseFrameFromParsed(parsed);
-    if (!frame) {
-      return null;
-    }
-    const payload = getFramePayload(frame);
-    if (!payload || Array.isArray(payload) || typeof payload !== "object") {
-      return null;
-    }
-    return { type: "payload", payload };
-  } catch {
-    return null;
-  }
-}
-
-function tryParseFrameFromParsed(parsed: unknown): WsFrame | null {
-  if (!Array.isArray(parsed) || parsed.length < 2) {
-    return null;
-  }
-  if (typeof parsed[0] !== "number") {
-    return null;
-  }
-  const payload = parsed.at(-1);
-  if (
-    Array.isArray(payload) ||
-    typeof payload !== "object" ||
-    payload === null
-  ) {
-    return null;
-  }
-  if (parsed.length === 2) {
-    return parsed as WsFrame;
-  }
-  if (
-    typeof parsed[1] === "string" &&
-    typeof parsed[2] === "string" &&
-    (parsed.length === 4 || parsed.length === 5)
-  ) {
-    return parsed as WsFrame;
-  }
-  return null;
-}

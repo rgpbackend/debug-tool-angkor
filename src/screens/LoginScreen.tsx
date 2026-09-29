@@ -1,122 +1,97 @@
-import type { GameSession } from "../hooks/useGameSession";
 import { useState } from "react";
 
-type LoginScreenProps = Pick<
-  GameSession,
-  | "loginAndEnterGame"
-  | "error"
-  | "authSuccessMessage"
-  | "busySession"
-  | "phase"
-> & {
+type LoginScreenProps = {
+  login: (username: string, password: string) => Promise<boolean>;
+  error: string | null;
+  authSuccessMessage: string | null;
+  busySession: boolean;
   onShowRegister: () => void;
+  onLoginSuccess: () => void;
 };
 
-function loginButtonLabel(phase: GameSession["phase"], busy: boolean): string {
-  if (!busy) {
-    return "Login";
-  }
-  switch (phase) {
-    case "logging-in":
-      return "Signing in…";
-    case "launching":
-      return "Launching game…";
-    case "refreshing":
-      return "Refreshing session…";
-    case "connecting":
-    case "connected":
-      return "Connecting…";
-    default:
-      return "Please wait…";
-  }
-}
-
 export default function LoginScreen({
-  loginAndEnterGame,
+  login,
   error,
   authSuccessMessage,
   busySession,
-  phase,
   onShowRegister,
+  onLoginSuccess,
 }: Readonly<LoginScreenProps>) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = () => {
-    void loginAndEnterGame(username, password);
+    login(username, password).then((ok) => {
+      if (ok) onLoginSuccess();
+    });
   };
 
   return (
-    <main className="login-screen">
-      <div className="login-card panel">
-        <h2>Sign in</h2>
-        <p className="muted login-lead">
-          Sign in with your account to launch the game and connect.
-        </p>
+    <main className="auth-screen">
+      <div className="auth-card">
+        <div className="auth-header">
+          <span className="auth-icon">🎰</span>
+          <h1 className="auth-title">Debug Tool</h1>
+          <p className="auth-subtitle">Sign in to your account</p>
+        </div>
 
-        <div className="field-grid login-fields">
-          <label className="span-2">
-            Username
+        <div className="auth-fields">
+          <label className="auth-field">
+            <span className="auth-field-label">Username</span>
             <input
+              className="auth-input"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               disabled={busySession}
+              placeholder="Enter your username"
             />
           </label>
-          <label className="span-2">
-            Password
+          <label className="auth-field">
+            <span className="auth-field-label">Password</span>
             <input
+              className="auth-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
               autoComplete="current-password"
               disabled={busySession}
+              placeholder="Enter your password"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !busySession) {
-                  handleSubmit();
-                }
+                if (e.key === "Enter" && !busySession) handleSubmit();
               }}
             />
           </label>
         </div>
 
         {authSuccessMessage ? (
-          <p className="success auth-notice" role="status">
+          <p className="auth-notice auth-notice--success" role="status">
             {authSuccessMessage}
           </p>
         ) : null}
 
-        {error ? <p className="error">{error}</p> : null}
+        {error ? <p className="auth-notice auth-notice--error">{error}</p> : null}
 
-        <div className="row login-actions">
-          <button
-            type="button"
-            className="primary"
-            onClick={handleSubmit}
-            disabled={busySession}
-          >
-            {loginButtonLabel(phase, busySession)}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="auth-btn"
+          onClick={handleSubmit}
+          disabled={busySession}
+        >
+          {busySession ? "Signing in…" : "Sign in"}
+        </button>
 
-        <p className="auth-switch muted">
+        <p className="auth-switch">
           No account yet?{" "}
           <button
             type="button"
-            className="link-button"
+            className="auth-switch-btn"
             onClick={onShowRegister}
             disabled={busySession}
           >
-            Register
+            Create one
           </button>
         </p>
-
-        {busySession ? (
-          <p className="muted login-phase">
-            Phase: <strong>{phase}</strong>
-          </p>
-        ) : null}
       </div>
     </main>
   );

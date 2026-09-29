@@ -21,8 +21,8 @@ npm run dev
 
 ## Login flow
 
-1. `POST {VITE_API_BASE_URL}/user/login` with username and password → user JWT
-2. `POST {VITE_API_BASE_URL}/play-game` with Bearer user JWT and `{ gameId }` → WS access token (in memory) + `refreshToken` (stored in `localStorage` only)
+1. `POST {VITE_API_AUTH_URL}/user/login` with username and password → user JWT
+2. `POST {VITE_API_AUTH_URL}/play-game` with Bearer user JWT and `{ gameId }` → WS access token (in memory) + `refreshToken` (stored in `localStorage` only)
 3. WebSocket connect to `VITE_WS_URL` with WS access token, then join `gameId`
 
 On reload, if a refresh token exists in `localStorage`, the client calls `VITE_AUTH_REFRESH_URL` with that token to obtain `accessToken` + `refreshToken`, then connects the WebSocket. Login and `play-game` are not called again during this path.
@@ -36,7 +36,7 @@ While the WebSocket is open:
 
 | Variable                    | Description                                                                 |
 | --------------------------- | --------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL`         | Agency API base (default `https://agency001.relaxwmestu.xyz/api/v1`)        |
+| `VITE_API_AUTH_URL`         | Agency API base (default `https://agency001.relaxwmestu.xyz/api/v1`)        |
 | `VITE_WS_URL`               | WebSocket endpoint URL                                                      |
 | `VITE_GAME_ID`              | Game id for play-game and WS join (default `game-the-last-guardian-of-angkor`) |
 | `VITE_AGENT_ID`             | Agent id for connect frame (default `1`)                                    |

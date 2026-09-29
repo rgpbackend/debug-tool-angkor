@@ -1,54 +1,115 @@
-import { useState } from "react";
-import JoinRetryModal from "./components/JoinRetryModal";
-import { useGameSession } from "./hooks/useGameSession";
-import GameScreen from "./screens/GameScreen";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "./hooks/useAuth";
+import { type GameDef } from "./games";
+import { loadAgencyUserToken } from "./lib/game-session-storage";
+import LobbyScreen from "./screens/LobbyScreen";
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
-import "./slot-cabinet.css";
 import "./App.css";
 
-type AuthView = "login" | "register";
+type AppView = "login" | "register" | "lobby" | "game";
 
 export default function App() {
-  const session = useGameSession();
-  const [authView, setAuthView] = useState<AuthView>("login");
+  const auth = useAuth();
+  const [view, setView] = useState<AppView>(() => {
+    if (loadAgencyUserToken()) return "lobby";
+    return "login";
+  });
+  const [selectedGame, setSelectedGame] = useState<GameDef | null>(null);
+  const [wsAccessToken, setWsAccessToken] = useState("");
 
-  const showLogin = () => {
-    session.setError(null);
-    setAuthView("login");
-  };
+  // Fetch balance when entering lobby
+  useEffect(() => {
+    if (view === "lobby" && auth.agencyUserToken) {
+      void auth.fetchBalance();
+    }
+  }, [view, auth.agencyUserToken, auth.fetchBalance]);
 
-  const showRegister = () => {
-    session.setError(null);
-    session.setAuthSuccessMessage(null);
-    setAuthView("register");
-  };
+  // Refresh balance after deposit
+  useEffect(() => {
+    if (view === "lobby" && !auth.depositBusy && auth.agencyUserToken) {
+      void auth.fetchBalance();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.depositBusy]);
 
-  const handleRegisterSuccess = () => {
-    setAuthView("login");
-  };
+  const handleLoginSuccess = useCallback(() => setView("lobby"), []);
+  const handleRegisterSuccess = useCallback(() => setView("login"), []);
+
+  const handleLaunchGame = useCallback(async (game: GameDef) => {
+    const result = await auth.playGame(game.id);
+    if (result) {
+      setSelectedGame(game);
+      setWsAccessToken(result.token);
+      setView("game");
+    }
+  }, [auth]);
+
+  const handleBackToLobby = useCallback(() => {
+    setWsAccessToken("");
+    setSelectedGame(null);
+    setView("lobby");
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    auth.logout();
+    setWsAccessToken("");
+    setSelectedGame(null);
+    setView("login");
+  }, [auth]);
+
+  const GameScreenComponent = selectedGame?.GameScreen;
 
   return (
     <div className="game-app">
-      {session.gameScreenActive ? (
-        <GameScreen {...session} />
-      ) : authView === "register" ? (
+      {view === "game" && GameScreenComponent && wsAccessToken ? (
+        <GameScreenComponent
+          agencyUserToken={auth.agencyUserToken}
+          wsAccessToken={wsAccessToken}
+          balance={auth.balance != null ? String(auth.balance) : null}
+          depositBusy={auth.depositBusy}
+          depositFunds={auth.deposit}
+          onBackToLobby={handleBackToLobby}
+          onLogout={handleLogout}
+        />
+      ) : view === "lobby" ? (
+        <LobbyScreen
+          loggedIn={auth.agencyUserToken !== ""}
+          error={auth.error}
+          busy={auth.busy}
+          balance={auth.balance}
+          balanceLoading={auth.balanceLoading}
+          depositBusy={auth.depositBusy}
+          onDeposit={auth.depositAmount}
+          onLaunch={handleLaunchGame}
+          onLogout={handleLogout}
+        />
+      ) : view === "register" ? (
         <RegisterScreen
-          {...session}
-          onShowLogin={showLogin}
+          registerAccount={auth.register}
+          error={auth.error}
+          busyRegister={auth.busy}
           onRegisterSuccess={handleRegisterSuccess}
+          onShowLogin={() => {
+            auth.setError(null);
+            auth.setAuthSuccessMessage(null);
+            setView("login");
+          }}
         />
       ) : (
-        <LoginScreen {...session} onShowRegister={showRegister} />
+        <LoginScreen
+          login={auth.login}
+          error={auth.error}
+          authSuccessMessage={auth.authSuccessMessage}
+          busySession={auth.busy}
+          onShowRegister={() => {
+            auth.setError(null);
+            auth.setAuthSuccessMessage(null);
+            setView("register");
+          }}
+          onLoginSuccess={handleLoginSuccess}
+        />
       )}
-
-      <JoinRetryModal
-        open={session.joinRetryOpen}
-        message={session.joinRetryMessage ?? ""}
-        busy={session.joinRetryBusy}
-        onRetry={session.retryJoinGame}
-        onLogout={session.dismissJoinRetry}
-      />
     </div>
   );
 }

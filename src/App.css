@@ -2,7 +2,7 @@
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 1.25rem 1.25rem 1.5rem;
+  padding: 0;
   text-align: left;
   box-sizing: border-box;
   min-height: 100svh;
@@ -10,64 +10,178 @@
   flex-direction: column;
 }
 
-.login-screen {
+/* ====================================================================
+   Auth (Login / Register)
+   ==================================================================== */
+
+.auth-screen {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 0 2rem;
+  padding: 1.5rem;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(196, 164, 74, 0.04) 0%, transparent 60%),
+    #0D0B0F;
 }
 
-.login-card {
-  width: min(100%, 28rem);
-  margin-top: 0;
+.auth-card {
+  width: 100%;
+  max-width: 24rem;
+  padding: 2.5rem 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.015);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.4);
 }
 
-.login-card h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.15rem;
+.auth-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
 }
 
-.login-lead {
-  margin: 0 0 1rem;
-  font-size: 0.9rem;
-}
-
-.login-fields {
+.auth-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  display: block;
   margin-bottom: 0.75rem;
+  filter: drop-shadow(0 0 10px rgba(196, 164, 74, 0.3));
 }
 
-.login-actions {
-  margin-top: 0.25rem;
+.auth-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #e8e0d5;
+  margin: 0 0 0.35rem;
+  letter-spacing: 0.06em;
 }
 
-.login-phase {
-  margin: 0.75rem 0 0;
+.auth-subtitle {
   font-size: 0.85rem;
+  color: #807870;
+  margin: 0;
 }
+
+/* --- Fields --- */
+
+.auth-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.auth-field-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #807870;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.auth-input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #e8e0d5;
+  font: inherit;
+  font-size: 0.92rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-input::placeholder {
+  color: rgba(128, 120, 112, 0.5);
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: rgba(196, 164, 74, 0.45);
+  box-shadow: 0 0 0 3px rgba(196, 164, 74, 0.1);
+}
+
+.auth-input:disabled {
+  opacity: 0.4;
+}
+
+/* --- Button --- */
+
+.auth-btn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  margin-top: 1.25rem;
+  border: 1px solid rgba(196, 164, 74, 0.35);
+  border-radius: 7px;
+  background: rgba(196, 164, 74, 0.1);
+  color: #c4a44a;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: rgba(196, 164, 74, 0.18);
+  border-color: rgba(196, 164, 74, 0.55);
+  color: #d4b85a;
+}
+
+.auth-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Notices --- */
+
+.auth-notice {
+  font-size: 0.8rem;
+  margin: 0.75rem 0 0;
+  text-align: center;
+}
+
+.auth-notice--error {
+  color: #e8452d;
+}
+
+.auth-notice--success {
+  color: #4ade80;
+}
+
+/* --- Switch --- */
 
 .auth-switch {
-  margin: 0.85rem 0 0;
-  font-size: 0.88rem;
+  margin: 1.25rem 0 0;
+  font-size: 0.82rem;
+  color: #807870;
+  text-align: center;
 }
 
-.link-button {
+.auth-switch-btn {
   padding: 0;
   border: none;
   background: none;
-  color: var(--accent);
+  color: #c4a44a;
   font: inherit;
   font-weight: 600;
-  text-decoration: underline;
   cursor: pointer;
+  transition: color 0.15s;
 }
 
-.link-button:hover:not(:disabled) {
-  color: var(--text-h);
+.auth-switch-btn:hover:not(:disabled) {
+  color: #d4b85a;
+  text-decoration: underline;
 }
 
-.link-button:disabled {
-  opacity: 0.5;
+.auth-switch-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -83,13 +197,389 @@
   flex-shrink: 0;
 }
 
+/* ====================================================================
+   Lobby
+   ==================================================================== */
+
+.lobby-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.5rem 3rem;
+  max-width: 56rem;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- Topbar --- */
+
+.lobby-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lobby-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.lobby-brand-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.lobby-brand-text {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e8e0d5;
+  letter-spacing: 0.06em;
+}
+
+.lobby-logout-btn {
+  padding: 0.45rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  color: #807870;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.lobby-logout-btn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #e8e0d5;
+}
+
+/* --- Wallet --- */
+
+.lobby-wallet {
+  width: 100%;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 540px) {
+  .lobby-wallet {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wallet-balance {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.wallet-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #807870;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.wallet-balance-value {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #c4a44a;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.wallet-deposit {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.wallet-deposit .wallet-label {
+  margin-bottom: 0.75rem;
+}
+
+.deposit-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deposit-currency {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c4a44a;
+  flex-shrink: 0;
+}
+
+.deposit-amount-input {
+  flex: 1;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  color: #e8e0d5;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 0;
+}
+
+.deposit-amount-input:focus {
+  outline: none;
+  border-color: #c4a44a;
+  box-shadow: 0 0 0 2px rgba(196, 164, 74, 0.15);
+}
+
+.deposit-amount-input:disabled {
+  opacity: 0.4;
+}
+
+.deposit-btn {
+  flex-shrink: 0;
+  padding: 0.55rem 1.25rem;
+  border: 1px solid #c4a44a;
+  border-radius: 6px;
+  background: rgba(196, 164, 74, 0.1);
+  color: #c4a44a;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.deposit-btn:hover:not(:disabled) {
+  background: rgba(196, 164, 74, 0.2);
+  color: #d4b85a;
+}
+
+.deposit-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.deposit-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.deposit-chip {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #807870;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.deposit-chip:hover:not(:disabled) {
+  border-color: rgba(196, 164, 74, 0.4);
+  color: #c4a44a;
+  background: rgba(196, 164, 74, 0.06);
+}
+
+.deposit-chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.lobby-error {
+  color: #e8452d;
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.lobby-success {
+  color: #4ade80;
+  font-size: 0.82rem;
+  margin: 0 0 1rem;
+}
+
+/* --- Games --- */
+
+.lobby-games-section {
+  width: 100%;
+}
+
+.lobby-section-title {
+  margin: 0 0 0.85rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #807870;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.lobby-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 480px) {
+  .lobby-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lobby-empty {
+  color: #807870;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.lobby-launching {
+  color: #c4a44a;
+  font-size: 0.85rem;
+  margin: 1rem 0 0;
+}
+
+/* --- Game Cards --- */
+
+.lobby-game-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.lobby-game-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+
+.lobby-game-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Angkor card — temple stone */
+.lobby-game-card--angkor {
+  border-color: rgba(196, 164, 74, 0.15);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 30%, rgba(94, 234, 212, 0.04) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(196, 164, 74, 0.06) 0%, rgba(0, 0, 0, 0.2) 100%),
+    #1a1814;
+}
+
+.lobby-game-card--angkor:hover:not(:disabled) {
+  border-color: rgba(196, 164, 74, 0.35);
+  box-shadow: 0 0 30px rgba(196, 164, 74, 0.08);
+}
+
+/* Titan card — forge ember */
+.lobby-game-card--titan {
+  border-color: rgba(232, 69, 45, 0.12);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 30%, rgba(232, 69, 45, 0.05) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(212, 168, 67, 0.04) 0%, rgba(0, 0, 0, 0.2) 100%),
+    #100c0a;
+}
+
+.lobby-game-card--titan:hover:not(:disabled) {
+  border-color: rgba(232, 69, 45, 0.3);
+  box-shadow: 0 0 30px rgba(232, 69, 45, 0.08);
+}
+
+.lobby-game-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(196, 164, 74, 0.3));
+}
+
+.lobby-game-card--titan .lobby-game-icon {
+  filter: drop-shadow(0 0 12px rgba(232, 69, 45, 0.4));
+}
+
+/* Bullet card — dust and lead */
+.lobby-game-card--bullet {
+  border-color: rgba(196, 164, 74, 0.16);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 30%, rgba(139, 30, 30, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(196, 164, 74, 0.05) 0%, rgba(0, 0, 0, 0.22) 100%),
+    #16110e;
+}
+
+.lobby-game-card--bullet:hover:not(:disabled) {
+  border-color: rgba(240, 192, 64, 0.35);
+  box-shadow: 0 0 30px rgba(139, 30, 30, 0.12);
+}
+
+.lobby-game-card--bullet .lobby-game-icon {
+  filter: drop-shadow(0 0 12px rgba(240, 192, 64, 0.35));
+}
+
+.lobby-game-card--alchemy {
+  border-color: rgba(62, 207, 178, 0.18);
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 30%, rgba(62, 207, 178, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(212, 177, 90, 0.05) 0%, rgba(0, 0, 0, 0.22) 100%),
+    #0d1618;
+}
+
+.lobby-game-card--alchemy:hover:not(:disabled) {
+  border-color: rgba(62, 207, 178, 0.4);
+  box-shadow: 0 0 30px rgba(62, 207, 178, 0.12);
+}
+
+.lobby-game-card--alchemy .lobby-game-icon {
+  filter: drop-shadow(0 0 12px rgba(62, 207, 178, 0.4));
+}
+
+.lobby-game-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e8e0d5;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+}
+
+.lobby-game-meta {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #807870;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .slot-stage {
   position: relative;
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-color: color-mix(in srgb, var(--slot-gold, #c4a44a) 35%, var(--border));
   background: radial-gradient(
       ellipse 120% 80% at 50% -20%,
-      color-mix(in srgb, var(--accent) 8%, transparent),
-      transparent 55%
+      color-mix(in srgb, var(--slot-gold, #c4a44a) 6%, transparent),
+      transparent 58%
     ),
     color-mix(in srgb, var(--bg) 90%, var(--code-bg));
 }

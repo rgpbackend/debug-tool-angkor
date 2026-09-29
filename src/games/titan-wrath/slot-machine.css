@@ -1,0 +1,2394 @@
+/* ============================================================
+   Titan's Wrath — Slot Machine Styles (Forge Cabinet)
+   ============================================================ */
+
+/* --- Design Tokens --- */
+:root {
+  --titan-obsidian: #0D0B0F;
+  --titan-ember: #1A1410;
+  --titan-forge-gold: #D4A843;
+  --titan-wrath-vermilion: #E8452D;
+  --titan-divine-amber: #F0C060;
+  --titan-ash: #8A8580;
+  --titan-smoke: #C4BFB8;
+  --titan-display: 'Cinzel', serif;
+  --titan-body: Inter, system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================================
+   Screen
+   ============================================================ */
+
+.titan-screen {
+  height: 100svh;
+  max-height: 100svh;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+  background: var(--titan-obsidian);
+  box-sizing: border-box;
+}
+
+/* --- Joining screen — centered, no split --- */
+.titan-screen--joining {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  height: 100svh;
+  max-height: 100svh;
+}
+
+/* ============================================================
+   Game panel — left side, holds the slot machine
+   ============================================================ */
+
+.titan-game-panel {
+  flex: 1;
+  min-width: 420px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.titan-game-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.titan-game-log {
+  flex-shrink: 0;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid rgba(212, 168, 67, 0.08);
+  background: #0F0D13;
+}
+
+/* ============================================================
+   Debug panel — right side, dev tools
+   ============================================================ */
+
+.titan-debug-panel {
+  width: 380px;
+  flex-shrink: 0;
+  background: #0F0D13;
+  border-left: 1px solid rgba(212, 168, 67, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.25s ease;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.titan-debug-panel.collapsed {
+  width: 0;
+  border-left: none;
+}
+
+/* Toggle button at the left edge of the debug panel */
+.titan-debug-toggle {
+  position: absolute;
+  left: -28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 56px;
+  background: #0F0D13;
+  border: 1px solid rgba(212, 168, 67, 0.08);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  color: var(--titan-forge-gold);
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: left 0.25s ease;
+}
+
+.titan-debug-panel.collapsed .titan-debug-toggle {
+  left: -28px;
+}
+
+.titan-debug-toggle:hover {
+  background: rgba(212, 168, 67, 0.1);
+}
+
+/* ============================================================
+   Debug sections
+   ============================================================ */
+
+.titan-debug-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.titan-debug-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  font-family: var(--titan-display);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--titan-forge-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid rgba(212, 168, 67, 0.08);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.titan-debug-section-header span {
+  opacity: 0.8;
+}
+
+/* Divider between debug sections */
+.titan-debug-section + .titan-debug-section {
+  border-top: 1px solid rgba(212, 168, 67, 0.06);
+}
+
+/* ============================================================
+   Cabinet — the slot machine container
+   ============================================================ */
+
+.titan-slot-machine {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  background: linear-gradient(180deg, #120F0D 0%, var(--titan-obsidian) 100%);
+  border: 1px solid rgba(212, 168, 67, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 0 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(212, 168, 67, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ============================================================
+   Game body — 3-column: jackpot | grid | controls
+   ============================================================ */
+
+.titan-game-body {
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.titan-sidebar {
+  flex-shrink: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.titan-sidebar--left {
+  width: 170px;
+  border-right: 1px solid rgba(212, 168, 67, 0.08);
+  padding: 6px;
+}
+.titan-sidebar--right {
+  width: 150px;
+  border-left: 1px solid rgba(212, 168, 67, 0.08);
+  padding: 10px 8px;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+
+.titan-cabinet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(212, 168, 67, 0.08);
+  gap: 10px;
+}
+
+.titan-cabinet-toolbar {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.titan-cabinet-title {
+  font-family: var(--titan-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+  letter-spacing: 0.06em;
+  text-align: center;
+  flex: 1;
+  white-space: nowrap;
+}
+
+@media (min-width: 600px) {
+  .titan-cabinet-title { font-size: 0.95rem; }
+}
+
+@media (min-width: 800px) {
+  .titan-cabinet-title { font-size: 1.05rem; }
+}
+
+.titan-cabinet-menu-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--titan-ash);
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.titan-cabinet-menu-btn:hover {
+  border-color: var(--titan-forge-gold);
+  color: var(--titan-smoke);
+}
+
+.titan-header-balance {
+  font-family: var(--titan-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--titan-smoke);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   Status Row (Balance) — hidden, balance in header now
+   ============================================================ */
+
+.titan-cabinet-status {
+  display: none;
+}
+
+/* ============================================================
+   Error Banner
+   ============================================================ */
+
+.titan-error-banner {
+  padding: 7px 14px;
+  background: rgba(232, 69, 45, 0.1);
+  border-bottom: 1px solid rgba(232, 69, 45, 0.2);
+  color: var(--titan-wrath-vermilion);
+  font-family: var(--titan-body);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+/* ============================================================
+   Grid Area — the hero
+   ============================================================ */
+
+.titan-grid-area {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 10px 12px;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(26, 20, 16, 0.6) 0%, var(--titan-obsidian) 100%);
+}
+
+.titan-reel-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.titan-reel-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Payline display in cabinet --- */
+.titan-display-amount {
+  font-family: var(--titan-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+}
+
+.titan-display-amount--idle {
+  opacity: 0.5;
+}
+
+/* ============================================================
+   Reel Grid
+   ============================================================ */
+
+.titan-reel-grid {
+  --titan-cell-w: 80px;
+  --titan-cell-gap: 5px;
+  --titan-reel-pad: 5px;
+  display: flex;
+  gap: var(--titan-cell-gap);
+  justify-content: center;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+  padding: 8px 10px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 800px) {
+  .titan-reel-grid { --titan-cell-w: 100px; }
+}
+@media (min-width: 1100px) {
+  .titan-reel-grid { --titan-cell-w: 120px; }
+}
+@media (min-width: 1400px) {
+  .titan-reel-grid { --titan-cell-w: 140px; }
+}
+
+.titan-reel-col {
+  --reel-rows: 3;
+  --reel-gap: 3px;
+  --reel-cell: var(--titan-cell-w, 80px);
+  --reel-viewport-height: calc(var(--reel-rows) * var(--reel-cell) + (var(--reel-rows) - 1) * var(--reel-gap));
+  display: flex;
+  flex-direction: column;
+  gap: var(--reel-gap);
+  border-radius: 4px;
+  padding: 3px;
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.titan-reel-col.reel-locked {
+  border-color: rgba(240, 192, 96, 0.3);
+  box-shadow: 0 0 12px var(--titan-divine-amber);
+  animation: locked-pulse 2s ease-in-out infinite;
+}
+
+@keyframes locked-pulse {
+  0%, 100% { box-shadow: 0 0 12px var(--titan-divine-amber); }
+  50% { box-shadow: 0 0 24px var(--titan-divine-amber); }
+}
+
+/* Motion reel viewport */
+.reel-viewport {
+  width: 100%;
+  overflow: hidden;
+  height: var(--reel-viewport-height);
+  position: relative;
+  contain: layout style paint;
+}
+
+.reel-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ============================================================
+   Symbol Cells
+   ============================================================ */
+
+.titan-symbol-cell,
+.titan-reel-grid .titan-symbol-cell {
+  width: var(--reel-cell, 80px);
+  height: var(--reel-cell, 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: var(--titan-ember);
+  border: 1px solid rgba(138, 133, 128, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Cells with images — let the PNG art breathe */
+.titan-symbol-cell:has(.titan-symbol-img) {
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(212, 168, 67, 0.1);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+.titan-symbol-cell.cell--motion,
+.titan-reel-grid .cell--motion {
+  opacity: 0.94;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%), 0 1px 4px rgb(0 0 0 / 18%);
+}
+
+.titan-symbol-cell.cell--empty,
+.titan-reel-grid .cell--empty {
+  opacity: 0.35;
+}
+
+.titan-symbol-cell.cell--empty .titan-symbol-text,
+.titan-reel-grid .cell--empty .titan-symbol-text {
+  color: rgba(255, 255, 255, 0.1);
+}
+
+.titan-symbol-text {
+  font-family: var(--titan-display);
+  font-size: clamp(0.85rem, calc(var(--reel-cell, 80px) * 0.35), 2rem);
+  font-weight: 700;
+  user-select: none;
+}
+
+.titan-symbol-img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  image-rendering: auto;
+}
+
+.symbol-high .titan-symbol-text { color: var(--titan-forge-gold); }
+.symbol-mid .titan-symbol-text { color: #B8B0A0; }
+.symbol-low .titan-symbol-text { color: #A08060; }
+.symbol-wild .titan-symbol-text {
+  color: var(--titan-wrath-vermilion);
+  text-shadow: 0 0 10px var(--titan-wrath-vermilion);
+  animation: wild-flicker 0.5s ease-in-out infinite alternate;
+}
+
+/* Image-based symbol tints — subtle accent behind the PNG */
+.symbol-high:has(.titan-symbol-img) {
+  box-shadow: inset 0 0 12px rgba(212, 168, 67, 0.12), 0 0 8px rgba(212, 168, 67, 0.06);
+}
+.symbol-wild:has(.titan-symbol-img) {
+  background: linear-gradient(135deg, rgba(232, 69, 45, 0.12), rgba(212, 168, 67, 0.06));
+  box-shadow: inset 0 0 14px rgba(232, 69, 45, 0.15), 0 0 12px rgba(232, 69, 45, 0.1);
+  animation: wild-cell-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes wild-cell-pulse {
+  0% { box-shadow: inset 0 0 14px rgba(232, 69, 45, 0.15), 0 0 12px rgba(232, 69, 45, 0.1); }
+  100% { box-shadow: inset 0 0 22px rgba(232, 69, 45, 0.3), 0 0 20px rgba(240, 192, 96, 0.2); }
+}
+
+/* Keep text wild styling for fallback (non-image) cells */
+.symbol-wild:not(:has(.titan-symbol-img)) {
+  background: linear-gradient(135deg, rgba(232, 69, 45, 0.15), rgba(212, 168, 67, 0.1));
+}
+
+.titan-reel-col.reel-bounce .reel-viewport {
+  animation: slot-reel-bounce 220ms cubic-bezier(0.25, 0.9, 0.35, 1);
+}
+
+@keyframes slot-reel-bounce {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(2%); }
+  100% { transform: translateY(0); }
+}
+
+/* ============================================================
+   Payline Overlay
+   ============================================================ */
+
+.titan-payline-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.payline-group .payline-glow {
+  stroke-dasharray: 8 4;
+  animation: payline-dash 0.5s linear infinite;
+  filter: drop-shadow(0 0 6px var(--titan-divine-amber));
+}
+
+.payline-group .payline-rtl {
+  animation-direction: reverse;
+}
+
+@keyframes payline-dash {
+  to { stroke-dashoffset: -24; }
+}
+
+.payline-win-text {
+  paint-order: stroke;
+  stroke: var(--titan-obsidian);
+  stroke-width: 3px;
+}
+
+/* ============================================================
+   Wild Expansion
+   ============================================================ */
+
+.titan-wild-expansion {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.wild-fire-burst {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse, rgba(232, 69, 45, 0.4), rgba(212, 168, 67, 0.15), transparent);
+  animation: fire-expand 0.6s ease-out both;
+}
+
+.wild-fire-text {
+  font-family: var(--titan-display);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--titan-wrath-vermilion);
+  text-shadow: 0 0 20px var(--titan-wrath-vermilion), 0 0 40px var(--titan-forge-gold);
+  animation: fire-text 0.4s ease-out 0.1s both;
+}
+
+@keyframes fire-expand {
+  0% { opacity: 0; transform: scaleY(0.5); }
+  50% { opacity: 1; transform: scaleY(1.05); }
+  100% { opacity: 0.8; transform: scaleY(1); }
+}
+
+@keyframes fire-text {
+  0% { opacity: 0; transform: scale(0.3); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+   Display
+   ============================================================ */
+
+.titan-cabinet-display {
+  padding: 6px 16px;
+  text-align: center;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.titan-display-muted {
+  font-family: var(--titan-body);
+  font-size: 0.8rem;
+  color: var(--titan-ash);
+}
+
+.titan-cabinet-display.display-win {
+  background: linear-gradient(90deg, rgba(212, 168, 67, 0.08), rgba(240, 192, 96, 0.04), rgba(212, 168, 67, 0.08));
+}
+
+.titan-win-amount {
+  font-family: var(--titan-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+  animation: win-pop-in 0.35s ease-out;
+}
+
+@keyframes win-pop-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ============================================================
+   Controls
+   ============================================================ */
+
+.titan-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  flex: 1;
+}
+
+/* Super Bet */
+.titan-super-bet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.titan-super-bet:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.titan-super-bet.super-bet-on {
+  border-color: var(--titan-wrath-vermilion);
+  box-shadow: 0 0 12px rgba(232, 69, 45, 0.4);
+}
+
+.super-bet-label {
+  font-family: var(--titan-display);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--titan-ash);
+  letter-spacing: 0.08em;
+}
+
+.super-bet-on .super-bet-label { color: var(--titan-wrath-vermilion); }
+
+.super-bet-badge {
+  font-family: var(--titan-body);
+  font-size: 0.58rem;
+  color: var(--titan-forge-gold);
+  margin-top: 3px;
+}
+
+/* Bet Controls — compact row */
+.titan-bet-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.bet-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 50%;
+  color: var(--titan-smoke);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.bet-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.bet-btn:not(:disabled):hover { border-color: var(--titan-forge-gold); color: var(--titan-forge-gold); }
+
+.bet-display {
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(138, 133, 128, 0.2);
+  border-radius: 5px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  min-width: 52px;
+}
+
+.bet-display:hover { border-color: var(--titan-forge-gold); }
+
+/* Spin Button */
+.titan-spin-btn {
+  width: 100%;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 2px solid var(--titan-forge-gold);
+  background: linear-gradient(135deg, rgba(26, 20, 16, 0.9), rgba(13, 11, 15, 0.9));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 18px rgba(212, 168, 67, 0.25);
+}
+
+.titan-spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.titan-spin-btn:not(:disabled):hover {
+  box-shadow: 0 0 30px rgba(212, 168, 67, 0.5);
+  transform: scale(1.06);
+}
+
+.titan-spin-btn.spin-spinning {
+  border-radius: 10px;
+  border-color: var(--titan-wrath-vermilion);
+  box-shadow: 0 0 20px rgba(232, 69, 45, 0.35);
+}
+
+.titan-spin-btn.spin-auto {
+  border-radius: 10px;
+}
+
+.spin-icon {
+  font-size: 1.6rem;
+}
+
+.spin-stop-icon {
+  font-size: 1.35rem;
+  color: var(--titan-wrath-vermilion);
+}
+
+.spin-auto-count {
+  font-family: var(--titan-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+}
+
+/* Auto Spin Button */
+.titan-auto-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 7px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.titan-auto-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.titan-auto-btn:not(:disabled):hover { border-color: var(--titan-forge-gold); }
+
+/* ============================================================
+   Modals (Autospin / Bet Picker / Paytable / Menu)
+   ============================================================ */
+
+.autospin-backdrop,
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.autospin-picker,
+.bet-picker {
+  background: #1A1410;
+  border: 1px solid rgba(212, 168, 67, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 240px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.autospin-title,
+.bet-picker-title {
+  font-family: var(--titan-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.autospin-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.autospin-option {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 6px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-display);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.autospin-option:hover { border-color: var(--titan-forge-gold); color: var(--titan-forge-gold); }
+
+.autospin-cancel {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: var(--titan-ash);
+  font-family: var(--titan-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.bet-picker {
+  max-width: 320px;
+  width: 90%;
+}
+
+.bet-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.bet-option {
+  padding: 8px 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 5px;
+  color: var(--titan-smoke);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.bet-option:hover { border-color: var(--titan-forge-gold); }
+.bet-option.bet-selected { border-color: var(--titan-forge-gold); background: rgba(212, 168, 67, 0.15); }
+
+/* Paytable Modal */
+.paytable-modal {
+  background: #1A1410;
+  border: 1px solid rgba(212, 168, 67, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 360px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.paytable-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.paytable-title {
+  font-family: var(--titan-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+  margin: 0;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(138, 133, 128, 0.3);
+  border-radius: 50%;
+  color: var(--titan-smoke);
+  cursor: pointer;
+}
+
+.paytable-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(138, 133, 128, 0.1);
+}
+
+.paytable-symbol {
+  font-family: var(--titan-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+  display: flex;
+  align-items: center;
+}
+
+.paytable-symbol-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.paytable-payouts {
+  display: flex;
+  gap: 10px;
+  font-family: var(--titan-body);
+  font-size: 0.78rem;
+  color: var(--titan-smoke);
+}
+
+.paytable-wild .paytable-symbol { color: var(--titan-wrath-vermilion); }
+
+.paytable-wild-desc {
+  font-family: var(--titan-body);
+  font-size: 0.7rem;
+  color: var(--titan-smoke);
+  max-width: 180px;
+}
+
+/* Paytable multiplier rules section */
+.paytable-rules {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(212, 160, 23, 0.06);
+  border: 1px solid rgba(212, 160, 23, 0.15);
+  border-radius: 8px;
+}
+
+.paytable-rules-title {
+  font-family: var(--titan-display);
+  font-size: 0.85rem;
+  color: var(--titan-forge-gold);
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.paytable-rule {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-family: var(--titan-body);
+  font-size: 0.7rem;
+  color: var(--titan-smoke);
+  line-height: 1.5;
+}
+
+.paytable-rule:last-child {
+  margin-bottom: 0;
+}
+
+.paytable-rule-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  margin-top: 1px;
+}
+
+.paytable-rule strong {
+  color: var(--titan-forge-gold);
+  font-weight: 600;
+}
+
+.paytable-rule p {
+  margin: 2px 0 0 0;
+}
+
+.paytable-rule-list {
+  margin: 4px 0 0 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.paytable-rule-list li {
+  margin-bottom: 2px;
+}
+
+/* Menu Popover */
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.menu-popover {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #1A1410;
+  border: 1px solid rgba(212, 168, 67, 0.25);
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 200px;
+  z-index: 101;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-body);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.menu-item:hover:not(:disabled) { background: rgba(212, 168, 67, 0.1); }
+.menu-item:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.menu-icon { font-size: 1.1rem; }
+.menu-soon {
+  margin-left: auto;
+  font-size: 0.65rem;
+  color: var(--titan-ash);
+}
+
+/* ============================================================
+   Titan's Gaze — eyes during spinning
+   ============================================================ */
+
+.titan-grid-area[data-spinning]::before,
+.titan-grid-area[data-spinning]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 44px;
+  height: 26px;
+  background: radial-gradient(ellipse at center,
+    var(--titan-forge-gold) 0%,
+    var(--titan-wrath-vermilion) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: titan-gaze-appear 0.4s ease-out both,
+             titan-gaze-pulse 2s ease-in-out 0.4s infinite;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.titan-grid-area[data-spinning]::before { left: calc(50% - 70px); }
+.titan-grid-area[data-spinning]::after  { right: calc(50% - 70px); }
+
+@keyframes titan-gaze-appear {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes titan-gaze-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.08); opacity: 0.9; }
+}
+
+/* ============================================================
+   Joining Screen
+   ============================================================ */
+
+.titan-screen--joining {
+  justify-content: center;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 35%, rgba(232, 69, 45, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 60%, rgba(212, 168, 67, 0.04) 0%, transparent 60%),
+    var(--titan-obsidian);
+}
+
+.titan-joining-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.titan-joining-emblem {
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 24px rgba(240, 192, 96, 0.5));
+  animation: titan-emblem-float 3s ease-in-out infinite;
+}
+
+@keyframes titan-emblem-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.titan-joining-title {
+  font-family: var(--titan-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+  margin: 12px 0 0;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 32px rgba(212, 168, 67, 0.35);
+}
+
+.titan-joining-forge {
+  width: 180px;
+  height: 4px;
+  margin-top: 28px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.titan-joining-forge-bar {
+  width: 40%;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--titan-wrath-vermilion) 20%,
+    var(--titan-forge-gold) 50%,
+    var(--titan-divine-amber) 80%,
+    transparent 100%
+  );
+  animation: titan-forge-slide 1.6s ease-in-out infinite;
+}
+
+@keyframes titan-forge-slide {
+  0% { transform: translateX(-100%); opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { transform: translateX(350%); opacity: 0; }
+}
+
+.titan-joining-status {
+  font-family: var(--titan-body);
+  font-size: 0.85rem;
+  color: var(--titan-ash);
+  margin: 16px 0 0;
+  letter-spacing: 0.03em;
+}
+
+.titan-joining-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+/* Toolbar buttons */
+.titan-lobby-btn,
+.titan-logout-btn {
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  color: var(--titan-ash);
+  font-family: var(--titan-body);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.titan-lobby-btn:hover,
+.titan-logout-btn:hover {
+  border-color: rgba(212, 168, 67, 0.4);
+  color: var(--titan-forge-gold);
+}
+
+/* ============================================================
+   Olympus Jackpot — Horizontal Bar (above grid)
+   ============================================================ */
+
+.titan-jackpot-bar {
+  --bar-mini: #B88A5A;
+  --bar-minor: #B0B0B8;
+  --bar-major: var(--titan-forge-gold);
+  --bar-grand: var(--titan-wrath-vermilion);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px 6px;
+  flex-shrink: 0;
+}
+
+/* --- Tier cards row --- */
+
+.jackpot-bar-cards {
+  display: flex;
+  gap: 4px;
+  justify-content: space-between;
+}
+
+.jackpot-bar-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(138, 133, 128, 0.1);
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+  min-width: 0;
+  gap: 2px;
+}
+
+.jackpot-bar-card.card-reached {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.jackpot-bar-card.tier-mini  { border-color: rgba(184, 138, 90, 0.15); }
+.jackpot-bar-card.tier-minor { border-color: rgba(176, 176, 184, 0.15); }
+.jackpot-bar-card.tier-major { border-color: rgba(212, 168, 67, 0.15); }
+.jackpot-bar-card.tier-grand { border-color: rgba(232, 69, 45, 0.15); }
+
+.jackpot-bar-card.tier-mini.card-reached  { border-color: rgba(184, 138, 90, 0.5); box-shadow: 0 0 8px rgba(184, 138, 90, 0.2); }
+.jackpot-bar-card.tier-minor.card-reached { border-color: rgba(176, 176, 184, 0.5); box-shadow: 0 0 8px rgba(176, 176, 184, 0.2); }
+.jackpot-bar-card.tier-major.card-reached { border-color: rgba(212, 168, 67, 0.5); box-shadow: 0 0 12px rgba(212, 168, 67, 0.25); }
+.jackpot-bar-card.tier-grand.card-reached {
+  border-color: rgba(232, 69, 45, 0.6);
+  box-shadow: 0 0 16px rgba(232, 69, 45, 0.3);
+  animation: grand-card-glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes grand-card-glow {
+  0% { box-shadow: 0 0 16px rgba(232, 69, 45, 0.3); }
+  100% { box-shadow: 0 0 24px rgba(232, 69, 45, 0.5); }
+}
+
+.card-tier-name {
+  font-family: var(--titan-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+.card-tier-prize {
+  font-family: var(--titan-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.card-tier-prize.prize-progressive {
+  color: var(--titan-divine-amber);
+}
+
+/* Per-tier colors */
+.jackpot-bar-card .card-tier-name { color: rgba(138, 133, 128, 0.4); }
+.jackpot-bar-card .card-tier-prize { color: rgba(138, 133, 128, 0.35); }
+
+.jackpot-bar-card.tier-mini  .card-tier-name { color: rgba(184, 138, 90, 0.5); }
+.jackpot-bar-card.tier-minor .card-tier-name { color: rgba(176, 176, 184, 0.5); }
+.jackpot-bar-card.tier-major .card-tier-name { color: rgba(212, 168, 67, 0.5); }
+.jackpot-bar-card.tier-grand .card-tier-name { color: rgba(232, 69, 45, 0.5); }
+
+.jackpot-bar-card.tier-mini.card-reached  .card-tier-name { color: var(--bar-mini); }
+.jackpot-bar-card.tier-minor.card-reached .card-tier-name { color: var(--bar-minor); }
+.jackpot-bar-card.tier-major.card-reached .card-tier-name { color: var(--bar-major); }
+.jackpot-bar-card.tier-grand.card-reached .card-tier-name {
+  color: var(--bar-grand);
+  text-shadow: 0 0 6px rgba(232, 69, 45, 0.5);
+}
+
+.jackpot-bar-card.card-reached .card-tier-prize { color: var(--titan-smoke); }
+.jackpot-bar-card.tier-major.card-reached .card-tier-prize { color: var(--titan-forge-gold); }
+.jackpot-bar-card.tier-grand.card-reached .card-tier-prize { color: var(--titan-divine-amber); }
+
+/* --- Progress track --- */
+
+.jackpot-bar-track {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(138, 133, 128, 0.1);
+  border-radius: 4px;
+  overflow: visible;
+  margin: 0 2px;
+}
+
+.jackpot-bar-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg,
+    rgba(184, 138, 90, 0.6) 0%,
+    rgba(176, 176, 184, 0.5) 25%,
+    rgba(212, 168, 67, 0.6) 55%,
+    rgba(232, 69, 45, 0.7) 100%
+  );
+  transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+}
+
+.jackpot-bar-fill.fill-flash {
+  animation: bar-fill-flash 0.4s ease-out;
+}
+
+@keyframes bar-fill-flash {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.8); }
+  100% { filter: brightness(1); }
+}
+
+/* Token count floating badge */
+.jackpot-bar-badge {
+  position: absolute;
+  top: -18px;
+  transform: translateX(-50%);
+  z-index: 3;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--titan-divine-amber);
+  color: var(--titan-obsidian);
+  font-family: var(--titan-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 8px rgba(240, 192, 96, 0.5);
+  pointer-events: none;
+  transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --- Tier markers on the track --- */
+
+.jackpot-bar-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.marker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(138, 133, 128, 0.3);
+  background: var(--titan-obsidian);
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+}
+
+.jackpot-bar-marker.marker-reached .marker-dot {
+  border-color: var(--titan-divine-amber);
+  box-shadow: 0 0 6px var(--titan-divine-amber);
+  background: rgba(240, 192, 96, 0.3);
+}
+
+/* --- Impact sparks --- */
+
+.jackpot-bar-track.track-impact {
+  box-shadow: inset 0 0 12px rgba(240, 192, 96, 0.2);
+}
+
+.bar-impact-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.bar-impact-spark {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--titan-divine-amber);
+  box-shadow: 0 0 6px var(--titan-divine-amber), 0 0 12px rgba(240, 192, 96, 0.4);
+  animation: bar-spark-burst 0.5s ease-out forwards;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes bar-spark-burst {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(2); opacity: 1; }
+  100% { transform: translate(-50%, 0) scale(0.2); opacity: 0; }
+}
+
+/* ============================================================
+   Divine Token Badge — rendered inside grid cells
+   ============================================================ */
+
+.titan-symbol-cell.cell-has-token {
+  box-shadow:
+    inset 0 0 6px rgba(240, 192, 96, 0.2),
+    0 0 8px rgba(240, 192, 96, 0.3);
+  border-color: rgba(240, 192, 96, 0.4);
+}
+
+.divine-token-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%,
+    var(--titan-olympian-light, #FFF5E0) 0%,
+    var(--titan-divine-amber) 55%,
+    var(--titan-forge-gold) 100%
+  );
+  box-shadow:
+    0 0 4px var(--titan-divine-amber),
+    0 0 8px rgba(240, 192, 96, 0.6);
+  z-index: 5;
+  animation: divine-token-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.divine-token-icon-inner {
+  font-size: 9px;
+  line-height: 1;
+  color: var(--titan-obsidian);
+  text-shadow: none;
+}
+
+@keyframes divine-token-pop {
+  0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+  60% { transform: scale(1.5) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Stagger — token at position row*5+col gets delay based on col index */
+.titan-reel-col:nth-child(1) .divine-token-badge { animation-delay: 0.05s; }
+.titan-reel-col:nth-child(2) .divine-token-badge { animation-delay: 0.15s; }
+.titan-reel-col:nth-child(3) .divine-token-badge { animation-delay: 0.25s; }
+.titan-reel-col:nth-child(4) .divine-token-badge { animation-delay: 0.35s; }
+.titan-reel-col:nth-child(5) .divine-token-badge { animation-delay: 0.45s; }
+
+/* Token flying to meter — shrink + rise + fade */
+.divine-token-badge.token-flying {
+  animation: token-fly-to-meter 0.5s cubic-bezier(0.34, 0.6, 0.5, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes token-fly-to-meter {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(2px, -30px) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-4px, -100px) scale(0.15);
+    opacity: 0;
+  }
+}
+
+/* ============================================================
+   Meter Impact — tokens arrive at the meter
+   ============================================================ */
+
+.jackpot-meter-track.meter-impact {
+  box-shadow: inset 0 0 20px rgba(240, 192, 96, 0.3);
+}
+
+.meter-impact-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.meter-impact-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--titan-divine-amber);
+  box-shadow: 0 0 8px var(--titan-divine-amber), 0 0 16px rgba(240, 192, 96, 0.5);
+  left: calc(var(--meter-fill-pct, 50%) * 1%);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: meter-spark-burst 0.6s ease-out forwards;
+}
+
+@keyframes meter-spark-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(2.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -80%) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* ============================================================
+   Jackpot Celebration Overlay
+   ============================================================ */
+
+.titan-jackpot-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 11, 15, 0.88);
+  backdrop-filter: blur(6px);
+  animation: celebration-backdrop-in 0.3s ease-out;
+}
+
+@keyframes celebration-backdrop-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Radial light burst behind the text */
+.celebration-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.celebration-burst-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  animation: burst-expand 2s ease-out infinite;
+}
+
+@keyframes burst-expand {
+  0% { width: 80px; height: 80px; opacity: 0.7; }
+  100% { width: 600px; height: 600px; opacity: 0; }
+}
+
+.celebration-burst-ring:nth-child(1) {
+  background: radial-gradient(circle, rgba(240, 192, 96, 0.4), transparent 70%);
+  animation-delay: 0s;
+}
+
+.celebration-burst-ring:nth-child(2) {
+  background: radial-gradient(circle, rgba(212, 168, 67, 0.3), transparent 70%);
+  animation-delay: 0.6s;
+}
+
+.celebration-burst-ring:nth-child(3) {
+  background: radial-gradient(circle, rgba(240, 192, 96, 0.2), transparent 70%);
+  animation-delay: 1.2s;
+}
+
+/* Floating spark particles */
+.celebration-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.celebration-spark {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--titan-divine-amber);
+  box-shadow: 0 0 6px var(--titan-divine-amber);
+  animation: spark-float-up 2.5s ease-out infinite;
+}
+
+@keyframes spark-float-up {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(-120px) translateX(30px) scale(0); opacity: 0; }
+}
+
+/* Content */
+.celebration-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: celebration-content-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+}
+
+@keyframes celebration-content-in {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.celebration-tier-badge {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-family: var(--titan-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.celebration-tier-badge.tier-mini {
+  background: rgba(184, 138, 90, 0.25);
+  color: #C9A87C;
+  border: 1px solid rgba(184, 138, 90, 0.4);
+}
+
+.celebration-tier-badge.tier-minor {
+  background: rgba(176, 176, 184, 0.25);
+  color: #C8C8D0;
+  border: 1px solid rgba(176, 176, 184, 0.4);
+}
+
+.celebration-tier-badge.tier-major {
+  background: rgba(212, 168, 67, 0.25);
+  color: var(--titan-forge-gold);
+  border: 1px solid rgba(212, 168, 67, 0.4);
+  box-shadow: 0 0 16px rgba(212, 168, 67, 0.3);
+}
+
+.celebration-tier-badge.tier-grand {
+  background: rgba(232, 69, 45, 0.25);
+  color: var(--titan-wrath-vermilion);
+  border: 1px solid rgba(232, 69, 45, 0.5);
+  box-shadow: 0 0 24px rgba(232, 69, 45, 0.4);
+  animation: grand-badge-pulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes grand-badge-pulse {
+  0% { box-shadow: 0 0 24px rgba(232, 69, 45, 0.4); }
+  100% { box-shadow: 0 0 40px rgba(232, 69, 45, 0.7); }
+}
+
+.celebration-prize {
+  font-family: var(--titan-display);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--titan-forge-gold);
+  text-shadow:
+    0 0 40px rgba(212, 168, 67, 0.5),
+    0 0 80px rgba(240, 192, 96, 0.3);
+  line-height: 1;
+}
+
+.celebration-prize.tier-grand {
+  color: var(--titan-wrath-vermilion);
+  text-shadow:
+    0 0 40px rgba(232, 69, 45, 0.5),
+    0 0 80px rgba(232, 69, 45, 0.3);
+}
+
+.celebration-sub {
+  font-family: var(--titan-body);
+  font-size: 0.85rem;
+  color: var(--titan-smoke);
+  text-align: center;
+  max-width: 280px;
+}
+
+.celebration-dismiss {
+  margin-top: 24px;
+  padding: 8px 28px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(212, 168, 67, 0.3);
+  border-radius: 8px;
+  color: var(--titan-forge-gold);
+  font-family: var(--titan-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.celebration-dismiss:hover {
+  background: rgba(212, 168, 67, 0.1);
+  border-color: var(--titan-forge-gold);
+}
+
+@media (min-width: 600px) {
+  .celebration-prize { font-size: 4rem; }
+}
+
+@media (min-width: 800px) {
+  .celebration-prize { font-size: 5rem; }
+}
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .titan-reel-col.reel-bounce .reel-viewport { animation: none; }
+  .symbol-wild .titan-symbol-text { animation: none; }
+  .symbol-wild:has(.titan-symbol-img) { animation: none; }
+  .payline-group .payline-glow { animation: none; }
+  .wild-fire-burst { animation: none; }
+  .wild-fire-text { animation: none; }
+  .titan-spin-btn .spin-icon { animation: none; }
+  .titan-joining-emblem { animation: none; }
+  .titan-joining-forge-bar { animation: none; }
+  .divine-token-badge { animation: none; }
+  .divine-token-badge.token-flying { animation: none; opacity: 0; }
+  .jackpot-bar-fill { transition: none; }
+  .bar-impact-spark { animation: none; }
+  .celebration-burst-ring { animation: none; }
+  .celebration-spark { animation: none; }
+}
+
+/* ============================================================
+   Debug — Cheat Panel
+   ============================================================ */
+
+.debug-cheat-panel {
+  padding: 8px 10px;
+  overflow-y: auto;
+}
+
+.debug-cheat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.debug-cheat-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.debug-cheat-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  text-align: center;
+  font-family: var(--titan-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--titan-smoke);
+  background: var(--titan-ember);
+  border: 1px solid rgba(212, 168, 67, 0.12);
+  border-radius: 4px;
+  outline: none;
+  text-transform: uppercase;
+  padding: 0;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.debug-cheat-cell:focus {
+  border-color: var(--titan-forge-gold);
+  box-shadow: 0 0 6px rgba(212, 168, 67, 0.2);
+}
+
+.debug-cheat-cell:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.debug-cheat-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.debug-cheat-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  font-family: var(--titan-body);
+  font-size: 0.65rem;
+  font-weight: 600;
+  border: 1px solid rgba(212, 168, 67, 0.2);
+  border-radius: 4px;
+  background: rgba(212, 168, 67, 0.08);
+  color: var(--titan-smoke);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background 0.15s;
+}
+
+.debug-cheat-btn:hover:not(:disabled) {
+  background: rgba(212, 168, 67, 0.18);
+}
+
+.debug-cheat-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.debug-cheat-btn.primary {
+  background: var(--titan-forge-gold);
+  color: var(--titan-obsidian);
+  border-color: var(--titan-forge-gold);
+}
+
+.debug-cheat-status {
+  margin-top: 6px;
+  font-family: var(--titan-body);
+  font-size: 0.6rem;
+  color: var(--titan-ash);
+  min-height: 1em;
+}
+
+.debug-cheat-status.success {
+  color: #22c55e;
+}
+
+.debug-cheat-status.error {
+  color: var(--titan-wrath-vermilion);
+}
+
+.debug-cheat-section-label {
+  font-family: var(--titan-body);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--titan-ash);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 10px 0 4px;
+}
+
+.debug-cheat-section-label:first-child {
+  margin-top: 0;
+}
+
+.debug-cheat-token-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.debug-cheat-token-input {
+  width: 56px;
+  padding: 5px 6px;
+  font-family: var(--titan-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--titan-smoke);
+  background: var(--titan-ember);
+  border: 1px solid rgba(212, 168, 67, 0.12);
+  border-radius: 4px;
+  outline: none;
+  text-align: center;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.debug-cheat-token-input:focus {
+  border-color: var(--titan-forge-gold);
+  box-shadow: 0 0 6px rgba(212, 168, 67, 0.2);
+}
+
+.debug-cheat-token-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Debug — Message Log
+   ============================================================ */
+
+.debug-log-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  position: relative;
+}
+
+.debug-log-list {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 0;
+}
+
+.debug-log-entry {
+  display: flex;
+  gap: 6px;
+  padding: 3px 10px;
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 0.58rem;
+  line-height: 1.45;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  transition: background 0.1s;
+  min-height: 0;
+}
+
+.debug-log-entry:hover {
+  filter: brightness(1.3);
+}
+
+.debug-log-entry.dir-in {
+  background: rgba(34, 197, 94, 0.04);
+}
+
+.debug-log-entry.dir-out {
+  background: rgba(96, 165, 250, 0.04);
+}
+
+.debug-log-entry.is-error {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.debug-log-dir {
+  flex-shrink: 0;
+  width: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dir-in .debug-log-dir { color: #22c55e; }
+.dir-out .debug-log-dir { color: #60a5fa; }
+.is-error .debug-log-dir { color: #ef4444; }
+
+.debug-log-time {
+  flex-shrink: 0;
+  color: var(--titan-ash);
+  opacity: 0.6;
+}
+
+.debug-log-summary {
+  flex: 1;
+  color: var(--titan-smoke);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.is-error .debug-log-summary {
+  color: #ef4444;
+}
+
+.debug-log-expand {
+  display: none;
+  padding: 4px 10px 4px 28px;
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 0.55rem;
+  color: var(--titan-ash);
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.debug-log-entry.expanded + .debug-log-expand {
+  display: block;
+}
+
+/* Scroll-to-bottom button */
+.debug-log-scroll-btn {
+  position: sticky;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  font-family: var(--titan-body);
+  font-size: 0.55rem;
+  background: rgba(212, 168, 67, 0.15);
+  border: 1px solid rgba(212, 168, 67, 0.25);
+  border-radius: 10px;
+  color: var(--titan-forge-gold);
+  cursor: pointer;
+  z-index: 5;
+}
+
+/* Clear button in header */
+.debug-log-clear {
+  padding: 2px 8px;
+  font-family: var(--titan-body);
+  font-size: 0.55rem;
+  background: transparent;
+  border: 1px solid rgba(212, 168, 67, 0.15);
+  border-radius: 3px;
+  color: var(--titan-ash);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.debug-log-clear:hover {
+  color: var(--titan-smoke);
+  border-color: rgba(212, 168, 67, 0.3);
+}
+
+/* Debug panel empty state */
+.debug-empty {
+  padding: 16px;
+  text-align: center;
+  font-family: var(--titan-body);
+  font-size: 0.6rem;
+  color: var(--titan-ash);
+  opacity: 0.5;
+}
+
+/* =================================================================
+   Menu button
+   ================================================================= */
+
+.titan-menu-btn {
+  background: none;
+  border: 1px solid rgba(212, 168, 67, 0.3);
+  border-radius: 6px;
+  color: var(--titan-forge-gold);
+  font-size: 1.2rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.titan-menu-btn:hover {
+  border-color: var(--titan-forge-gold);
+}
+
+/* =================================================================
+   History modal (reuses .paytable-modal + .modal-backdrop)
+   ================================================================= */
+
+.hist-modal {
+  max-width: 640px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.hist-body {
+  color: var(--titan-smoke);
+  font-family: var(--titan-body);
+  font-size: 0.8rem;
+}
+
+/* -- Level 1: spin list -- */
+
+.hist-list-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.hist-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hist-pagination button {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 4px;
+  color: var(--titan-smoke);
+  font-family: var(--titan-body);
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.hist-pagination button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}.hist-page-info {
+  font-size: 0.75rem;
+  color: var(--titan-ash);
+}
+
+/* -- Table -- */
+
+.hist-table-wrap {
+  overflow-x: auto;
+}
+.hist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.hist-table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(138, 133, 128, 0.2);
+  color: var(--titan-ash);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+.hist-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(138, 133, 128, 0.08);
+}
+
+/* -- Row styles -- */
+
+.hist-row-clickable {
+  cursor: pointer;
+}
+.hist-row-clickable:hover {
+  background: rgba(212, 168, 67, 0.08);
+}
+.hist-row-sel {
+  background: rgba(212, 168, 67, 0.12);
+}
+.hist-round-id {
+  font-size: 0.7rem;
+}
+
+/* -- Type badges -- */
+
+.hist-type-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.hist-type-BASE {
+  background: rgba(100, 149, 237, 0.2);
+  color: cornflowerblue;
+}
+.hist-type-RESPIN {
+  background: rgba(212, 168, 67, 0.2);
+  color: var(--titan-forge-gold);
+}
+
+/* -- Amounts -- */
+
+.hist-amount {
+  text-align: left;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.hist-profit-pos { color: #4caf50; }
+.hist-profit-neg { color: #e74c3c; }
+.hist-ts { font-size: 0.7rem; }
+
+/* -- Level 2: detail -- */
+
+.hist-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.hist-detail-title {
+  font-family: var(--titan-display);
+  font-size: 0.95rem;
+  color: var(--titan-forge-gold);
+}
+.hist-back-btn {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.25);
+  border-radius: 4px;
+  color: var(--titan-smoke);
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: var(--titan-body);
+}
+.hist-back-btn:hover {
+  border-color: var(--titan-forge-gold);
+  color: var(--titan-forge-gold);
+}
+
+.hist-detail-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.hist-detail-meta p {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+}
+.hist-label {
+  color: var(--titan-ash);
+  margin-right: 6px;
+}
+.hist-label::after { content: ":"; }
+
+/* -- Reels grid in detail -- */
+
+.hist-section {
+  margin-top: 14px;
+}
+.hist-section h3 {
+  font-family: var(--titan-display);
+  font-size: 0.8rem;
+  color: var(--titan-ash);
+  margin: 0 0 8px;
+}
+.hist-reels {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+.hist-reel-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hist-cell {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(138, 133, 128, 0.15);
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--titan-smoke);
+  overflow: hidden;
+}
+.hist-cell img {
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
+}
+.hist-cell-hit {
+  border-color: var(--titan-forge-gold);
+  background: rgba(212, 168, 67, 0.15);
+  box-shadow: 0 0 6px rgba(212, 168, 67, 0.3);
+}
+.hist-sym-mini {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+.hist-sym-mini.sym-A { color: #ffd700; }
+.hist-sym-mini.sym-B { color: #5dade2; }
+.hist-sym-mini.sym-C { color: #58d68d; }
+.hist-sym-mini.sym-D { color: #bb8fce; }
+.hist-sym-mini.sym-E { color: #f4d03f; }
+.hist-sym-mini.sym-F { color: #e74c3c; }
+.hist-sym-mini.sym-G { color: #2ecc71; }
+.hist-sym-mini.sym-W { color: #ff6347; }
+
+.hist-cell.sym-A { color: #ffd700; }
+.hist-cell.sym-B { color: #5dade2; }
+.hist-cell.sym-C { color: #58d68d; }
+.hist-cell.sym-D { color: #bb8fce; }
+.hist-cell.sym-E { color: #f4d03f; }
+.hist-cell.sym-F { color: #e74c3c; }
+.hist-cell.sym-G { color: #2ecc71; }
+.hist-cell.sym-W { color: #ff6347; }
+
+/* -- Jackpot tier badges -- */
+
+.tier-badge-grand {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+.tier-badge-major {
+  background: rgba(100, 149, 237, 0.2);
+  color: cornflowerblue;
+}
+
+.jackpot-prize {
+  color: var(--titan-forge-gold);
+}
+
+/* -- Misc -- */
+
+.muted { color: var(--titan-ash); }
+.error { color: #e74c3c; }
+
+/* -- Insufficient balance popup -- */
+
+.titan-insufficient-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.titan-insufficient-popup {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid #c8943e;
+  border-radius: 12px;
+  padding: 32px 40px;
+  text-align: center;
+  max-width: 360px;
+}
+
+.titan-insufficient-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.titan-insufficient-popup h2 {
+  color: #f5d78c;
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+
+.titan-insufficient-popup p {
+  color: #aaa;
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.titan-insufficient-ok {
+  margin-top: 16px;
+  padding: 8px 32px;
+  background: linear-gradient(180deg, #f5d78c 0%, #c8943e 100%);
+  color: #1a0e04;
+  border: none;
+  border-radius: 4px;
+  font-weight: 700;
+  cursor: pointer;
+}
