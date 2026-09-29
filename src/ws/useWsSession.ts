@@ -5,6 +5,7 @@ import {
   BrowserWsClient,
   StompTokenBannedError,
   isJoinResponsePayload,
+  isJoinErrorPayload,
   isJackpotPoolsPayload,
   isGetBalanceResponsePayload,
   isGetBalanceErrorPayload,
@@ -71,6 +72,9 @@ export function useWsSession(
   const sessionReadyRef = useRef(false);
   const sessionEndingRef = useRef(false);
   const joinInFlightRef = useRef(false);
+  const joinResponseWaitRef = useRef<Promise<Record<string, unknown>> | null>(
+    null,
+  );
   const autoConnectStartedRef = useRef(false);
   const gameRouteRef = useRef(gameId.trim());
   const jackpotTierInfoRef = useRef(jackpotTierInfo);
@@ -247,6 +251,7 @@ export function useWsSession(
       setSymbolCatalog([]);
       setBalance(null);
       joinInFlightRef.current = false;
+      joinResponseWaitRef.current = null;
       setJoinRetryOpen(false);
       setJoinRetryMessage(null);
       setPhase("disconnected");
@@ -400,10 +405,15 @@ export function useWsSession(
         throw new Error(`Disconnected before join (${detail})`);
       }
 
-      const joinPayloadPromise = client.waitForPayload(
-        isJoinResponsePayload,
-        "join response",
-      );
+      let joinPayloadPromise = joinResponseWaitRef.current;
+      joinResponseWaitRef.current = null;
+      if (!joinPayloadPromise) {
+        joinPayloadPromise = client.waitForPayload(
+          isJoinResponsePayload,
+          "join response",
+          { rejectMatcher: isJoinErrorPayload },
+        );
+      }
       client.sendFrame(joinFrame(gameRouteRef.current));
 
       const rawJoinPayload = await joinPayloadPromise;

@@ -18,7 +18,15 @@ const QUICK_DEPOSIT_OPTIONS = [100, 500, 1000, 5000, 10000];
 function lobbyCardTheme(id: string): string {
   if (id === "yama_01021") return "titan";
   if (id === "yama_01026") return "bullet";
+  if (id === "yama_01027") return "alchemy";
   return "angkor";
+}
+
+function lobbyMeta(game: GameDef): string {
+  if (game.id === "yama_01026") return "576 Ways";
+  if (game.winSystem === "paylines") return "10 Paylines";
+  if (game.winSystem === "cluster") return "8×8 Cluster";
+  return "Win Ways";
 }
 
 export default function LobbyScreen({
@@ -133,13 +141,7 @@ export default function LobbyScreen({
               >
                 <span className="lobby-game-icon">{game.icon}</span>
                 <span className="lobby-game-name">{game.name}</span>
-                <span className="lobby-game-meta">
-                  {game.id === "yama_01026"
-                    ? "576 Ways"
-                    : game.winSystem === "paylines"
-                      ? "10 Paylines"
-                      : "Win Ways"}
-                </span>
+                <span className="lobby-game-meta">{lobbyMeta(game)}</span>
               </button>
             ))}
           </div>

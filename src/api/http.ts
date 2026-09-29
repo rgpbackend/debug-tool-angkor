@@ -45,23 +45,38 @@ export async function getJson<T>(
   return requestJson<T>(url, "GET", undefined, headers);
 }
 
+function httpErrorMessage(status: number, text: string): string {
+  if (status === 401) return "Invalid username or password";
+  if (status === 409) return "Username already taken";
+  return `Request failed (${status})${text ? `: ${text}` : ""}`;
+}
+
 async function requestJson<T>(
   url: string,
   method: string,
   body: unknown,
   headers: Record<string, string>,
 ): Promise<T> {
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: body != null ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: body != null ? JSON.stringify(body) : undefined,
+    });
+  } catch (e) {
+    if (e instanceof TypeError) {
+      throw new Error(
+        "Agency hid the response (CORS). Duplicate username and wrong password often look like Failed to fetch. Try a unique username.",
+        { cause: e },
+      );
+    }
+    throw e;
+  }
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(
-      `Request failed (${response.status})${text ? `: ${text}` : ""}`,
-    );
+    throw new Error(httpErrorMessage(response.status, text));
   }
 
   const text = await response.text();

@@ -309,7 +309,10 @@ export class BrowserWsClient {
 export { StompTokenBannedError } from "./stomp-errors";
 
 function formatCmdErrorMessage(payload: Record<string, unknown>): string {
-  const msg = typeof payload.msg === "string" ? payload.msg.trim() : "";
+  const msg =
+    (typeof payload.msg === "string" && payload.msg.trim()) ||
+    (typeof payload.mgs === "string" && payload.mgs.trim()) ||
+    "";
   const errorCode =
     typeof payload.errorCode === "string" ? payload.errorCode.trim() : "";
   if (errorCode && msg) return `${errorCode}: ${msg}`;
@@ -325,9 +328,11 @@ export function isJoinResponsePayload(
   payload: Record<string, unknown>,
 ): boolean {
   const symbols = readJoinField(payload, "symbols");
+  const c = Number(payload.c ?? 0);
   if (
     !hasCmd(payload, "1005") ||
-    typeof payload.c !== "number" ||
+    !Number.isFinite(c) ||
+    c !== 0 ||
     !Array.isArray(symbols)
   ) {
     return false;
@@ -342,6 +347,13 @@ export function isJoinResponsePayload(
     !Array.isArray(first) &&
     typeof (first as Record<string, unknown>).id === "string"
   );
+}
+
+/** Matches a failed cmd 1005 so join wait rejects instead of timing out. */
+export function isJoinErrorPayload(payload: Record<string, unknown>): boolean {
+  if (!hasCmd(payload, "1005")) return false;
+  const c = Number(payload.c);
+  return Number.isFinite(c) && c !== 0;
 }
 
 /** Matches cmd 1510 (pull) or 1520 (push) jackpot pools response. */
